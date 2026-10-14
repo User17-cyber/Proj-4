@@ -359,53 +359,72 @@ svg { display: block; width: 100%; height: 100%; }
   box-shadow: var(--lift);
 }
 
+/* Each shop: a header row, the live street scene, then the controls. */
 .shop {
   display: grid;
-  grid-template-columns: 96px minmax(0, 1fr);
-  gap: 12px;
-  padding: 12px;
-  align-items: start;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  padding: 10px 12px 12px;
+  align-content: start;
 }
 
-.shop-icon {
+.shop-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.shop-stars {
+  flex: none;
+  display: inline-flex;
+  gap: 1px;
+  font-size: 1rem;
+  line-height: 1;
+  color: #DCD6EA;
+  -webkit-text-stroke: 1px var(--ink);
+}
+.shop-stars .on { color: var(--sun); }
+.shop-head .shop-speed { margin-left: auto; }
+
+.shop-scene {
   position: relative;
-  width: 96px;
-  height: 96px;
-  padding: 6px;
+  display: block;
+  width: 100%;
+  height: 118px;
+  padding: 0;
   border: var(--line) solid var(--ink);
-  border-radius: 18px;
+  border-radius: 14px;
+  overflow: hidden;
   background: var(--tile, var(--paper-2));
-  box-shadow: 0 4px 0 var(--ink);
-  transition: transform .08s;
   touch-action: manipulation;
 }
-.shop-icon:active:not(:disabled) { transform: scale(.94) translateY(2px); box-shadow: 0 2px 0 var(--ink); }
-.shop-icon:disabled { cursor: default; }
-.shop-icon.working svg { animation: wobble 1.2s ease-in-out infinite; transform-origin: 50% 90%; }
-.shop-icon.squish svg { animation: squish .3s ease-out; }
+@media (min-width: 760px) { .shop-scene { height: 128px; } }
+.shop-scene canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+button.shop-scene:active { transform: translateY(1px); }
 
 .owned-badge {
   position: absolute;
-  left: 50%;
-  bottom: -12px;
+  left: 56px;
+  bottom: 3px;
   translate: -50% 0;
-  min-width: 44px;
+  min-width: 40px;
   padding: 0 8px;
-  border: var(--line) solid var(--ink);
+  border: 2px solid #FFFFFF;
   border-radius: 999px;
   background: var(--ink);
   color: #FFFFFF;
   font-weight: 800;
-  font-size: .85rem;
-  line-height: 20px;
+  font-size: .8rem;
+  line-height: 18px;
   text-align: center;
   font-variant-numeric: tabular-nums;
+  pointer-events: none;
 }
 
 .tap-hint {
   position: absolute;
-  top: -12px;
-  right: -12px;
+  top: 6px;
+  left: 74px;
   padding: 0 8px;
   border: var(--line) solid var(--ink);
   border-radius: 999px;
@@ -419,17 +438,15 @@ svg { display: block; width: 100%; height: 100%; }
   pointer-events: none;
 }
 
-.manager-pin {
-  position: absolute;
-  top: -12px;
-  right: -12px;
-  width: 36px;
-  height: 36px;
+/* The "coming soon" card keeps a small picture tile. */
+.shop-icon {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  padding: 6px;
   border: var(--line) solid var(--ink);
-  border-radius: 50%;
-  background: #FFFFFF;
-  overflow: hidden;
-  pointer-events: none;
+  border-radius: 18px;
+  background: #E2DDF0;
 }
 
 .shop-body {
@@ -540,12 +557,9 @@ svg { display: block; width: 100%; height: 100%; }
   transform-origin: left center;
 }
 
-.shop.locked .shop-icon svg { filter: grayscale(1) brightness(.75) opacity(.6); }
-.shop.locked .shop-icon { background: #E2DDF0; }
 .shop-note { margin: 0; font-weight: 700; color: var(--ink-soft); }
 .open-btn { justify-content: space-between; }
-.shop.mystery { grid-template-columns: 96px minmax(0, 1fr); border-style: dashed; background: rgba(255, 251, 240, .75); box-shadow: none; }
-.shop.mystery .shop-icon { background: #E2DDF0; box-shadow: none; }
+.shop.mystery { grid-template-columns: 96px minmax(0, 1fr); gap: 12px; align-items: center; border-style: dashed; background: rgba(255, 251, 240, .75); box-shadow: none; }
 
 /* ------------------------------------------------------------------ managers & upgrades */
 .card-grid {
@@ -923,6 +937,22 @@ svg { display: block; width: 100%; height: 100%; }
   pointer-events: none;
   overflow: hidden;
 }
+/* Coins flying from a shop up into the coin counter ride above the header. */
+.fly-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  pointer-events: none;
+  overflow: hidden;
+}
+.fly-coin {
+  position: absolute;
+  left: -11px;
+  top: -11px;
+  width: 22px;
+  height: 22px;
+}
+
 .floater {
   position: absolute;
   font-family: var(--font-display);
@@ -963,8 +993,6 @@ svg { display: block; width: 100%; height: 100%; }
 @keyframes pulse { 50% { transform: scale(1.06); } }
 @keyframes bump { 50% { transform: scale(1.25) rotate(-10deg); } }
 @keyframes hop { 50% { transform: translateY(-4px); } }
-@keyframes wobble { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg) translateY(-2px); } }
-@keyframes squish { 30% { transform: scale(1.12, .85); } 65% { transform: scale(.94, 1.08); } }
 @keyframes stripes { to { background-position: 28px 0, 0 0; } }
 @keyframes toast-in { from { transform: translateY(-16px) scale(.9); opacity: 0; } }
 @keyframes toast-out { to { transform: translateY(-12px); opacity: 0; } }
@@ -985,7 +1013,7 @@ svg { display: block; width: 100%; height: 100%; }
 @keyframes sway { 50% { transform: rotate(8deg) translateX(6px); } }
 
 @media (prefers-reduced-motion: reduce) {
-  .cloud, .badge, .tap-hint, .chip-boost, .shop-icon.working svg, .balloon svg { animation: none; }
+  .cloud, .badge, .tap-hint, .chip-boost, .balloon svg { animation: none; }
   .bar.blur .bar-fill { animation: none; }
   .confetti { display: none; }
   .balloon { animation: balloon-still 12s linear forwards; bottom: 120px; }
@@ -993,7 +1021,8 @@ svg { display: block; width: 100%; height: 100%; }
 }
 
 @media (max-width: 400px) {
-  .shop { grid-template-columns: 80px minmax(0, 1fr); gap: 10px; padding: 10px; }
+  .shop { padding: 8px 10px 10px; }
+  .shop.mystery { grid-template-columns: 80px minmax(0, 1fr); }
   .shop-icon { width: 80px; height: 80px; }
   .shop-name { font-size: 1.1rem; }
   .buy-toggle button { min-width: 44px; padding: 0 6px; }

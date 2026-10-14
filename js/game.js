@@ -183,15 +183,34 @@
     confetti(r.left + r.width / 2, r.top + r.height / 2, count);
   }
 
-  function floater(node, text) {
-    const r = node.getBoundingClientRect();
-    if (r.bottom < 0 || r.top > window.innerHeight) return;
+  function floaterAt(x, y, text) {
+    if (y < 0 || y > window.innerHeight) return;
     const f = el('span', 'floater');
     f.textContent = text;
-    f.style.left = r.left + r.width / 2 + rand(-14, 14) + 'px';
-    f.style.top = r.top + 4 + 'px';
+    f.style.left = x + rand(-10, 10) + 'px';
+    f.style.top = y + 'px';
     f.addEventListener('animationend', function () { f.remove(); });
     $('#fx').appendChild(f);
+  }
+
+  // A coin arcs from (x, y) on screen into the coin counter in the header.
+  let lastFly = 0;
+  function flyCoin(x, y) {
+    const now = performance.now();
+    if (reducedMotion || now - lastFly < 140 || document.hidden) return;
+    lastFly = now;
+    const purse = $('#purseCoin').getBoundingClientRect();
+    const tx = purse.left + purse.width / 2, ty = purse.top + purse.height / 2;
+    const coin = el('span', 'fly-coin', A.coin());
+    if (!coin.animate) return;
+    $('#flyLayer').appendChild(coin);
+    const mx = x + (tx - x) * 0.3 + rand(-30, 30), my = Math.min(y, ty) - rand(20, 60);
+    const anim = coin.animate([
+      { transform: 'translate(' + x + 'px,' + y + 'px) scale(.6)' },
+      { transform: 'translate(' + mx + 'px,' + my + 'px) scale(1)', offset: 0.35 },
+      { transform: 'translate(' + tx + 'px,' + ty + 'px) scale(.5)', opacity: 0.85 },
+    ], { duration: 750, easing: 'cubic-bezier(.4, 0, .6, 1)' });
+    anim.onfinish = function () { coin.remove(); bumpPurse(); };
   }
 
   function bumpPurse() {
@@ -260,10 +279,49 @@
   // ---------------------------------------------------------------------------
   // Town tab
   // ---------------------------------------------------------------------------
-  function renderTown() {
+  const MANAGER_LINES = ['On it, boss!', 'Busy busy!', 'Hi boss!', 'Coming right up!', 'Next customer!', 'Business is booming!'];
+
+  // Scenes only animate while on screen, and redraw at their new size when cards resize.
+  const sceneWatch = {
+    visible: typeof IntersectionObserver === 'function' ? new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.target.sceneRef) e.target.sceneRef.visible = e.isIntersecting; });
+    }, { rootMargin: '40px' }) : null,
+    size: typeof ResizeObserver === 'function' ? new ResizeObserver(function (entries) {
+      entries.forEach(function (e) { if (e.target.sceneRef && e.target.sceneRef.lane) e.target.sceneRef.lane.resize(); });
+    }) : null,
+  };
+
+  function watchScene(r, node) {
+    node.sceneRef = r;
+    r.visible = true;
+    if (sceneWatch.visible) sceneWatch.visible.observe(node);
+    if (sceneWatch.size) sceneWatch.size.observe(node);
+  }
+
+  function makeLane(r, i, locked, build) {
+    const b = G.BUSINESSES[i];
+    const m = G.MANAGERS[i];
+    r.lane = Scene.createLane($('canvas', r.scene), {
+      key: b.id,
+      shopSvg: A.shop(b.id),
+      productSvg: A.product(b.id),
+      faceSvg: A.face(m.animal, m.color),
+      tile: b.tile,
+      bar: b.bar,
+      night: b.id === 'moon',
+      locked: locked,
+      build: build,
+      onServe: function (x, y) { onServe(r, x, y); },
+    });
+  }
+
+  // justOpened: index of a shop that was just bought, so its building pops up.
+  function renderTown(justOpened) {
     const list = $('#shopList');
     list.textContent = '';
     refs.shops = [];
+    if (sceneWatch.visible) sceneWatch.visible.disconnect();
+    if (sceneWatch.size) sceneWatch.size.disconnect();
     let lockedShown = 0;
     G.BUSINESSES.forEach(function (b, i) {
       if (state.biz[i].owned > 0) {
@@ -276,6 +334,11 @@
         lockedShown++;
       }
     });
+    // Scenes measure themselves, so they're made once the cards are on the page.
+    refs.shops.forEach(function (r) {
+      makeLane(r, r.i, !!r.locked, r.i === justOpened);
+      watchScene(r, r.scene);
+    });
     updateTown(true);
   }
 
@@ -285,26 +348,24 @@
     card.style.setProperty('--tile', b.tile);
     card.style.setProperty('--barc', b.bar);
     card.innerHTML =
-      '<button class="shop-icon" type="button" aria-label="Run ' + b.name + '">' + A.shop(b.id) +
-        '<span class="owned-badge"></span><span class="tap-hint">TAP!</span>' +
-        '<span class="manager-pin" hidden>' + A.face(G.MANAGERS[i].animal, G.MANAGERS[i].color) + '</span>' +
+      '<div class="shop-head"><h2 class="shop-name">' + b.name + '</h2><span class="shop-stars"></span><span class="shop-speed"></span></div>' +
+      '<button class="shop-scene" type="button" aria-label="Run ' + b.name + '">' +
+        '<canvas aria-hidden="true"></canvas><span class="owned-badge"></span><span class="tap-hint">TAP!</span>' +
       '</button>' +
-      '<div class="shop-body">' +
-        '<div class="shop-name-row"><h2 class="shop-name">' + b.name + '</h2><span class="shop-speed"></span></div>' +
-        '<div class="bar"><div class="bar-fill"></div><div class="bar-text">' +
-          '<span class="bar-amount"></span><span class="bar-time" title="Time left">' + A.icon('clock') + '<span></span></span>' +
-        '</div></div>' +
-        '<button class="btn buy-btn" type="button"><span class="buy-n"></span><span class="buy-cost">' + coinCost(0) + '</span></button>' +
-        '<div class="milestone"><div class="mini-bar"><span></span></div><span class="ms-text"></span></div>' +
-      '</div>';
+      '<div class="bar"><div class="bar-fill"></div><div class="bar-text">' +
+        '<span class="bar-amount"></span><span class="bar-time" title="Time left">' + A.icon('clock') + '<span></span></span>' +
+      '</div></div>' +
+      '<button class="btn buy-btn" type="button"><span class="buy-n"></span><span class="buy-cost">' + coinCost(0) + '</span></button>' +
+      '<div class="milestone"><div class="mini-bar"><span></span></div><span class="ms-text"></span></div>';
 
     const r = {
       i: i,
       card: card,
-      icon: $('.shop-icon', card),
+      scene: $('.shop-scene', card),
       owned: $('.owned-badge', card),
       hint: $('.tap-hint', card),
-      pin: $('.manager-pin', card),
+      stars: $('.shop-stars', card),
+      starCount: -1,
       speed: $('.shop-speed', card),
       bar: $('.bar', card),
       fill: $('.bar-fill', card),
@@ -318,13 +379,16 @@
       msText: $('.ms-text', card),
     };
 
-    r.icon.addEventListener('click', function () {
+    // Tapping the street starts a batch; a manager's shop gets a cheerful reply instead.
+    r.scene.addEventListener('click', function () {
       if (G.tap(state, i)) {
         Sound.play('tap');
-        r.icon.classList.remove('squish');
-        void r.icon.offsetWidth;
-        r.icon.classList.add('squish');
+        r.lane.poke();
         updateTown(true);
+      } else if (state.managers[i]) {
+        r.lane.say(MANAGER_LINES[Math.floor(Math.random() * MANAGER_LINES.length)]);
+      } else {
+        r.lane.poke();
       }
     });
 
@@ -333,13 +397,14 @@
       const before = G.milestonesReached(state.biz[i].owned);
       if (!G.buy(state, i, n)) { Sound.play('nope'); return; }
       Sound.play('buy');
+      r.lane.poke();
       const after = G.milestonesReached(state.biz[i].owned);
       if (after > before) {
         const next = G.nextMilestone(state.biz[i].owned);
         Sound.play('fanfare');
-        confettiAt(r.icon, 24);
+        confettiAt(r.scene, 24);
         toast(A.shop(b.id), b.name + ' is ' + Math.pow(2, after - before) + '× faster!',
-          next ? 'Own ' + next + ' to double its speed again.' : 'It has reached top speed.');
+          (next ? 'A new branch opened behind it. Own ' + next + ' to double its speed again.' : 'It has reached top speed.'));
       }
       afterChange();
     });
@@ -351,23 +416,22 @@
   function lockedCard(i) {
     const b = G.BUSINESSES[i];
     const card = el('article', 'card shop locked');
+    card.style.setProperty('--tile', b.tile);
     card.innerHTML =
-      '<div class="shop-icon">' + A.shop(b.id) + '</div>' +
-      '<div class="shop-body">' +
-        '<div class="shop-name-row"><h2 class="shop-name">' + b.name + '</h2></div>' +
-        '<p class="shop-note">Earns ' + fmt(b.rev) + ' coins every ' + G.fmtTime(b.time) + ' per shop.</p>' +
-        '<button class="btn btn-pink open-btn" type="button"><span>Open shop</span><span class="buy-cost">' + coinCost(b.cost) + '</span></button>' +
-      '</div>';
+      '<div class="shop-head"><h2 class="shop-name">' + b.name + '</h2><span class="shop-speed">Empty lot</span></div>' +
+      '<div class="shop-scene"><canvas aria-hidden="true"></canvas></div>' +
+      '<p class="shop-note">Earns ' + fmt(b.rev) + ' coins every ' + G.fmtTime(b.time) + ' per shop.</p>' +
+      '<button class="btn btn-pink open-btn" type="button"><span>Open shop</span><span class="buy-cost">' + coinCost(b.cost) + '</span></button>';
     const btn = $('.open-btn', card);
     btn.addEventListener('click', function () {
       if (!G.buy(state, i, 1)) { Sound.play('nope'); return; }
       Sound.play('fanfare');
       confettiAt(btn, 36);
-      toast(A.shop(b.id), 'New shop: ' + b.name + '!', 'Tap it to start earning.');
-      renderTown();
+      toast(A.shop(b.id), 'New shop: ' + b.name + '!', 'Tap it to start serving customers.');
+      renderTown(i);
       afterChange();
     });
-    refs.shops.push({ i: i, locked: true, buy: btn });
+    refs.shops.push({ i: i, locked: true, buy: btn, scene: $('.shop-scene', card) });
     return card;
   }
 
@@ -380,6 +444,13 @@
         '<p class="shop-note">' + remaining + ' more ' + (remaining === 1 ? 'shop' : 'shops') + ' to discover. Keep growing your town!</p>' +
       '</div>';
     return card;
+  }
+
+  function upgradesOwned(i) {
+    const id = G.BUSINESSES[i].id;
+    let n = 0;
+    for (let t = 0; t < 4; t++) if (state.upgrades[id + '-' + t]) n++;
+    return n;
   }
 
   function updateTown(text) {
@@ -399,16 +470,22 @@
       if (!text) return;
 
       const rev = G.revenue(state, i, now);
-      setText(r.owned, String(b.owned));
+      setText(r.owned, '×' + b.owned);
       setText(r.amount, fast ? fmt(rev / time) + ' / sec' : '+' + fmt(rev));
       r.timeBox.hidden = fast;
       if (!fast) setText(r.timer, b.running ? G.fmtTime((1 - b.progress) * time) : G.fmtTime(time));
       setText(r.speed, fmt(rev / time) + '/s');
       r.hint.hidden = managed || b.running;
-      r.pin.hidden = !managed;
-      r.icon.classList.toggle('working', managed);
-      r.icon.disabled = managed;
-      r.icon.setAttribute('aria-label', managed ? G.BUSINESSES[i].name + ' (run by ' + G.MANAGERS[i].name + ')' : 'Run ' + G.BUSINESSES[i].name);
+      r.scene.setAttribute('aria-label', managed ? G.BUSINESSES[i].name + ', run by ' + G.MANAGERS[i].name : 'Run ' + G.BUSINESSES[i].name);
+
+      // One gold star per upgrade bought for this shop.
+      const stars = upgradesOwned(i);
+      if (stars !== r.starCount) {
+        r.starCount = stars;
+        r.stars.innerHTML = [0, 1, 2, 3].map(function (k) { return '<span' + (k < stars ? ' class="on"' : '') + '>★</span>'; }).join('');
+        r.stars.setAttribute('aria-label', stars + ' of 4 upgrades');
+        r.stars.title = stars + ' of 4 upgrades bought';
+      }
 
       const n = G.buyAmount(state, i);
       const cost = G.costFor(i, b.owned, n);
@@ -420,12 +497,41 @@
       if (next) {
         const prev = G.prevMilestone(b.owned);
         r.msBar.style.transform = 'scaleX(' + (b.owned - prev) / (next - prev) + ')';
-        setText(r.msText, '2× speed at ' + next);
+        setText(r.msText, '2× speed + new branch at ' + next);
       } else {
         r.msBar.style.transform = 'scaleX(1)';
         setText(r.msText, 'Top speed!');
       }
     });
+  }
+
+  // Move every on-screen street scene forward and redraw it.
+  function animateTown(dt) {
+    refs.shops.forEach(function (r) {
+      if (!r.lane || !r.visible) return;
+      const b = state.biz[r.i];
+      r.lane.update(dt, {
+        owned: b.owned,
+        managed: state.managers[r.i],
+        running: b.running,
+        time: G.cycleTime(state, r.i),
+        milestones: G.milestonesReached(b.owned),
+      });
+      r.lane.draw();
+    });
+  }
+
+  // A customer was just served: float the earnings and fly a coin to the counter.
+  function onServe(r, x, y) {
+    const box = r.scene.getBoundingClientRect();
+    const sx = box.left + 3 + x, sy = box.top + 3 + y;
+    const f = floaters[r.i];
+    if (state.settings.floaters && f.amount > 0 && performance.now() - f.last >= 500) {
+      floaterAt(sx, sy - 10, '+' + fmt(f.amount));
+      f.amount = 0;
+      f.last = performance.now();
+    }
+    flyCoin(sx, sy);
   }
 
   // ---------------------------------------------------------------------------
@@ -928,24 +1034,23 @@
     let manual = false;
     step.payouts.forEach(function (p) {
       if (p.manual) manual = true;
-      const f = floaters[p.i];
-      f.amount += p.amount;
+      floaters[p.i].amount += p.amount;
+      if (tab === 'town') {
+        const r = refs.shops.find(function (s) { return s.i === p.i && s.lane; });
+        if (r) r.lane.payout();
+      }
     });
     if (manual) { Sound.play('coin'); bumpPurse(); }
 
     if (tab === 'town') {
-      if (state.settings.floaters && !document.hidden) {
-        refs.shops.forEach(function (r) {
-          const f = floaters[r.i];
-          if (r.locked || f.amount <= 0 || nowPerf - f.last < 600) return;
-          floater(r.icon, '+' + fmt(f.amount));
-          f.amount = 0;
-          f.last = nowPerf;
-        });
-      }
+      animateTown(Math.min(step.dt, 0.1));
       updateTown(nowPerf - lastText > 100);
     }
-    floaters.forEach(function (f) { if (tab !== 'town' || !state.settings.floaters) f.amount = 0; });
+    // Earnings only float up from shops you can see.
+    floaters.forEach(function (f, i) {
+      const r = tab === 'town' && refs.shops.find(function (s) { return s.i === i && !s.locked; });
+      if (!r || !r.visible || !state.settings.floaters) f.amount = 0;
+    });
 
     if (nowPerf - lastText > 100) {
       lastText = nowPerf;

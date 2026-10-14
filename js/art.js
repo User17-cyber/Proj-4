@@ -248,6 +248,38 @@
   }
 
   // ---------------------------------------------------------------------------
+  // What each shop's customers carry away. Drawn small, so the outlines are thick.
+  // ---------------------------------------------------------------------------
+  const PRODUCTS = {
+    lemon: '<path d="M56 30l14-24" fill="none" stroke="#FF5FA2" stroke-width="8"/>' +
+      '<path d="M24 30h52l-8 62h-36z" fill="#FFE14D"/><path d="M27 44h46" fill="none" stroke="#FFF7B8" stroke-width="6"/>' +
+      '<circle cx="26" cy="30" r="13" fill="#FFF07A"/>',
+    icecream: '<path d="M28 46l22 50l22-50z" fill="#F4A259"/><circle cx="50" cy="36" r="22" fill="#FF8FC7"/><circle cx="50" cy="12" r="8" fill="#FF3B6B"/>',
+    donut: '<path d="' + ring(50, 52, 42, 13) + '" fill="#E8A25B" fill-rule="evenodd"/>' +
+      '<path d="' + ring(50, 50, 34, 13) + '" fill="#FF7EB6" fill-rule="evenodd" stroke="none"/>' +
+      '<path d="M30 34l6 4M64 28l-4 6M70 52l6 2M26 56l6-2" fill="none" stroke="#FFFFFF" stroke-width="6"/>',
+    pizza: '<path d="M16 24q34-14 68 0l-34 70z" fill="#FFD23F"/><path d="M12 18q38-16 76 0l-4 12q-34-14-68 0z" fill="#E89B4A"/>' +
+      '<circle cx="40" cy="42" r="8" fill="#FF5A5F"/><circle cx="60" cy="44" r="7" fill="#FF5A5F"/><circle cx="50" cy="64" r="6" fill="#FF5A5F"/>',
+    toys: '<circle cx="26" cy="28" r="14" fill="#C68A5B"/><circle cx="74" cy="28" r="14" fill="#C68A5B"/>' +
+      '<circle cx="50" cy="56" r="36" fill="#C68A5B"/><ellipse cx="50" cy="68" rx="16" ry="12" fill="#F3C9A0"/>' +
+      '<circle cx="38" cy="50" r="5" fill="' + INK + '" stroke="none"/><circle cx="62" cy="50" r="5" fill="' + INK + '" stroke="none"/><ellipse cx="50" cy="63" rx="6" ry="4" fill="' + INK + '"/>',
+    candy: '<path d="M50 96V58" fill="none" stroke-width="9"/><circle cx="50" cy="36" r="30" fill="#FFE14D"/>' +
+      '<path d="M50 36m-2 0a4 4 0 1 1 6 2a11 11 0 1 1 -16 -8a18 18 0 1 1 26 14" fill="none" stroke="#FF5FA2" stroke-width="7"/>',
+    park: '<path d="M50 70q-8 12 2 28" fill="none"/><path d="M50 4c20 0 32 15 32 34c0 20-16 34-32 34s-32-14-32-34c0-19 12-34 32-34z" fill="#FF5A5F"/>' +
+      '<path d="M34 26q4-10 14-12" fill="none" stroke="#FFFFFF" stroke-width="7"/>',
+    studio: '<circle cx="34" cy="26" r="12" fill="#FFF7D6"/><circle cx="52" cy="20" r="13" fill="#FFF7D6"/><circle cx="68" cy="28" r="12" fill="#FFF7D6"/>' +
+      '<path d="M22 36h56l-8 58h-40z" fill="#FFFFFF"/><path d="M38 36l3 58M58 36l-3 58" fill="none" stroke="#FF5A5F" stroke-width="10"/><path d="M22 36h56l-8 58h-40z" fill="none"/>',
+    rocket: '<path d="M14 46q0-32 36-32t36 32z" fill="#F6B04E"/><path d="M12 54q10-8 19 0q10-8 19 0q10-8 19 0q10-8 19 0" fill="none" stroke="#3DDC97" stroke-width="9"/>' +
+      '<rect x="12" y="58" width="76" height="14" rx="6" fill="#8B4A2B"/><path d="M14 76h72q0 16-14 16h-44q-14 0-14-16z" fill="#F6B04E"/>',
+    moon: '<path d="M34 34q0-24 16-24t16 24" fill="none" stroke-width="8"/><path d="M18 32h64l6 60h-76z" fill="#C77DFF"/>' +
+      sparkle(50, 62, 16, '#FFE14D').replace('stroke-width="2"', 'stroke-width="6"'),
+  };
+
+  function product(id) {
+    return '<svg viewBox="0 0 100 100" aria-hidden="true"><g stroke="' + INK + '" stroke-width="7" stroke-linejoin="round" stroke-linecap="round">' + (PRODUCTS[id] || '') + '</g></svg>';
+  }
+
+  // ---------------------------------------------------------------------------
   // Small icons
   // ---------------------------------------------------------------------------
   function coin() {
@@ -308,5 +340,5 @@
     return '<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">' + paths[name] + '</g></svg>';
   }
 
-  root.Art = { shop: shop, mystery: mystery, face: face, coin: coin, sprinkle: sprinkle, sprinkleJar: sprinkleJar, trophy: trophy, balloon: balloon, icon: icon };
+  root.Art = { shop: shop, product: product, mystery: mystery, face: face, coin: coin, sprinkle: sprinkle, sprinkleJar: sprinkleJar, trophy: trophy, balloon: balloon, icon: icon };
 })(this);

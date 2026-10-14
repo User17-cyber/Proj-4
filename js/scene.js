@@ -1,0 +1,671 @@
+/*
+ * Sprinkle Town Tycoon — the little street scene at the top of each shop card.
+ *
+ * Customers walk up and wait in line. Each finished batch serves the person at
+ * the front, who hops, grabs their treat and walks off while coins pop out.
+ * The line gets longer as you own more, a branch building appears behind the
+ * shop at every speed milestone, and delivery vans start driving by once the
+ * shop is busy. A hired manager stands out front and waves.
+ *
+ * Drawn on a <canvas> in CSS pixels; knows nothing about the game rules. The
+ * page feeds it { owned, managed, running, time, milestones } every frame.
+ */
+(function (root) {
+  'use strict';
+
+  const INK = '#2B2147';
+  const SKIN = ['#FFE0C7', '#F6C9A0', '#E0A877', '#B87A4B', '#8A5634'];
+  const SHIRTS = ['#FF5FA2', '#4CC9F0', '#3DDC97', '#FF9F43', '#8C6CFF', '#FFD23F', '#FF6B6B', '#5B8CFF'];
+  const HATS = ['none', 'none', 'cap', 'bow', 'beanie', 'cap', 'none'];
+  const GAP = 25;          // space between people in line
+  const BRANCH = 40;       // spacing of the branch buildings behind the shop
+  const reducedMotion = !!(root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  function rand(a, b) { return a + Math.random() * (b - a); }
+  function pick(list) { return list[Math.floor(Math.random() * list.length)]; }
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function easeOutBack(x) { const c = 1.7; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); }
+
+  // Mix a #RRGGBB color toward white (amount > 0) or toward ink (amount < 0).
+  function mix(hex, amount) {
+    const n = parseInt(hex.slice(1), 16);
+    const from = [n >> 16, (n >> 8) & 255, n & 255];
+    const to = amount < 0 ? [43, 33, 71] : [255, 255, 255];
+    const a = Math.abs(amount);
+    return 'rgb(' + from.map(function (v, k) { return Math.round(v + (to[k] - v) * a); }).join(',') + ')';
+  }
+
+  // The cartoon SVGs, turned into images the canvas can draw.
+  const images = {};
+  function image(key, svg) {
+    if (!images[key]) {
+      const img = new Image();
+      img.src = 'data:image/svg+xml;charset=utf-8,' +
+        encodeURIComponent(svg.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" '));
+      images[key] = img;
+    }
+    return images[key];
+  }
+  function ready(img) { return !!img && img.complete && img.naturalWidth > 0; }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function dot(ctx, x, y, r) {
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // opts: { key, shopSvg, productSvg, faceSvg, tile, bar, night, locked, build, onServe(x, y) }
+  function createLane(canvas, opts) {
+    const ctx = canvas.getContext('2d');
+    const shopImg = image('shop:' + opts.key, opts.shopSvg);
+    const productImg = opts.productSvg ? image('product:' + opts.key, opts.productSvg) : null;
+    const faceImg = opts.faceSvg ? image('face:' + opts.key, opts.faceSvg) : null;
+
+    let w = 0, h = 0, dpr = 1, lay = null;
+    let bg = null, bgKey = '';
+    let t = rand(0, 10);
+    let people = [], particles = [], vans = [];
+    let pending = 0, cooldown = 0, spawnTimer = 0.2, vanTimer = rand(1, 4), puffTimer = 0, passTimer = rand(0.5, 2);
+    let bump = 0, build = opts.build ? 0 : 1, wave = 0, bubble = null;
+    let info = { owned: 1, managed: false, running: false, time: 1, milestones: 0 };
+    let seeded = false, lastManaged = null, lastMilestones = null;
+    const clouds = [{ x: rand(0, 1), y: rand(0.1, 0.22), s: rand(0.8, 1) }, { x: rand(0, 1), y: rand(0.16, 0.34), s: rand(0.55, 0.75) }];
+
+    if (opts.build) dust();
+
+    // ------------------------------------------------------------- layout
+    function layout() {
+      const feet = h - 20;
+      const S = Math.min(h - 10, 104);            // main building size
+      const bx = 4;
+      const managerX = bx + S + 10;
+      const front = info.managed ? managerX + 28 : bx + S + 14;
+      lay = {
+        feet: feet, S: S, bx: bx, managerX: managerX, front: front,
+        walkTop: feet - 12, roadTop: feet + 5,
+        maxLine: Math.max(1, Math.floor((w - front - 14) / GAP) + 1),
+      };
+    }
+
+    function resize() {
+      const r = canvas.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      dpr = Math.min(root.devicePixelRatio || 1, 2);
+      w = r.width;
+      h = r.height;
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      bgKey = '';
+      layout();
+    }
+
+    function slotX(k) { return lay.front + k * GAP; }
+    function lineTarget() { return clamp(1 + Math.floor(Math.log2(Math.max(1, info.owned))), 1, lay.maxLine); }
+    // Busier (faster) shops have customers who hurry.
+    function hurry() { return clamp(1 + Math.log2(1 / Math.max(info.time, 0.01)) * 0.15, 0.85, 2.2); }
+
+    function person(x, dir) {
+      return {
+        x: x, dir: dir, state: 'line', slot: 0, walking: false, carry: false, timer: 0,
+        skin: pick(SKIN), shirt: pick(SHIRTS), hat: pick(HATS), hatColor: pick(SHIRTS),
+        phase: rand(0, 6), speed: rand(36, 50),
+      };
+    }
+
+    // ------------------------------------------------------------- events
+    function payout() {
+      if (opts.locked) return;
+      pending = Math.min(4, pending + Math.min(3, 1 + Math.floor(info.milestones / 2)));
+    }
+
+    function poke() { bump = 1; }
+
+    function say(text) {
+      bubble = { text: text, t: 1.8 };
+      wave = 1;
+    }
+
+    function dust() {
+      for (let k = 0; k < 14; k++) {
+        particles.push({ kind: 'dust', x: 50 + rand(-40, 40), y: (h || 110) - 22 + rand(-4, 2), vx: rand(-50, 50), vy: rand(-30, -5), life: rand(0.5, 0.9), max: 0.9, size: rand(4, 8) });
+      }
+    }
+
+    function sparkles(x, y, spread, n) {
+      if (reducedMotion) return;
+      for (let k = 0; k < n; k++) {
+        particles.push({ kind: 'spark', x: x + rand(-spread, spread), y: y + rand(-spread * 0.7, spread * 0.5), vx: rand(-20, 20), vy: rand(-50, -15), life: rand(0.6, 1.1), max: 1.1, size: rand(3, 6) });
+      }
+    }
+
+    function serve(c, speed) {
+      c.state = 'served';
+      c.timer = 0.3;
+      c.carry = true;
+      pending--;
+      cooldown = clamp(0.45 / speed, 0.12, 0.5);
+      wave = Math.max(wave, 0.5);
+      const cx = c.x - 6, cy = lay.feet - 38;
+      if (!reducedMotion) {
+        for (let k = 0; k < 3; k++) particles.push({ kind: 'coin', x: cx, y: cy, vx: rand(-45, 45), vy: rand(-170, -120), life: 0.75, max: 0.75, size: 4.5 });
+      }
+      if (opts.onServe) opts.onServe(cx, cy);
+    }
+
+    // ------------------------------------------------------------- update
+    function update(dt, next) {
+      info = next;
+      t += dt;
+      if (!w) return;
+      if (lastManaged !== info.managed) {
+        layout();
+        if (lastManaged === false && info.managed) say('Hi boss!');
+        lastManaged = info.managed;
+      }
+      if (lastMilestones !== null && info.milestones > lastMilestones) {
+        sparkles(lay.bx + lay.S / 2, lay.feet - lay.S / 2, 40, 16);
+        const n = branchCount();
+        if (n > 0) sparkles(w - 8 - n * BRANCH + 20, lay.walkTop - 24, 18, 10);
+      }
+      lastMilestones = info.milestones;
+      if (bump > 0) bump = Math.max(0, bump - dt * 4);
+      if (build < 1) build = Math.min(1, build + dt * 1.5);
+      if (wave > 0) wave -= dt;
+      if (bubble && (bubble.t -= dt) <= 0) bubble = null;
+
+      if (opts.locked) updatePassersby(dt);
+      else updateShop(dt);
+
+      particles.forEach(function (p) {
+        p.life -= dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        if (p.kind === 'coin') p.vy += 420 * dt;
+        if (p.kind === 'dust') { p.vx *= 0.92; p.size += dt * 10; }
+        if (p.kind === 'puff') p.size += dt * 5;
+      });
+      particles = particles.filter(function (p) { return p.life > 0; });
+      if (particles.length > 70) particles.splice(0, particles.length - 70);
+
+      if (!opts.locked && info.owned >= 10) {
+        vanTimer -= dt;
+        if (vanTimer <= 0) {
+          vans.push({ x: -54, speed: rand(70, 95) });
+          vanTimer = rand(7, 13) / (1 + info.milestones * 0.35);
+        }
+      }
+      vans.forEach(function (v) { v.x += v.speed * dt; });
+      vans = vans.filter(function (v) { return v.x < w + 10; });
+
+      clouds.forEach(function (c) {
+        c.x += dt * 0.006 * c.s;
+        if (c.x > 1.25) c.x = -0.25;
+      });
+    }
+
+    function updateShop(dt) {
+      const speed = hurry();
+      if (!seeded) {
+        seeded = true;
+        for (let k = 0; k < lineTarget(); k++) people.push(person(slotX(k), -1));
+      }
+      const line = people.filter(function (c) { return c.state === 'line'; });
+      line.forEach(function (c, k) { c.slot = k; });
+
+      spawnTimer -= dt;
+      if (line.length < lineTarget() && spawnTimer <= 0) {
+        people.push(person(w + 14, -1));
+        spawnTimer = rand(0.35, 0.9) / speed;
+      }
+
+      people.forEach(function (c) {
+        c.walking = false;
+        if (c.state === 'line') {
+          const tx = slotX(c.slot);
+          const step = c.speed * speed * dt;
+          if (c.x > tx + 0.5) { c.x = Math.max(tx, c.x - step); c.walking = true; c.dir = -1; }
+          else if (c.x < tx - 0.5) { c.x = Math.min(tx, c.x + step); c.walking = true; c.dir = 1; }
+          else c.dir = -1;
+        } else if (c.state === 'served') {
+          c.timer -= dt;
+          if (c.timer <= 0) { c.state = 'leave'; c.dir = 1; }
+        } else if (c.state === 'leave') {
+          c.x += c.speed * speed * 1.3 * dt;
+          c.walking = true;
+        }
+        if (c.walking) c.phase += dt * 12 * Math.min(speed, 1.6);
+      });
+      people = people.filter(function (c) { return c.x < w + 24; });
+
+      cooldown -= dt;
+      const front = line[0];
+      if (pending > 0 && front && Math.abs(front.x - slotX(0)) < 1 && cooldown <= 0) serve(front, speed);
+
+      if (info.running && !reducedMotion) {
+        puffTimer -= dt;
+        if (puffTimer <= 0) {
+          puffTimer = rand(0.3, 0.5);
+          particles.push({ kind: 'puff', x: lay.bx + lay.S * rand(0.35, 0.65), y: lay.feet - lay.S * 0.8, vx: rand(-6, 6), vy: rand(-26, -18), life: 1.1, max: 1.1, size: rand(3, 5) });
+        }
+      }
+    }
+
+    // Empty lots still get the odd passer-by.
+    function updatePassersby(dt) {
+      passTimer -= dt;
+      if (passTimer <= 0) {
+        const c = person(w + 14, -1);
+        c.state = 'pass';
+        people.push(c);
+        passTimer = rand(3, 7);
+      }
+      people.forEach(function (c) {
+        c.x -= c.speed * dt;
+        c.walking = true;
+        c.phase += dt * 12;
+      });
+      people = people.filter(function (c) { return c.x > -20; });
+    }
+
+    // ------------------------------------------------------------- background
+    function branchCount() {
+      if (opts.locked || !lay) return 0;
+      const fit = Math.max(0, Math.floor((w - lay.S - 30) / BRANCH));
+      return Math.min(info.milestones, fit);
+    }
+
+    function paintBackground() {
+      if (!bg) bg = document.createElement('canvas');
+      bg.width = canvas.width;
+      bg.height = canvas.height;
+      const b = bg.getContext('2d');
+      b.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      const sky = b.createLinearGradient(0, 0, 0, lay.walkTop);
+      if (opts.night) { sky.addColorStop(0, '#1F1B4A'); sky.addColorStop(1, '#4A3F8F'); }
+      else { sky.addColorStop(0, mix(opts.tile, 0.7)); sky.addColorStop(1, opts.tile); }
+      b.fillStyle = sky;
+      b.fillRect(0, 0, w, lay.walkTop);
+
+      if (opts.night) {
+        b.fillStyle = '#FFF7C2';
+        for (let k = 0; k < 18; k++) dot(b, (k * 97 % 100) / 100 * w, 6 + (k * 53 % 100) / 100 * (lay.walkTop - 30), k % 3 ? 1 : 1.6);
+      }
+
+      // Rolling hills on the horizon.
+      b.beginPath();
+      b.moveTo(0, lay.walkTop);
+      b.lineTo(0, lay.walkTop - 16);
+      for (let x = 0; x <= w; x += 80) b.quadraticCurveTo(x + 40, lay.walkTop - 34, x + 80, lay.walkTop - 16);
+      b.lineTo(w, lay.walkTop);
+      b.closePath();
+      b.fillStyle = opts.night ? '#3A3274' : mix(opts.tile, -0.12);
+      b.fill();
+      b.strokeStyle = INK;
+      b.lineWidth = 2;
+      b.stroke();
+
+      // One branch building per speed milestone, lined up behind the main shop.
+      const n = branchCount();
+      if (ready(shopImg)) {
+        for (let k = 0; k < n; k++) {
+          const size = 46;
+          b.drawImage(shopImg, w - 8 - (k + 1) * BRANCH - 3, lay.walkTop + 3 - size * 0.91, size, size);
+        }
+      }
+      // A little haze pushes the back row into the distance.
+      b.fillStyle = opts.night ? 'rgba(31,27,74,.22)' : 'rgba(255,255,255,.2)';
+      b.fillRect(0, 0, w, lay.walkTop);
+
+      // Sidewalk (or a grassy lot), curb, road.
+      b.fillStyle = opts.locked ? '#9BE36D' : '#FFF3D6';
+      b.fillRect(0, lay.walkTop, w, lay.roadTop - lay.walkTop);
+      if (!opts.locked) {
+        b.strokeStyle = 'rgba(43,33,71,.16)';
+        b.lineWidth = 1.5;
+        b.beginPath();
+        for (let x = 14; x < w; x += 24) { b.moveTo(x, lay.walkTop + 2); b.lineTo(x - 4, lay.roadTop - 2); }
+        b.stroke();
+      }
+      b.fillStyle = opts.night ? '#5B5394' : '#A79FCF';
+      b.fillRect(0, lay.roadTop, w, h - lay.roadTop);
+      b.strokeStyle = INK;
+      b.lineWidth = 2.5;
+      b.beginPath();
+      b.moveTo(0, lay.walkTop); b.lineTo(w, lay.walkTop);
+      b.moveTo(0, lay.roadTop); b.lineTo(w, lay.roadTop);
+      b.stroke();
+      b.strokeStyle = '#FFFFFF';
+      b.lineWidth = 2;
+      b.setLineDash([10, 10]);
+      b.beginPath();
+      b.moveTo(0, (lay.roadTop + h) / 2 + 1); b.lineTo(w, (lay.roadTop + h) / 2 + 1);
+      b.stroke();
+      b.setLineDash([]);
+
+      if (opts.locked) paintLot(b);
+    }
+
+    // The empty lot: a faint outline of the future shop and a For Sale sign.
+    function paintLot(b) {
+      if (ready(shopImg)) {
+        b.globalAlpha = 0.22;
+        b.drawImage(shopImg, lay.bx, lay.feet + 1 - lay.S * 0.91, lay.S, lay.S);
+        b.globalAlpha = 1;
+      }
+      const sx = lay.bx + lay.S + 46, top = lay.feet - 50;
+      b.strokeStyle = INK;
+      b.lineWidth = 3;
+      b.fillStyle = '#C98B4F';
+      b.fillRect(sx - 2, top + 20, 5, lay.feet - top - 20);
+      b.strokeRect(sx - 2, top + 20, 5, lay.feet - top - 20);
+      b.fillStyle = '#FFFFFF';
+      roundRect(b, sx - 34, top, 68, 26, 6);
+      b.fill();
+      b.stroke();
+      b.fillStyle = '#FF5A5F';
+      b.font = "16px 'Lilita One', 'Arial Rounded MT Bold', sans-serif";
+      b.textAlign = 'center';
+      b.textBaseline = 'middle';
+      b.fillText('FOR SALE', sx, top + 14);
+    }
+
+    // ------------------------------------------------------------- drawing
+    function draw() {
+      if (!w || !lay) return;
+      const fontsReady = !document.fonts || document.fonts.status === 'loaded';
+      const key = [w, h, branchCount(), ready(shopImg), fontsReady].join(':');
+      if (key !== bgKey) { paintBackground(); bgKey = key; }
+      ctx.clearRect(0, 0, w, h);
+      ctx.drawImage(bg, 0, 0, w, h);
+      drawClouds();
+
+      if (!opts.locked) {
+        drawShop();
+        particles.forEach(function (p) { if (p.kind === 'puff') drawParticle(p); });
+        if (info.managed) drawManager();
+      }
+      people.forEach(function (c) { if (c.state !== 'leave') drawPerson(c); });
+      people.forEach(function (c) { if (c.state === 'leave') drawPerson(c); });
+      if (!opts.locked && !info.managed && !info.running) {
+        const front = people.find(function (c) { return c.state === 'line' && Math.abs(c.x - slotX(0)) < 1; });
+        if (front) drawWaiting(front.x + 12, lay.feet - 42);
+      }
+      particles.forEach(function (p) { if (p.kind !== 'puff') drawParticle(p); });
+      vans.forEach(drawVan);
+      if (bubble) drawBubble();
+    }
+
+    function drawClouds() {
+      if (opts.night) return;
+      ctx.fillStyle = 'rgba(255,255,255,.9)';
+      clouds.forEach(function (c) {
+        const x = c.x * w, y = c.y * h, s = c.s;
+        ctx.beginPath();
+        ctx.ellipse(x, y, 18 * s, 6 * s, 0, 0, Math.PI * 2);
+        ctx.ellipse(x - 6 * s, y - 4 * s, 8 * s, 6 * s, 0, 0, Math.PI * 2);
+        ctx.ellipse(x + 6 * s, y - 5 * s, 9 * s, 7 * s, 0, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function drawShop() {
+      if (!ready(shopImg)) return;
+      const S = lay.S;
+      let sx = 1, sy = 1;
+      if (build < 1) sx = sy = Math.max(0.01, easeOutBack(build));
+      if (bump > 0) { sy += bump * 0.1; sx -= bump * 0.05; }
+      if (info.running && !reducedMotion) {
+        const k = Math.sin(t * 9) * 0.018;
+        sy += k;
+        sx -= k;
+      }
+      ctx.save();
+      ctx.translate(lay.bx + S / 2, lay.feet + 1);
+      ctx.scale(sx, sy);
+      ctx.drawImage(shopImg, -S / 2, -S * 0.91, S, S);
+      ctx.restore();
+    }
+
+    function strokeStyle(width) {
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = width;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+    }
+
+    function drawManager() {
+      const x = lay.managerX, feet = lay.feet;
+      strokeStyle(2);
+      ctx.fillStyle = 'rgba(43,33,71,.15)';
+      ctx.beginPath();
+      ctx.ellipse(x, feet + 1, 9, 2.4, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(x - 3, feet - 9); ctx.lineTo(x - 3, feet);
+      ctx.moveTo(x + 3, feet - 9); ctx.lineTo(x + 3, feet);
+      ctx.stroke();
+      // Uniform in the shop's color, with an apron.
+      ctx.fillStyle = opts.bar;
+      roundRect(ctx, x - 8, feet - 25, 16, 17, 5);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#FFFFFF';
+      roundRect(ctx, x - 4, feet - 21, 8, 11, 2);
+      ctx.fill();
+      // Waves while serving, and every few seconds anyway.
+      const waving = (wave > 0 || t % 5 < 0.8) && !reducedMotion;
+      const ang = waving ? -1.1 + Math.sin(t * 14) * 0.5 : 1.2;
+      ctx.beginPath();
+      ctx.moveTo(x + 7, feet - 20);
+      ctx.lineTo(x + 7 + Math.cos(ang) * 10, feet - 20 + Math.sin(ang) * 10);
+      ctx.stroke();
+      if (ready(faceImg)) ctx.drawImage(faceImg, x - 16, feet - 52, 32, 32);
+    }
+
+    function drawPerson(c) {
+      const leaving = c.state === 'leave';
+      const feet = lay ? lay.feet + (leaving ? 4 : 0) : h - 20;
+      const step = c.walking && !reducedMotion ? Math.sin(c.phase) : 0;
+      const bob = c.walking && !reducedMotion ? Math.abs(Math.cos(c.phase)) * 1.6 : 0;
+      const hop = c.state === 'served' && !reducedMotion ? Math.sin(clamp(1 - c.timer / 0.3, 0, 1) * Math.PI) * 6 : 0;
+      const x = c.x, y = feet - bob - hop, d = c.dir;
+
+      ctx.fillStyle = 'rgba(43,33,71,.15)';
+      ctx.beginPath();
+      ctx.ellipse(x, feet + 1, 8, 2.2, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      strokeStyle(2);
+      ctx.beginPath();
+      ctx.moveTo(x - 3, y - 9); ctx.lineTo(x - 3 + step * 4, feet - hop);
+      ctx.moveTo(x + 3, y - 9); ctx.lineTo(x + 3 - step * 4, feet - hop);
+      ctx.stroke();
+
+      ctx.fillStyle = c.shirt;
+      roundRect(ctx, x - 7, y - 23, 14, 15, 5);
+      ctx.fill();
+      ctx.stroke();
+
+      if (c.carry) {
+        ctx.beginPath();
+        ctx.moveTo(x + d * 5, y - 19);
+        ctx.lineTo(x + d * 9, y - 31);
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = c.skin;
+      ctx.beginPath();
+      ctx.arc(x, y - 31, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      const ex = x + d * 2.2;
+      ctx.fillStyle = INK;
+      dot(ctx, ex - 2.6, y - 32, 1.2);
+      dot(ctx, ex + 2.6, y - 32, 1.2);
+      if (c.carry) {
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(ex, y - 30, 2.6, 0.15 * Math.PI, 0.85 * Math.PI);
+        ctx.stroke();
+        ctx.lineWidth = 2;
+      }
+
+      drawHat(c, x, y - 31, d);
+      if (c.carry && ready(productImg)) ctx.drawImage(productImg, x + d * 9 - 9, y - 50, 18, 18);
+    }
+
+    function drawHat(c, x, hy, d) {
+      ctx.fillStyle = c.hatColor;
+      if (c.hat === 'cap') {
+        ctx.beginPath();
+        ctx.arc(x, hy - 2, 8, Math.PI, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x, hy - 2);
+        ctx.lineTo(x + d * 12, hy - 2);
+        ctx.stroke();
+      } else if (c.hat === 'beanie') {
+        ctx.beginPath();
+        ctx.arc(x, hy - 1, 8.5, Math.PI, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        dot(ctx, x, hy - 10, 3);
+        ctx.stroke();
+      } else if (c.hat === 'bow') {
+        ctx.beginPath();
+        ctx.moveTo(x + 3, hy - 7);
+        ctx.lineTo(x - 2, hy - 11);
+        ctx.lineTo(x - 2, hy - 3);
+        ctx.closePath();
+        ctx.moveTo(x + 3, hy - 7);
+        ctx.lineTo(x + 8, hy - 11);
+        ctx.lineTo(x + 8, hy - 3);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      }
+    }
+
+    // A "..." thought bubble: this customer is waiting for you to tap the shop.
+    function drawWaiting(x, y) {
+      const bob = reducedMotion ? 0 : Math.sin(t * 4) * 1.5;
+      strokeStyle(2);
+      ctx.fillStyle = '#FFFFFF';
+      roundRect(ctx, x - 13, y - 14 + bob, 26, 14, 7);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = INK;
+      for (let k = -1; k <= 1; k++) dot(ctx, x + k * 6, y - 7 + bob, 1.6);
+    }
+
+    function drawParticle(p) {
+      const a = clamp(p.life / p.max, 0, 1);
+      ctx.globalAlpha = p.kind === 'coin' ? Math.min(1, a * 2) : a;
+      if (p.kind === 'coin') {
+        strokeStyle(1.5);
+        ctx.fillStyle = '#FFC93C';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#FFF3B0';
+        dot(ctx, p.x - 1.4, p.y - 1.4, 1.3);
+      } else if (p.kind === 'puff') {
+        ctx.fillStyle = '#FFFFFF';
+        dot(ctx, p.x, p.y, p.size);
+      } else if (p.kind === 'dust') {
+        ctx.fillStyle = '#E8D6B0';
+        dot(ctx, p.x, p.y, p.size);
+      } else if (p.kind === 'spark') {
+        const r = p.size;
+        ctx.fillStyle = '#FFE14D';
+        strokeStyle(1.2);
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y - r);
+        ctx.quadraticCurveTo(p.x, p.y, p.x + r, p.y);
+        ctx.quadraticCurveTo(p.x, p.y, p.x, p.y + r);
+        ctx.quadraticCurveTo(p.x, p.y, p.x - r, p.y);
+        ctx.quadraticCurveTo(p.x, p.y, p.x, p.y - r);
+        ctx.fill();
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // A delivery van in the shop's color with its treat painted on the side.
+    function drawVan(v) {
+      const y = h - 4, x = v.x;
+      strokeStyle(2);
+      ctx.fillStyle = opts.bar;
+      roundRect(ctx, x, y - 19, 34, 15, 3);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#FFFFFF';
+      roundRect(ctx, x + 33, y - 15, 13, 11, 4);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#9BE7FF';
+      roundRect(ctx, x + 37, y - 13, 6, 5, 1.5);
+      ctx.fill();
+      ctx.fillStyle = INK;
+      dot(ctx, x + 9, y - 3, 3.6);
+      dot(ctx, x + 36, y - 3, 3.6);
+      if (ready(productImg)) ctx.drawImage(productImg, x + 10, y - 18, 13, 13);
+    }
+
+    function drawBubble() {
+      const x = info.managed ? lay.managerX : lay.bx + lay.S * 0.6;
+      const y = info.managed ? lay.feet - 56 : lay.feet - lay.S * 0.92;
+      ctx.font = "800 12px 'Baloo 2', 'Trebuchet MS', sans-serif";
+      const bw = ctx.measureText(bubble.text).width + 16, bh = 20;
+      const bx = clamp(x - bw / 2, 3, w - bw - 3), by = Math.max(3, y - bh - 6);
+      ctx.globalAlpha = clamp(bubble.t / 0.3, 0, 1);
+      strokeStyle(2);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.moveTo(x - 4, by + bh - 1);
+      ctx.lineTo(x, by + bh + 6);
+      ctx.lineTo(x + 4, by + bh - 1);
+      ctx.fill();
+      ctx.stroke();
+      roundRect(ctx, bx, by, bw, bh, 9);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = INK;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(bubble.text, bx + bw / 2, by + bh / 2 + 1);
+      ctx.globalAlpha = 1;
+    }
+
+    resize();
+
+    return {
+      resize: resize,
+      update: update,
+      draw: draw,
+      payout: payout,
+      poke: poke,
+      say: say,
+      celebrate: function () { if (lay) sparkles(lay.bx + lay.S / 2, lay.feet - lay.S / 2, 40, 16); },
+    };
+  }
+
+  root.Scene = { createLane: createLane };
+})(this);
