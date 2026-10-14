@@ -303,6 +303,7 @@
       soundOn: '<path d="M4 9h4l5-4v14l-5-4h-4z"/><path d="M16 9q2 3 0 6M18.5 6.5q4 5.5 0 11"/>',
       soundOff: '<path d="M4 9h4l5-4v14l-5-4h-4z"/><path d="M16 9l5 6M21 9l-5 6"/>',
       close: '<path d="M6 6l12 12M18 6l-12 12"/>',
+      clock: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M10 3h4"/>',
     };
     return '<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">' + paths[name] + '</g></svg>';
   }

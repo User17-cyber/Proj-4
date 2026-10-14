@@ -291,11 +291,10 @@
       '</button>' +
       '<div class="shop-body">' +
         '<div class="shop-name-row"><h2 class="shop-name">' + b.name + '</h2><span class="shop-speed"></span></div>' +
-        '<div class="bar"><div class="bar-fill"></div><div class="bar-text"></div></div>' +
-        '<div class="shop-actions">' +
-          '<button class="btn buy-btn" type="button"><span class="buy-n"></span><span class="buy-cost">' + coinCost(0) + '</span></button>' +
-          '<div class="timer" title="Time left"></div>' +
-        '</div>' +
+        '<div class="bar"><div class="bar-fill"></div><div class="bar-text">' +
+          '<span class="bar-amount"></span><span class="bar-time" title="Time left">' + A.icon('clock') + '<span></span></span>' +
+        '</div></div>' +
+        '<button class="btn buy-btn" type="button"><span class="buy-n"></span><span class="buy-cost">' + coinCost(0) + '</span></button>' +
         '<div class="milestone"><div class="mini-bar"><span></span></div><span class="ms-text"></span></div>' +
       '</div>';
 
@@ -309,11 +308,12 @@
       speed: $('.shop-speed', card),
       bar: $('.bar', card),
       fill: $('.bar-fill', card),
-      barText: $('.bar-text', card),
+      amount: $('.bar-amount', card),
+      timeBox: $('.bar-time', card),
+      timer: $('.bar-time > span', card),
       buy: $('.buy-btn', card),
       buyN: $('.buy-n', card),
       cost: $('.buy-btn .cost', card),
-      timer: $('.timer', card),
       msBar: $('.mini-bar > span', card),
       msText: $('.ms-text', card),
     };
@@ -400,8 +400,9 @@
 
       const rev = G.revenue(state, i, now);
       setText(r.owned, String(b.owned));
-      setText(r.barText, fast ? fmt(rev / time) + ' / sec' : '+' + fmt(rev));
-      setText(r.timer, b.running ? G.fmtTime((1 - b.progress) * time) : G.fmtTime(time));
+      setText(r.amount, fast ? fmt(rev / time) + ' / sec' : '+' + fmt(rev));
+      r.timeBox.hidden = fast;
+      if (!fast) setText(r.timer, b.running ? G.fmtTime((1 - b.progress) * time) : G.fmtTime(time));
       setText(r.speed, fmt(rev / time) + '/s');
       r.hint.hidden = managed || b.running;
       r.pin.hidden = !managed;
