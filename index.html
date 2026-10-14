@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Sprinkle Town Tycoon</title>
+  <meta name="claude:viewport-fit-sides" content="cover">
+  <meta name="description" content="A bright, cartoony idle tycoon game. Run a lemonade stand, open shops, hire animal managers and grow Sprinkle Town.">
+  <meta name="theme-color" content="#7FD8FF">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Lilita+One&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="scenery" aria-hidden="true">
+    <div class="sun"></div>
+    <div class="cloud c1"></div>
+    <div class="cloud c2"></div>
+    <div class="cloud c3"></div>
+    <svg class="hills" viewBox="0 0 1200 220" preserveAspectRatio="none">
+      <path d="M0 120Q200 30 420 110T820 90T1200 100V220H0z" fill="#9BE36D" stroke="#2B2147" stroke-width="4"/>
+      <path d="M0 170Q300 100 600 160T1200 150V220H0z" fill="#6FD15A" stroke="#2B2147" stroke-width="4"/>
+    </svg>
+  </div>
+
+  <header class="hud">
+    <div class="hud-inner">
+      <div class="hud-top">
+        <span class="brand">Sprinkle Town</span>
+        <div class="hud-chips">
+          <button class="chip chip-sprinkle" id="sprinkleChip" type="button" title="Golden sprinkles">
+            <span class="chip-icon" id="sprinkleChipIcon"></span><span id="sprinkleCount">0</span>
+          </button>
+          <button class="icon-btn" id="muteBtn" type="button" aria-label="Turn sound off"></button>
+        </div>
+      </div>
+      <div class="purse">
+        <span class="purse-coin" id="purseCoin"></span>
+        <span class="coins" id="coins" aria-live="off">0</span>
+      </div>
+      <div class="hud-row">
+        <div class="rate"><span id="perSec">0</span> coins / sec</div>
+        <span class="chip chip-boost" id="boostChip" hidden></span>
+      </div>
+    </div>
+  </header>
+
+  <main class="main" id="main">
+    <section class="panel" id="panel-town" role="tabpanel" aria-labelledby="tab-town">
+      <div class="panel-head">
+        <h1 class="panel-title">Your Town</h1>
+        <div class="buy-toggle" role="radiogroup" aria-label="How many to buy">
+          <button type="button" role="radio" data-mode="1">×1</button>
+          <button type="button" role="radio" data-mode="10">×10</button>
+          <button type="button" role="radio" data-mode="100">×100</button>
+          <button type="button" role="radio" data-mode="max">Max</button>
+        </div>
+      </div>
+      <div class="shop-list" id="shopList"></div>
+    </section>
+
+    <section class="panel" id="panel-managers" role="tabpanel" aria-labelledby="tab-managers" hidden>
+      <div class="panel-head">
+        <h1 class="panel-title">Managers</h1>
+        <p class="panel-sub">A manager keeps their shop running, even while you're away.</p>
+      </div>
+      <div class="card-grid" id="managerList"></div>
+    </section>
+
+    <section class="panel" id="panel-upgrades" role="tabpanel" aria-labelledby="tab-upgrades" hidden>
+      <div class="panel-head">
+        <h1 class="panel-title">Upgrades</h1>
+        <p class="panel-sub">Every upgrade triples a shop's profit.</p>
+      </div>
+      <div class="upgrade-list" id="upgradeList"></div>
+    </section>
+
+    <section class="panel" id="panel-sprinkles" role="tabpanel" aria-labelledby="tab-sprinkles" hidden>
+      <div class="panel-head">
+        <h1 class="panel-title">Golden Sprinkles</h1>
+      </div>
+      <div id="sprinkleView"></div>
+    </section>
+
+    <section class="panel" id="panel-more" role="tabpanel" aria-labelledby="tab-more" hidden>
+      <div class="panel-head">
+        <h1 class="panel-title">Trophies &amp; Settings</h1>
+      </div>
+      <div id="moreView"></div>
+    </section>
+  </main>
+
+  <nav class="tabbar" role="tablist" aria-label="Game menus">
+    <button class="tab" role="tab" id="tab-town" data-tab="town" aria-controls="panel-town" type="button"><span class="tab-icon" data-icon="town"></span><span class="tab-label">Town</span><span class="badge" hidden></span></button>
+    <button class="tab" role="tab" id="tab-managers" data-tab="managers" aria-controls="panel-managers" type="button"><span class="tab-icon" data-icon="managers"></span><span class="tab-label">Managers</span><span class="badge" hidden></span></button>
+    <button class="tab" role="tab" id="tab-upgrades" data-tab="upgrades" aria-controls="panel-upgrades" type="button"><span class="tab-icon" data-icon="upgrades"></span><span class="tab-label">Upgrades</span><span class="badge" hidden></span></button>
+    <button class="tab" role="tab" id="tab-sprinkles" data-tab="sprinkles" aria-controls="panel-sprinkles" type="button"><span class="tab-icon" data-icon="sprinkles"></span><span class="tab-label">Sprinkles</span><span class="badge" hidden></span></button>
+    <button class="tab" role="tab" id="tab-more" data-tab="more" aria-controls="panel-more" type="button"><span class="tab-icon" data-icon="more"></span><span class="tab-label">Trophies</span><span class="badge" hidden></span></button>
+  </nav>
+
+  <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+  <div class="fx" id="fx" aria-hidden="true"></div>
+  <div class="modal-root" id="modalRoot" hidden></div>
+
+  <script src="js/core.js"></script>
+  <script src="js/art.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
