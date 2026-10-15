@@ -42,9 +42,9 @@ function options() {
     const owned = s.biz[i].owned;
     if (i > 0 && s.biz[i - 1].owned < 1) return;
     const gain = shopIncome(i, owned + 1) - shopIncome(i, owned);
-    opts.push({ cost: G.costFor(i, owned, 1), gain: gain, act: () => G.buy(s, i, 1) });
+    opts.push({ cost: G.costFor(i, owned, 1, s), gain: gain, act: () => G.buy(s, i, 1) });
     if (owned > 0 && !s.managers[i]) {
-      opts.push({ cost: G.MANAGERS[i].cost, gain: shopIncome(i, owned) * 0.6, act: () => G.hireManager(s, i) });
+      opts.push({ cost: G.managerCost(s, i), gain: shopIncome(i, owned) * 0.6, act: () => G.hireManager(s, i) });
     }
   });
   G.UPGRADES.forEach((u) => {

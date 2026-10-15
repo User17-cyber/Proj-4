@@ -25,8 +25,11 @@ It also works as-is on GitHub Pages: enable Pages for this branch and open the s
 - **Build factories** once the Moon Mall is open: Crayon Factory → Sneaker Factory → Chocolate Factory → Robot Factory → Rainbow Factory → Star Factory. Factories have workers in hard hats along a conveyor belt that carries their goods out to a truck; every finished batch, the loaded truck drives off and the next one pulls in. The Candy Factory works the same way.
 - **Hire managers** (Managers tab). They stand outside their shop, wave, and keep it running without taps, even while the game is closed (up to 8 hours of pay).
 - **Buy upgrades** (Upgrades tab) to triple a shop's profit, or every shop's. Each one adds a gold star to the shop's rating.
+- **Complete Town Goals.** Three goals sit at the top of the Town tab (own so many of a shop, make so many coins, hire a manager, pop a balloon, and so on). Finished goals pay a prize when you claim them: coins, a Sugar Rush, or golden sprinkles.
+- **Tip-hunting VIPs.** Every minute or so a VIP visitor in gold with a crown stops by one of your streets. Tap that street before they leave for a big tip.
 - **Pop lucky balloons** when they float by for a coin shower or a 30-second Sugar Rush (triple profit).
 - **Hold a Grand Reopening** (Sprinkles tab) to start over with golden sprinkles. Each sprinkle adds +2% profit forever.
+- **Unlock Sprinkle Perks** as your sprinkle count grows, from starting every run with 10 Lemonade Stands (5 sprinkles) to cheaper shops, half-price managers and doubled goal prizes. Perks are never spent.
 - **Collect trophies** for +1% profit each.
 
 Use the ×1 / ×10 / ×100 / Max switch to buy in bulk. The game saves itself in your browser every few seconds; the Trophies tab has a save code you can copy to move your town to another browser.
@@ -37,9 +40,9 @@ Use the ×1 / ×10 / ×100 / Max switch to buy in bulk. The game saves itself in
 | --- | --- |
 | `index.html` | Page structure: header, five menu tabs, bottom tab bar |
 | `css/style.css` | All styling: colors, chunky cartoon buttons and cards, animations |
-| `js/core.js` | Game rules and numbers: shops, prices, managers, upgrades, trophies, saving. No page code, so it also runs in Node |
+| `js/core.js` | Game rules and numbers: shops, prices, managers, upgrades, goals, perks, trophies, saving. No page code, so it also runs in Node |
 | `js/art.js` | Cartoon drawings as inline SVG: shops, the treats customers buy, animal managers, icons |
-| `js/scene.js` | The animated street drawn on a canvas in each shop card: customers, managers, coins, branches, vans |
+| `js/scene.js` | The animated street drawn on a canvas in each shop card: customers, managers, coins, branches, vans, factory belts and trucks, VIP visitors |
 | `js/game.js` | Everything on screen: menus, taps, game clock, sounds, balloons, saving |
 | `tools/simulate.js` | A bot that plays the game quickly to check the pacing after changing numbers |
 

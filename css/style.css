@@ -10,6 +10,7 @@
   --sky-2: #D4F4FF;
   --sun: #FFD23F;          /* coins, main buttons */
   --sun-deep: #F5B700;
+  --sun-soft: #FFF1B8;     /* goal panel header, unlocked perks */
   --bubblegum: #FF5FA2;    /* accent */
   --mint: #2ED3A0;
   --grape: #8C6CFF;
@@ -341,6 +342,61 @@ svg { display: block; width: 100%; height: 100%; }
   background: var(--grape);
   color: #FFFFFF;
 }
+
+/* ------------------------------------------------------------------ town goals */
+.goals { overflow: hidden; }
+.goals-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 14px;
+  border: 0;
+  background: var(--sun-soft);
+  text-align: left;
+}
+.goals-head[aria-expanded="true"] { border-bottom: var(--line) solid var(--ink); }
+.goals-title { flex: 1; font-family: var(--font-display); font-size: 1.25rem; }
+.goals-ready {
+  padding: 0 10px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--bubblegum);
+  color: #FFFFFF;
+  font-weight: 800;
+  font-size: .8rem;
+  line-height: 20px;
+  animation: hop 1.2s ease-in-out infinite;
+}
+.goals-chevron { width: 24px; height: 24px; flex: none; transition: transform .2s; }
+.goals-head[aria-expanded="true"] .goals-chevron { transform: rotate(180deg); }
+.goal-list { display: grid; }
+.goal {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 12px;
+}
+.goal + .goal { border-top: 2px dashed #E3DCF3; }
+.goal-icon { width: 40px; height: 40px; color: var(--ink); }
+.goal-name { display: block; font-weight: 800; font-size: .95rem; line-height: 1.2; }
+.goal-progress {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  margin-top: 4px;
+  font-size: .75rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+.goal-claim { min-width: 94px; flex-direction: column; gap: 0; line-height: 1.1; }
+.goal-reward { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; font-size: .8rem; }
+.goal-claim .btn-coin { width: 16px; height: 16px; }
+.goal-claim.ready { background: var(--mint); animation: pulse 1s ease-in-out infinite; }
+.goal-claim:disabled { cursor: default; }
 
 /* ------------------------------------------------------------------ shops */
 .shop-list {
@@ -714,6 +770,23 @@ button.shop-scene:active { transform: translateY(1px); }
 }
 .gain-line .chip-icon { width: 28px; height: 28px; }
 
+/* ------------------------------------------------------------------ sprinkle perks */
+.perk-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+  gap: 12px;
+}
+.perk { display: grid; gap: 4px; padding: 12px; align-content: start; }
+.perk.got { background: var(--sun-soft); }
+.perk:not(.got) { border-style: dashed; box-shadow: none; background: rgba(255, 251, 240, .8); }
+.perk-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.perk-need { display: inline-flex; align-items: center; gap: 4px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.perk-need .chip-icon { width: 20px; height: 20px; }
+.perk-name { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 1.1rem; line-height: 1.15; }
+.perk-desc { margin: 0; font-size: .85rem; font-weight: 700; color: var(--ink-soft); }
+.perk .stamp { font-size: .75rem; padding: 0 8px; }
+.perk .mini-bar { margin-top: 4px; }
+
 /* ------------------------------------------------------------------ trophies & settings */
 .trophy-grid {
   display: grid;
@@ -1013,7 +1086,7 @@ button.shop-scene:active { transform: translateY(1px); }
 @keyframes sway { 50% { transform: rotate(8deg) translateX(6px); } }
 
 @media (prefers-reduced-motion: reduce) {
-  .cloud, .badge, .tap-hint, .chip-boost, .balloon svg { animation: none; }
+  .cloud, .badge, .tap-hint, .chip-boost, .balloon svg, .goals-ready, .goal-claim.ready { animation: none; }
   .bar.blur .bar-fill { animation: none; }
   .confetti { display: none; }
   .balloon { animation: balloon-still 12s linear forwards; bottom: 120px; }

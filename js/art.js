@@ -456,6 +456,12 @@
       (lit ? '<path d="M38 26v10" fill="none" stroke="#FFF7C2" stroke-width="4"/>' : ''), '');
   }
 
+  function crown() {
+    return svg('<path d="M14 78V32l20 18l16-28l16 28l20-18v46z" fill="#FFD23F"/>' +
+      '<rect x="14" y="70" width="72" height="12" rx="3" fill="#FFC93C"/>' +
+      '<circle cx="50" cy="52" r="6" fill="#FF5FA2"/><circle cx="30" cy="60" r="4" fill="#4CC9F0"/><circle cx="70" cy="60" r="4" fill="#3DDC97"/>', 'VIP');
+  }
+
   function balloon(color) {
     return svg('<path d="M50 74q-6 10 2 18t-2 18" fill="none" stroke-width="2.5"/>' +
       '<path d="M50 6c18 0 30 14 30 32c0 20-16 36-30 36s-30-16-30-36c0-18 12-32 30-32z" fill="' + color + '"/>' +
@@ -476,9 +482,10 @@
       soundOff: '<path d="M4 9h4l5-4v14l-5-4h-4z"/><path d="M16 9l5 6M21 9l-5 6"/>',
       close: '<path d="M6 6l12 12M18 6l-12 12"/>',
       clock: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M10 3h4"/>',
+      chevron: '<path d="M6 9l6 6l6-6"/>',
     };
     return '<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">' + paths[name] + '</g></svg>';
   }
 
-  root.Art = { shop: shop, product: product, mystery: mystery, face: face, coin: coin, sprinkle: sprinkle, sprinkleJar: sprinkleJar, trophy: trophy, balloon: balloon, icon: icon };
+  root.Art = { shop: shop, product: product, mystery: mystery, face: face, coin: coin, sprinkle: sprinkle, sprinkleJar: sprinkleJar, trophy: trophy, crown: crown, balloon: balloon, icon: icon };
 })(this);

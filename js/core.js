@@ -111,6 +111,26 @@
   const SPRINKLE_SCALE = 10;     // sprinkles = SCALE * sqrt(lifetime coins / BASE)
   const SPRINKLE_BASE = 1e11;
   const OFFLINE_CAP = 8 * 3600;  // seconds of away-time that managers get paid for
+  const RUSH_SECONDS = 30;       // how long a Sugar Rush (triple profit) lasts
+
+  // Sprinkle Perks unlock for good once you hold enough golden sprinkles. They're never spent.
+  const PERKS = [
+    { id: 'headStart',  name: 'Lemon Head Start', need: 5,    desc: 'Start every run with 10 Lemonade Stands.' },
+    { id: 'luckySkies', name: 'Lucky Skies',      need: 15,   desc: 'Lucky balloons float by twice as often.' },
+    { id: 'loyalLou',   name: 'Loyal Lou',        need: 30,   desc: 'Lemony Lou is already hired when a run starts.' },
+    { id: 'nightShift', name: 'Night Shift',      need: 60,   desc: 'Managers get paid for up to 16 hours away, not 8.' },
+    { id: 'sweetStart', name: 'Sweet Start',      need: 100,  desc: 'Start every run with 100K coins.' },
+    { id: 'vipMagnet',  name: 'VIP Magnet',       need: 150,  desc: 'VIP visitors tip twice as much.' },
+    { id: 'bulkDeal',   name: 'Bulk Discount',    need: 250,  desc: 'Shops and factories cost 10% less.' },
+    { id: 'hiringFair', name: 'Hiring Fair',      need: 500,  desc: 'Managers cost half as much.' },
+    { id: 'goldGoals',  name: 'Golden Goals',     need: 1000, desc: 'Town Goal rewards are doubled.' },
+    { id: 'sugarStorm', name: 'Sugar Storm',      need: 2500, desc: 'Sugar Rushes last twice as long.' },
+  ];
+  const PERKS_BY_ID = {};
+  PERKS.forEach(function (p) { PERKS_BY_ID[p.id] = p; });
+
+  function hasPerk(s, id) { return s.sprinkles >= PERKS_BY_ID[id].need; }
+  function perkCount(s) { return PERKS.filter(function (p) { return s.sprinkles >= p.need; }).length; }
 
   const TROPHIES = [
     { id: 'firstSale',   name: 'First Sale',     desc: 'Earn your very first coin',            test: function (s) { return s.lifetimeEarned > 0; } },
@@ -133,6 +153,14 @@
     { id: 'galaxy',      name: 'Coin Galaxy',    desc: 'Earn 1Qa coins in one run',            test: function (s) { return s.runEarned >= 1e15; } },
     { id: 'factories4',  name: 'Smokestack City', desc: 'Open 4 factories',                    test: function (s) { return factoryCount(s) >= 4; } },
     { id: 'starmaker',   name: 'Star Maker',     desc: 'Open the Star Factory',                test: function (s) { return s.biz[BUSINESSES.length - 1].owned > 0; } },
+    { id: 'vip1',        name: 'VIP Treatment',  desc: 'Collect a tip from a VIP visitor',     test: function (s) { return s.stats.vips >= 1; } },
+    { id: 'goals10',     name: 'Goal Getter',    desc: 'Complete 10 Town Goals',               test: function (s) { return s.stats.goalsDone >= 10; } },
+    { id: 'allstar',     name: 'All-Star',       desc: 'Buy all 4 upgrades for one shop',      test: function (s) { return BUSINESSES.some(function (b, i) { return shopMult(s, i) >= 81; }); } },
+    { id: 'perks3',      name: 'Perk Collector', desc: 'Unlock 3 Sprinkle Perks',              test: function (s) { return perkCount(s) >= 3; } },
+    { id: 'five100',     name: 'Five Star Town', desc: 'Own 100 of 5 different businesses',    test: function (s) { return s.biz.filter(function (b) { return b.owned >= 100; }).length >= 5; } },
+    { id: 'vip25',       name: 'Red Carpet',     desc: 'Collect 25 VIP tips',                  test: function (s) { return s.stats.vips >= 25; } },
+    { id: 'goals50',     name: 'Goal Machine',   desc: 'Complete 50 Town Goals',               test: function (s) { return s.stats.goalsDone >= 50; } },
+    { id: 'allPerks',    name: 'Sprinkle Royalty', desc: 'Unlock every Sprinkle Perk',         test: function (s) { return perkCount(s) >= PERKS.length; } },
   ];
 
   function openCount(s) { return s.biz.filter(function (b) { return b.owned > 0; }).length; }
@@ -143,23 +171,28 @@
   // State
   // ---------------------------------------------------------------------------
   function newState(now) {
-    return {
+    const s = {
       v: 1,
       coins: 0,
       runEarned: 0,
       lifetimeEarned: 0,
       sprinkles: 0,
+      bonusSprinkles: 0, // sprinkles won from goals; they don't count against Grand Reopening gains
       biz: BUSINESSES.map(function (b, i) { return { owned: i === 0 ? 1 : 0, progress: 0, running: false }; }),
       managers: BUSINESSES.map(function () { return false; }),
       upgrades: {},
       trophies: {},
       hints: {},
       boost: { mult: 1, until: 0 },
-      stats: { taps: 0, balloons: 0, reopenings: 0, playTime: 0, bestRun: 0 },
-      settings: { sound: true, floaters: true },
+      goals: [],
+      // made: coins earned by shops and factories themselves (not prizes or tips)
+      stats: { taps: 0, balloons: 0, reopenings: 0, playTime: 0, bestRun: 0, goalsDone: 0, vips: 0, made: 0 },
+      settings: { sound: true, floaters: true, goalsOpen: true },
       buyMode: '1',
       lastSeen: now || Date.now(),
     };
+    ensureGoals(s);
+    return s;
   }
 
   function earn(s, amount) {
@@ -171,20 +204,25 @@
   // ---------------------------------------------------------------------------
   // Prices
   // ---------------------------------------------------------------------------
-  function costFor(i, owned, n) {
+  function priceMult(s) { return s && hasPerk(s, 'bulkDeal') ? 0.9 : 1; }
+
+  // Price of the next n, given how many are owned. Pass the state to apply perks.
+  function costFor(i, owned, n, s) {
     const b = BUSINESSES[i];
-    return b.cost * Math.pow(b.rate, owned) * (Math.pow(b.rate, n) - 1) / (b.rate - 1);
+    return priceMult(s) * b.cost * Math.pow(b.rate, owned) * (Math.pow(b.rate, n) - 1) / (b.rate - 1);
   }
 
   function maxAffordable(s, i) {
     const b = BUSINESSES[i];
     const owned = s.biz[i].owned;
-    const first = b.cost * Math.pow(b.rate, owned);
+    const first = priceMult(s) * b.cost * Math.pow(b.rate, owned);
     if (s.coins < first) return 0;
     let n = Math.floor(Math.log(s.coins * (b.rate - 1) / first + 1) / Math.log(b.rate));
-    while (n > 0 && costFor(i, owned, n) > s.coins) n--;
+    while (n > 0 && costFor(i, owned, n, s) > s.coins) n--;
     return n;
   }
+
+  function managerCost(s, i) { return MANAGERS[i].cost * (hasPerk(s, 'hiringFair') ? 0.5 : 1); }
 
   // How many the buy button is offering right now, given the x1/x10/x100/Max switch.
   function buyAmount(s, i) {
@@ -193,7 +231,7 @@
   }
 
   function buy(s, i, n) {
-    const cost = costFor(i, s.biz[i].owned, n);
+    const cost = costFor(i, s.biz[i].owned, n, s);
     if (n < 1 || cost > s.coins) return false;
     s.coins -= cost;
     s.biz[i].owned += n;
@@ -201,9 +239,9 @@
   }
 
   function hireManager(s, i) {
-    const m = MANAGERS[i];
-    if (s.managers[i] || s.biz[i].owned < 1 || s.coins < m.cost) return false;
-    s.coins -= m.cost;
+    const cost = managerCost(s, i);
+    if (s.managers[i] || s.biz[i].owned < 1 || s.coins < cost) return false;
+    s.coins -= cost;
     s.managers[i] = true;
     s.biz[i].running = true;
     return true;
@@ -314,16 +352,35 @@
       }
       const amount = revenue(s, i, now) * batches;
       earn(s, amount);
+      s.stats.made += amount;
       payouts.push({ i: i, amount: amount, manual: !s.managers[i] });
     }
     s.stats.bestRun = Math.max(s.stats.bestRun, s.runEarned);
     return payouts;
   }
 
+  function offlineCap(s) { return hasPerk(s, 'nightShift') ? 2 * OFFLINE_CAP : OFFLINE_CAP; }
+
   // Coins managers earned while the game was closed (boosts don't count).
   function offlineEarnings(s, seconds) {
-    const t = Math.min(Math.max(0, seconds), OFFLINE_CAP);
+    const t = Math.min(Math.max(0, seconds), offlineCap(s));
     return incomePerSec(s, 0, false) * t;
+  }
+
+  function rushSeconds(s) { return hasPerk(s, 'sugarStorm') ? 2 * RUSH_SECONDS : RUSH_SECONDS; }
+
+  // Triple profit for a while; stacks onto a rush that's already going.
+  function startRush(s, now, seconds) {
+    s.boost = { mult: 3, until: Math.max(now, s.boost.until) + (seconds || rushSeconds(s)) * 1000 };
+  }
+
+  // A VIP visitor's tip: about two minutes of that shop's earnings.
+  function vipTip(s, i) {
+    const shop = s.biz[i].owned > 0 ? revenue(s, i, 0) / cycleTime(s, i) : 0;
+    const amount = Math.max(25, shop * 120, incomePerSec(s, 0, true) * 20) * (hasPerk(s, 'vipMagnet') ? 2 : 1);
+    earn(s, amount);
+    s.stats.vips++;
+    return amount;
   }
 
   // ---------------------------------------------------------------------------
@@ -333,13 +390,16 @@
     return Math.floor(SPRINKLE_SCALE * Math.sqrt(Math.max(0, coins) / SPRINKLE_BASE));
   }
 
+  // Sprinkles earned from coins (goal prizes are counted separately).
+  function earnedSprinkles(s) { return Math.max(0, s.sprinkles - s.bonusSprinkles); }
+
   function sprinkleGain(s) {
-    return Math.max(0, sprinklesForLifetime(s.lifetimeEarned) - s.sprinkles);
+    return Math.max(0, sprinklesForLifetime(s.lifetimeEarned) - earnedSprinkles(s));
   }
 
   // Lifetime coins still needed for the next sprinkle, and how far along it is (0..1).
   function nextSprinkle(s) {
-    const have = Math.max(sprinklesForLifetime(s.lifetimeEarned), s.sprinkles);
+    const have = Math.max(sprinklesForLifetime(s.lifetimeEarned), earnedSprinkles(s));
     const lo = SPRINKLE_BASE * Math.pow(have / SPRINKLE_SCALE, 2);
     const hi = SPRINKLE_BASE * Math.pow((have + 1) / SPRINKLE_SCALE, 2);
     return {
@@ -360,7 +420,142 @@
     s.upgrades = {};
     s.boost = fresh.boost;
     s.stats.reopenings++;
+    // Perks you now hold give the new run a head start.
+    if (hasPerk(s, 'headStart')) s.biz[0].owned = 10;
+    if (hasPerk(s, 'loyalLou')) { s.managers[0] = true; s.biz[0].running = true; }
+    if (hasPerk(s, 'sweetStart')) s.coins = 1e5;
+    s.goals = [];
+    ensureGoals(s);
     return gain;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Town Goals: three small objectives at a time, each paying a prize.
+  // ---------------------------------------------------------------------------
+  const GOAL_SLOTS = 3;
+  const GOAL_TYPES = ['own', 'own', 'own', 'earn', 'earn', 'balloon', 'upgrade', 'manager', 'open', 'vip'];
+  const GOAL_SECONDS = { own: 120, earn: 90, balloon: 120, upgrade: 90, manager: 150, open: 180, vip: 120 };
+  const GOAL_REWARDS = ['coins', 'rush', 'sprinkles'];
+
+  function pick(list) { return list[Math.floor(Math.random() * list.length)]; }
+
+  // Round up to two significant digits: 12345 -> 13000.
+  function roundNice(v) {
+    const p = Math.pow(10, Math.max(0, Math.floor(Math.log10(v)) - 1));
+    return Math.ceil(v / p) * p;
+  }
+
+  function plural(name) { return /[^aeiou]y$/.test(name) ? name.slice(0, -1) + 'ies' : name + 's'; }
+
+  function goalKey(g) { return g.type + (g.i === undefined ? '' : g.i); }
+
+  // Something the player can reach soon: affordable within about 15 minutes.
+  function reachable(s, cost) { return cost <= s.coins + incomePerSec(s, 0, true) * 900; }
+
+  function buildGoal(s, type) {
+    const open = [];
+    s.biz.forEach(function (b, i) { if (b.owned > 0) open.push(i); });
+    if (type === 'own') {
+      const i = pick(open);
+      const owned = s.biz[i].owned;
+      const m = nextMilestone(owned);
+      const target = m && m - owned <= Math.max(10, owned * 0.6) ? m : Math.ceil((owned + Math.max(5, owned * 0.3)) / 5) * 5;
+      return { type: 'own', i: i, target: target };
+    }
+    if (type === 'earn') {
+      return { type: 'earn', base: s.stats.made, target: roundNice(Math.max(50, incomePerSec(s, 0, true) * (90 + Math.random() * 150))) };
+    }
+    if (type === 'balloon') {
+      return s.lifetimeEarned < 30 ? null : { type: 'balloon', base: s.stats.balloons, target: Math.random() < 0.6 ? 1 : 2 };
+    }
+    if (type === 'upgrade') {
+      const cheapest = UPGRADES.filter(function (u) { return upgradeAvailable(s, u); })[0];
+      return cheapest && reachable(s, cheapest.cost) ? { type: 'upgrade', base: Object.keys(s.upgrades).length, target: 1 } : null;
+    }
+    if (type === 'manager') {
+      const i = open.filter(function (k) { return !s.managers[k]; })[0];
+      return i !== undefined && reachable(s, managerCost(s, i)) ? { type: 'manager', i: i } : null;
+    }
+    if (type === 'open') {
+      const i = s.biz.findIndex(function (b) { return b.owned < 1; });
+      return i >= 0 && reachable(s, costFor(i, 0, 1, s)) ? { type: 'open', i: i } : null;
+    }
+    if (type === 'vip') {
+      return s.lifetimeEarned < 100 ? null : { type: 'vip', base: s.stats.vips, target: 1 };
+    }
+    return null;
+  }
+
+  function makeGoal(s) {
+    const keys = s.goals.map(goalKey);
+    let g = null;
+    for (let tries = 0; tries < 40 && !g; tries++) {
+      const c = buildGoal(s, pick(GOAL_TYPES));
+      if (c && keys.indexOf(goalKey(c)) < 0 && !goalDone(s, c)) g = c;
+    }
+    g = g || buildGoal(s, 'earn');
+    const r = Math.random();
+    g.reward = s.stats.reopenings > 0 && r < 0.12 ? 'sprinkles' : r < 0.35 ? 'rush' : 'coins';
+    return g;
+  }
+
+  function ensureGoals(s) {
+    while (s.goals.length < GOAL_SLOTS) s.goals.push(makeGoal(s));
+  }
+
+  // { have, need } for the progress bar.
+  function goalProgress(s, g) {
+    switch (g.type) {
+      case 'own': return { have: s.biz[g.i].owned, need: g.target };
+      case 'earn': return { have: s.stats.made - g.base, need: g.target };
+      case 'balloon': return { have: s.stats.balloons - g.base, need: g.target };
+      case 'upgrade': return { have: Object.keys(s.upgrades).length - g.base, need: g.target };
+      case 'manager': return { have: s.managers[g.i] ? 1 : 0, need: 1 };
+      case 'open': return { have: s.biz[g.i].owned > 0 ? 1 : 0, need: 1 };
+      case 'vip': return { have: s.stats.vips - g.base, need: g.target };
+    }
+    return { have: 0, need: 1 };
+  }
+
+  function goalDone(s, g) {
+    const p = goalProgress(s, g);
+    return p.have >= p.need;
+  }
+
+  function goalText(g) {
+    const b = g.i === undefined ? null : BUSINESSES[g.i];
+    switch (g.type) {
+      case 'own': return 'Own ' + g.target + ' ' + plural(b.name);
+      case 'earn': return 'Make ' + fmt(g.target) + ' coins from your shops';
+      case 'balloon': return g.target === 1 ? 'Pop a lucky balloon' : 'Pop ' + g.target + ' lucky balloons';
+      case 'upgrade': return 'Buy an upgrade';
+      case 'manager': return 'Hire ' + MANAGERS[g.i].name;
+      case 'open': return (b.kind === 'factory' ? 'Build the ' : 'Open the ') + b.name;
+      case 'vip': return 'Collect a tip from a VIP visitor';
+    }
+    return '';
+  }
+
+  // Coins, Sugar Rush seconds, or sprinkles, depending on the goal's prize.
+  function goalRewardValue(s, g) {
+    const mult = hasPerk(s, 'goldGoals') ? 2 : 1;
+    if (g.reward === 'sprinkles') return Math.max(1, Math.round(s.sprinkles * 0.03)) * mult;
+    if (g.reward === 'rush') return rushSeconds(s) * mult;
+    return Math.max(25, incomePerSec(s, 0, true) * GOAL_SECONDS[g.type]) * mult;
+  }
+
+  // Pay out a finished goal and put a new one in its place.
+  function claimGoal(s, idx, now) {
+    const g = s.goals[idx];
+    if (!g || !goalDone(s, g)) return null;
+    const value = goalRewardValue(s, g);
+    if (g.reward === 'sprinkles') { s.sprinkles += value; s.bonusSprinkles += value; }
+    else if (g.reward === 'rush') startRush(s, now, value);
+    else earn(s, value);
+    s.stats.goalsDone++;
+    s.goals.splice(idx, 1);
+    s.goals.splice(idx, 0, makeGoal(s));
+    return { reward: g.reward, value: value, goal: g };
   }
 
   // ---------------------------------------------------------------------------
@@ -395,6 +590,7 @@
     s.runEarned = num(data.runEarned, 0);
     s.lifetimeEarned = Math.max(num(data.lifetimeEarned, 0), s.runEarned);
     s.sprinkles = Math.floor(num(data.sprinkles, 0));
+    s.bonusSprinkles = Math.min(s.sprinkles, Math.floor(num(data.bonusSprinkles, 0)));
     if (Array.isArray(data.biz)) {
       s.biz.forEach(function (b, i) {
         const d = data.biz[i];
@@ -413,9 +609,24 @@
     if (data.settings) {
       if (typeof data.settings.sound === 'boolean') s.settings.sound = data.settings.sound;
       if (typeof data.settings.floaters === 'boolean') s.settings.floaters = data.settings.floaters;
+      if (typeof data.settings.goalsOpen === 'boolean') s.settings.goalsOpen = data.settings.goalsOpen;
     }
     if (['1', '10', '100', 'max'].indexOf(data.buyMode) >= 0) s.buyMode = data.buyMode;
     s.lastSeen = num(data.lastSeen, now || Date.now());
+    s.goals = [];
+    if (Array.isArray(data.goals)) {
+      data.goals.forEach(function (g) {
+        if (!g || !GOAL_SECONDS[g.type] || GOAL_REWARDS.indexOf(g.reward) < 0 || s.goals.length >= GOAL_SLOTS) return;
+        const needsShop = g.type === 'own' || g.type === 'manager' || g.type === 'open';
+        if (needsShop && !(Number.isInteger(g.i) && g.i >= 0 && g.i < BUSINESSES.length)) return;
+        const clean = { type: g.type, reward: g.reward };
+        if (needsShop) clean.i = g.i;
+        if (g.target !== undefined) clean.target = num(g.target, 1) || 1;
+        if (g.base !== undefined) clean.base = num(g.base, 0);
+        s.goals.push(clean);
+      });
+    }
+    ensureGoals(s);
     return s;
   }
 
@@ -454,10 +665,13 @@
   const api = {
     BUSINESSES: BUSINESSES, MILESTONES: MILESTONES, MANAGERS: MANAGERS, UPGRADES: UPGRADES,
     UPGRADE_BY_ID: UPGRADE_BY_ID, TROPHIES: TROPHIES, SPRINKLE_BONUS: SPRINKLE_BONUS,
-    TROPHY_BONUS: TROPHY_BONUS, OFFLINE_CAP: OFFLINE_CAP,
+    TROPHY_BONUS: TROPHY_BONUS, OFFLINE_CAP: OFFLINE_CAP, PERKS: PERKS, GOAL_SLOTS: GOAL_SLOTS,
     newState: newState, restore: restore, earn: earn,
     costFor: costFor, maxAffordable: maxAffordable, buyAmount: buyAmount, buy: buy,
-    hireManager: hireManager, upgradeAvailable: upgradeAvailable, buyUpgrade: buyUpgrade,
+    hireManager: hireManager, managerCost: managerCost, upgradeAvailable: upgradeAvailable, buyUpgrade: buyUpgrade,
+    hasPerk: hasPerk, perkCount: perkCount, offlineCap: offlineCap, rushSeconds: rushSeconds, startRush: startRush, vipTip: vipTip,
+    ensureGoals: ensureGoals, goalProgress: goalProgress, goalDone: goalDone, goalText: goalText,
+    goalRewardValue: goalRewardValue, claimGoal: claimGoal,
     milestonesReached: milestonesReached, nextMilestone: nextMilestone, prevMilestone: prevMilestone,
     cycleTime: cycleTime, revenue: revenue, shopMult: shopMult, globalMult: globalMult,
     boostMult: boostMult, trophyCount: trophyCount, incomePerSec: incomePerSec,

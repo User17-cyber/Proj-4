@@ -23,7 +23,8 @@
   let balloonEl = null;
   let hiddenAt = null;
   let nextBalloonAt = performance.now() + rand(35, 70) * 1000;
-  let refs = { shops: [], managers: [], upgrades: [], sprinkles: null, more: null, layout: '' };
+  let nextVipAt = performance.now() + rand(30, 50) * 1000;
+  let refs = { shops: [], goals: [], managers: [], upgrades: [], sprinkles: null, more: null };
   const floaters = G.BUSINESSES.map(function () { return { amount: 0, last: 0 }; });
   const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -145,17 +146,47 @@
   // ---------------------------------------------------------------------------
   // Little effects
   // ---------------------------------------------------------------------------
-  function toast(art, title, text) {
-    const box = $('#toasts');
-    const t = el('div', 'toast', '<span class="toast-art">' + art + '</span><span><strong></strong><span class="toast-text"></span></span>');
-    $('strong', t).textContent = title;
-    $('.toast-text', t).textContent = text;
-    box.appendChild(t);
-    while (box.children.length > 2) box.removeChild(box.firstChild);
+  // Up to two messages show at once. Replies to something the player just did
+  // show right away; background news (trophies, tips, perks) waits its turn.
+  const toastQueue = [];
+  const toastsShown = [];
+
+  function toast(art, title, text, background) {
+    const msg = { art: art, title: title, text: text };
+    if (background) {
+      toastQueue.push(msg);
+      if (toastQueue.length > 5) toastQueue.shift();
+      showNextToast();
+    } else {
+      if (toastsShown.length >= 2) dismissToast(toastsShown[0]);
+      displayToast(msg);
+    }
+  }
+
+  function showNextToast() {
+    if (toastsShown.length < 2 && toastQueue.length) displayToast(toastQueue.shift());
+  }
+
+  function displayToast(msg) {
+    const t = el('div', 'toast', '<span class="toast-art">' + msg.art + '</span><span><strong></strong><span class="toast-text"></span></span>');
+    $('strong', t).textContent = msg.title;
+    $('.toast-text', t).textContent = msg.text;
+    $('#toasts').appendChild(t);
+    const entry = { el: t, timer: 0 };
+    toastsShown.push(entry);
+    entry.timer = setTimeout(function () { dismissToast(entry); }, toastQueue.length ? 2400 : 3000);
+  }
+
+  function dismissToast(entry) {
+    const k = toastsShown.indexOf(entry);
+    if (k < 0) return;
+    toastsShown.splice(k, 1);
+    clearTimeout(entry.timer);
+    entry.el.classList.add('out');
     setTimeout(function () {
-      t.classList.add('out');
-      setTimeout(function () { t.remove(); }, 320);
-    }, 3000);
+      entry.el.remove();
+      showNextToast();
+    }, 320);
   }
 
   function confetti(x, y, count) {
@@ -318,6 +349,7 @@
 
   // justOpened: index of a shop that was just bought, so its building pops up.
   function renderTown(justOpened) {
+    renderGoals();
     const list = $('#shopList');
     list.textContent = '';
     refs.shops = [];
@@ -380,9 +412,13 @@
       msText: $('.ms-text', card),
     };
 
-    // Tapping the street starts a batch; a manager's shop gets a cheerful reply instead.
+    // Tapping the street collects a waiting VIP's tip, or starts a batch;
+    // a manager's shop gets a cheerful reply instead.
     r.scene.addEventListener('click', function () {
-      if (G.tap(state, i)) {
+      const vip = r.lane.collectVip();
+      if (vip) {
+        collectTip(r, vip);
+      } else if (G.tap(state, i)) {
         Sound.play('tap');
         r.lane.poke();
         updateTown(true);
@@ -423,7 +459,7 @@
       '<div class="shop-head"><h2 class="shop-name">' + b.name + '</h2><span class="shop-speed">Empty lot</span></div>' +
       '<div class="shop-scene"><canvas aria-hidden="true"></canvas></div>' +
       '<p class="shop-note">Earns ' + fmt(b.rev) + ' coins every ' + G.fmtTime(b.time) + ' per ' + (factory ? 'factory' : 'shop') + '.</p>' +
-      '<button class="btn btn-pink open-btn" type="button"><span>' + (factory ? 'Build factory' : 'Open shop') + '</span><span class="buy-cost">' + coinCost(b.cost) + '</span></button>';
+      '<button class="btn btn-pink open-btn" type="button"><span>' + (factory ? 'Build factory' : 'Open shop') + '</span><span class="buy-cost">' + coinCost(G.costFor(i, 0, 1, state)) + '</span></button>';
     const btn = $('.open-btn', card);
     btn.addEventListener('click', function () {
       if (!G.buy(state, i, 1)) { Sound.play('nope'); return; }
@@ -462,7 +498,7 @@
       const i = r.i;
       const b = state.biz[i];
       if (r.locked) {
-        r.buy.disabled = state.coins < G.BUSINESSES[i].cost;
+        r.buy.disabled = state.coins < G.costFor(i, 0, 1, state);
         return;
       }
       const managed = state.managers[i];
@@ -479,7 +515,8 @@
       if (!fast) setText(r.timer, b.running ? G.fmtTime((1 - b.progress) * time) : G.fmtTime(time));
       setText(r.speed, fmt(rev / time) + '/s');
       r.hint.hidden = managed || b.running;
-      r.scene.setAttribute('aria-label', managed ? G.BUSINESSES[i].name + ', run by ' + G.MANAGERS[i].name : 'Run ' + G.BUSINESSES[i].name);
+      r.scene.setAttribute('aria-label', r.lane && r.lane.hasVip() ? 'Collect the VIP tip at your ' + G.BUSINESSES[i].name
+        : managed ? G.BUSINESSES[i].name + ', run by ' + G.MANAGERS[i].name : 'Run ' + G.BUSINESSES[i].name);
 
       // One gold star per upgrade bought for this shop.
       const stars = upgradesOwned(i);
@@ -491,7 +528,7 @@
       }
 
       const n = G.buyAmount(state, i);
-      const cost = G.costFor(i, b.owned, n);
+      const cost = G.costFor(i, b.owned, n, state);
       setText(r.buyN, 'Buy ×' + n);
       setText(r.cost, fmt(cost));
       r.buy.disabled = cost > state.coins;
@@ -538,6 +575,119 @@
   }
 
   // ---------------------------------------------------------------------------
+  // Town Goals (top of the Town tab)
+  // ---------------------------------------------------------------------------
+  function goalArt(g) {
+    switch (g.type) {
+      case 'own': case 'open': return A.shop(G.BUSINESSES[g.i].id);
+      case 'manager': return A.face(G.MANAGERS[g.i].animal, G.MANAGERS[g.i].color);
+      case 'balloon': return A.balloon('#FF5FA2');
+      case 'upgrade': return A.icon('upgrades');
+      case 'vip': return A.crown();
+    }
+    return A.coin();
+  }
+
+  function rewardLabel(g) {
+    const v = G.goalRewardValue(state, g);
+    if (g.reward === 'sprinkles') return '<span class="btn-coin">' + A.sprinkle() + '</span>+' + fmt(v);
+    if (g.reward === 'rush') return '3× for ' + v + 's';
+    return '<span class="btn-coin">' + A.coin() + '</span>' + fmt(v);
+  }
+
+  function renderGoals() {
+    const box = $('#goalBox');
+    const open = state.settings.goalsOpen;
+    box.innerHTML =
+      '<button class="goals-head" type="button" aria-expanded="' + open + '" aria-controls="goalList">' +
+        '<span class="goals-title">Town Goals</span><span class="goals-ready" hidden></span>' +
+        '<span class="goals-chevron">' + A.icon('chevron') + '</span>' +
+      '</button>' +
+      '<div class="goal-list" id="goalList"' + (open ? '' : ' hidden') + '></div>';
+    $('.goals-head', box).addEventListener('click', function () {
+      state.settings.goalsOpen = !state.settings.goalsOpen;
+      renderGoals();
+    });
+    const list = $('#goalList', box);
+    refs.goals = state.goals.map(function (g, idx) {
+      const row = el('div', 'goal');
+      row.innerHTML =
+        '<span class="goal-icon">' + goalArt(g) + '</span>' +
+        '<div class="goal-text"><span class="goal-name"></span>' +
+          '<div class="goal-progress"><div class="mini-bar"><span></span></div><span class="goal-count"></span></div>' +
+        '</div>' +
+        '<button class="btn btn-small goal-claim" type="button"></button>';
+      $('.goal-name', row).textContent = G.goalText(g);
+      const r = { g: g, bar: $('.mini-bar > span', row), count: $('.goal-count', row), btn: $('.goal-claim', row), label: '' };
+      r.btn.addEventListener('click', function () { claimGoal(idx, r.btn); });
+      list.appendChild(row);
+      return r;
+    });
+    updateGoals();
+  }
+
+  function updateGoals() {
+    let ready = 0;
+    refs.goals.forEach(function (r) {
+      const p = G.goalProgress(state, r.g);
+      const done = p.have >= p.need;
+      if (done) ready++;
+      const have = Math.max(0, Math.min(p.have, p.need));
+      r.bar.style.transform = 'scaleX(' + have / p.need + ')';
+      setText(r.count, r.g.type === 'earn' ? fmt(have) + ' / ' + fmt(p.need) : Math.floor(have) + ' / ' + p.need);
+      const label = (done ? '<span>Claim</span>' : '') + '<span class="goal-reward">' + rewardLabel(r.g) + '</span>';
+      if (label !== r.label) { r.label = label; r.btn.innerHTML = label; }
+      r.btn.disabled = !done;
+      r.btn.classList.toggle('ready', done);
+    });
+    const tag = $('#goalBox .goals-ready');
+    if (tag) {
+      tag.hidden = !ready;
+      setText(tag, ready + ' ready!');
+    }
+  }
+
+  function claimGoal(idx, btn) {
+    const res = G.claimGoal(state, idx, Date.now());
+    if (!res) return;
+    Sound.play('fanfare');
+    confettiAt(btn, 30);
+    const text = res.reward === 'sprinkles' ? '+' + fmt(res.value) + ' golden sprinkles!'
+      : res.reward === 'rush' ? 'Sugar Rush! Every shop earns triple for ' + res.value + ' seconds.'
+        : '+' + fmt(res.value) + ' coins.';
+    toast(goalArt(res.goal), 'Goal complete!', G.goalText(res.goal) + ': ' + text);
+    if (res.reward === 'coins') bumpPurse();
+    renderGoals();
+    afterChange();
+  }
+
+  // ---------------------------------------------------------------------------
+  // VIP visitors: one turns up on a street you can see every minute or so.
+  // ---------------------------------------------------------------------------
+  function maybeVip(nowPerf) {
+    if (nowPerf < nextVipAt || tab !== 'town' || document.hidden || state.lifetimeEarned < 100) return;
+    const open = refs.shops.filter(function (r) { return !r.locked && r.lane && r.visible; });
+    const r = open[Math.floor(Math.random() * open.length)];
+    if (!r || !r.lane.addVip()) { nextVipAt = nowPerf + 5000; return; }
+    nextVipAt = nowPerf + rand(45, 90) * 1000;
+    if (!state.hints.vip) {
+      state.hints.vip = true;
+      toast(A.crown(), 'A VIP is visiting!', 'Tap the ' + G.BUSINESSES[r.i].name + ' street before they leave to collect a big tip.', true);
+    }
+  }
+
+  function collectTip(r, at) {
+    const amount = G.vipTip(state, r.i);
+    Sound.play('fanfare');
+    const box = r.scene.getBoundingClientRect();
+    const x = box.left + 3 + at.x, y = box.top + 3 + at.y;
+    floaterAt(x, y - 12, '+' + fmt(amount));
+    for (let k = 0; k < 3; k++) setTimeout(function () { flyCoin(x, y); }, k * 160);
+    toast(A.crown(), 'VIP tip!', 'A VIP at your ' + G.BUSINESSES[r.i].name + ' tipped ' + fmt(amount) + ' coins.');
+    afterChange();
+  }
+
+  // ---------------------------------------------------------------------------
   // Managers tab
   // ---------------------------------------------------------------------------
   function renderManagers() {
@@ -556,7 +706,7 @@
           '<h2 class="mgr-name">' + m.name + '</h2>' +
           '<p class="mgr-job">' + (open ? 'Runs your ' + b.name + ' for you.' : 'Wants to run a ' + b.name + '.') + '</p>' +
           (hired ? '<span class="stamp">ON THE JOB!</span>'
-            : open ? '<button class="btn btn-mint btn-small" type="button"><span>Hire</span><span class="buy-cost">' + coinCost(m.cost) + '</span></button>'
+            : open ? '<button class="btn btn-mint btn-small" type="button"><span>Hire</span><span class="buy-cost">' + coinCost(G.managerCost(state, i)) + '</span></button>'
               : '<button class="btn btn-small" type="button" disabled>Open the shop first</button>') +
         '</div>';
       const btn = $('.btn', card);
@@ -576,7 +726,7 @@
   }
 
   function updateManagers() {
-    refs.managers.forEach(function (r) { r.btn.disabled = state.coins < G.MANAGERS[r.i].cost; });
+    refs.managers.forEach(function (r) { r.btn.disabled = state.coins < G.managerCost(state, r.i); });
   }
 
   // ---------------------------------------------------------------------------
@@ -661,17 +811,30 @@
           '<div class="gain-line"><span class="chip-icon">' + A.sprinkle() + '</span><span data-r="gain"></span></div>' +
           '<div class="milestone"><div class="mini-bar"><span data-r="nextBar"></span></div><span data-r="next"></span></div>' +
           '<div class="keep-lose">' +
-            '<div class="keep"><strong>YOU KEEP</strong>Golden sprinkles, trophies</div>' +
+            '<div class="keep"><strong>YOU KEEP</strong>Golden sprinkles, perks, trophies</div>' +
             '<div class="lose"><strong>STARTS OVER</strong>Coins, shops, managers, upgrades</div>' +
           '</div>' +
           '<button class="btn btn-pink" type="button" data-r="btn">Hold a Grand Reopening</button>' +
         '</section>' +
+        '<h2 class="section-title">Sprinkle Perks</h2>' +
+        '<p class="panel-sub">Perks unlock for good once you hold enough golden sprinkles. You never spend sprinkles on them.</p>' +
+        '<div class="perk-grid">' + G.PERKS.map(perkCard).join('') + '</div>' +
       '</div>';
     const r = {};
     view.querySelectorAll('[data-r]').forEach(function (n) { r[n.getAttribute('data-r')] = n; });
     r.btn.addEventListener('click', confirmReopen);
     refs.sprinkles = r;
     updateSprinkles();
+  }
+
+  function perkCard(p) {
+    const got = state.sprinkles >= p.need;
+    return '<div class="card perk' + (got ? ' got' : '') + '">' +
+      '<div class="perk-top"><span class="perk-need"><span class="chip-icon">' + A.sprinkle() + '</span>' + p.need.toLocaleString('en-US') + '</span>' +
+        (got ? '<span class="stamp">UNLOCKED</span>' : '') + '</div>' +
+      '<h3 class="perk-name">' + p.name + '</h3><p class="perk-desc">' + p.desc + '</p>' +
+      (got ? '' : '<div class="mini-bar"><span style="transform:scaleX(' + Math.min(1, state.sprinkles / p.need) + ')"></span></div>') +
+    '</div>';
   }
 
   function updateSprinkles() {
@@ -734,7 +897,8 @@
         '<dl class="card stats">' +
           stat('Coins this run', 'run') + stat('Coins all time', 'life') + stat('Best run', 'best') +
           stat('Time played', 'time') + stat('Shop taps', 'taps') + stat('Balloons popped', 'balloons') +
-          stat('Grand Reopenings', 'reopens') + stat('Profit bonus', 'bonus') +
+          stat('Grand Reopenings', 'reopens') + stat('Town Goals done', 'goals') + stat('VIP tips', 'vips') +
+          stat('Sprinkle Perks', 'perks') + stat('Profit bonus', 'bonus') +
         '</dl>' +
         '<h2 class="section-title">Settings</h2>' +
         '<div class="card settings">' +
@@ -846,6 +1010,9 @@
     setText(r.taps, fmt(state.stats.taps));
     setText(r.balloons, fmt(state.stats.balloons));
     setText(r.reopens, fmt(state.stats.reopenings));
+    setText(r.goals, fmt(state.stats.goalsDone));
+    setText(r.vips, fmt(state.stats.vips));
+    setText(r.perks, G.perkCount(state) + ' of ' + G.PERKS.length);
     setText(r.bonus, '+' + fmt(bonus) + '%');
   }
 
@@ -881,13 +1048,15 @@
   }
 
   function updateBadges() {
-    const hireable = G.MANAGERS.filter(function (m, i) { return !state.managers[i] && state.biz[i].owned > 0 && state.coins >= m.cost; }).length;
+    const hireable = G.MANAGERS.filter(function (m, i) { return !state.managers[i] && state.biz[i].owned > 0 && state.coins >= G.managerCost(state, i); }).length;
+    const goalsReady = state.goals.filter(function (g) { return G.goalDone(state, g); }).length;
     const buyable = G.UPGRADES.filter(function (u) { return G.upgradeAvailable(state, u) && state.coins >= u.cost; }).length;
     const gain = G.sprinkleGain(state);
     setBadge('managers', hireable);
     setBadge('upgrades', buyable);
     setBadge('sprinkles', gain >= Math.max(10, state.sprinkles) ? '!' : 0);
     setBadge('more', unseenTrophies);
+    setBadge('town', goalsReady);
   }
 
   // ---------------------------------------------------------------------------
@@ -942,7 +1111,7 @@
   function removeBalloon(nextInSeconds) {
     if (balloonEl) balloonEl.remove();
     balloonEl = null;
-    nextBalloonAt = performance.now() + nextInSeconds * 1000;
+    nextBalloonAt = performance.now() + nextInSeconds * 1000 * (G.hasPerk(state, 'luckySkies') ? 0.5 : 1);
   }
 
   function popBalloon(b) {
@@ -954,8 +1123,8 @@
     const now = Date.now();
     const perSec = G.incomePerSec(state, now, true);
     if (Math.random() < 0.45 && perSec > 0) {
-      state.boost = { mult: 3, until: Math.max(now, state.boost.until) + 30000 };
-      toast(A.balloon('#FF5FA2'), 'Sugar Rush!', 'Every shop earns triple for 30 seconds.');
+      G.startRush(state, now);
+      toast(A.balloon('#FF5FA2'), 'Sugar Rush!', 'Every shop earns triple for ' + G.rushSeconds(state) + ' seconds.');
     } else {
       const amount = Math.max(20, perSec * 60);
       G.earn(state, amount);
@@ -970,15 +1139,15 @@
   // ---------------------------------------------------------------------------
   function checkHints() {
     const h = state.hints;
-    if (!h.manager && !state.managers[0] && state.coins >= G.MANAGERS[0].cost) {
+    if (!h.manager && !state.managers[0] && state.coins >= G.managerCost(state, 0)) {
       h.manager = true;
-      toast(A.face(G.MANAGERS[0].animal, G.MANAGERS[0].color), 'You can hire a manager!', 'Open Managers so your Lemonade Stand runs by itself.');
+      toast(A.face(G.MANAGERS[0].animal, G.MANAGERS[0].color), 'You can hire a manager!', 'Open Managers so your Lemonade Stand runs by itself.', true);
     } else if (!h.upgrade && G.UPGRADES.some(function (u) { return G.upgradeAvailable(state, u) && state.coins >= u.cost; })) {
       h.upgrade = true;
-      toast(A.shop('lemon'), 'Upgrade ready!', 'Check the Upgrades menu to triple a shop\'s profit.');
+      toast(A.shop('lemon'), 'Upgrade ready!', 'Check the Upgrades menu to triple a shop\'s profit.', true);
     } else if (!h.sprinkles && G.sprinkleGain(state) >= 10) {
       h.sprinkles = true;
-      toast(A.sprinkle(), 'Golden sprinkles!', 'A Grand Reopening would boost your profits. See the Sprinkles menu.');
+      toast(A.sprinkle(), 'Golden sprinkles!', 'A Grand Reopening would boost your profits. See the Sprinkles menu.', true);
     }
   }
 
@@ -1009,14 +1178,20 @@
       unseenTrophies += won.length;
       Sound.play('fanfare');
       if (won.length === 1) {
-        toast(A.trophy(true), 'Trophy: ' + won[0].name, won[0].desc + '. +' + Math.round(G.TROPHY_BONUS * 100) + '% profit!');
+        toast(A.trophy(true), 'Trophy: ' + won[0].name, won[0].desc + '. +' + Math.round(G.TROPHY_BONUS * 100) + '% profit!', true);
       } else {
-        toast(A.trophy(true), won.length + ' new trophies!', won.map(function (t) { return t.name; }).join(', ') + '.');
+        toast(A.trophy(true), won.length + ' new trophies!', won.map(function (t) { return t.name; }).join(', ') + '.', true);
       }
       if (tab === 'more') renderMore();
     }
+    const perks = G.PERKS.filter(function (p) { return state.sprinkles >= p.need && !state.hints['perk-' + p.id]; });
+    if (perks.length) {
+      perks.forEach(function (p) { state.hints['perk-' + p.id] = true; });
+      toast(A.sprinkle(), perks.length === 1 ? 'New perk: ' + perks[0].name : perks.length + ' new Sprinkle Perks!',
+        perks.length === 1 ? perks[0].desc : perks.map(function (p) { return p.name; }).join(', ') + '. See the Sprinkles menu.', true);
+    }
     updateHud();
-    if (tab === 'town') updateTown(true);
+    if (tab === 'town') { updateTown(true); updateGoals(); }
     if (tab === 'managers') updateManagers();
     if (tab === 'upgrades') updateUpgrades();
     if (tab === 'sprinkles') updateSprinkles();
@@ -1030,7 +1205,7 @@
     if (hiddenAt && !document.hidden) {
       const away = (Date.now() - hiddenAt.time) / 1000;
       const gained = state.coins - hiddenAt.coins;
-      if (away > 30 && gained > 0) toast(A.coin(), 'Welcome back!', 'Your managers earned ' + fmt(gained) + ' coins while you were gone.');
+      if (away > 30 && gained > 0) toast(A.coin(), 'Welcome back!', 'Your managers earned ' + fmt(gained) + ' coins while you were gone.', true);
       hiddenAt = null;
     }
 
@@ -1065,6 +1240,7 @@
       afterChange();
       checkHints();
       if (tab === 'more') updateMore();
+      maybeVip(nowPerf);
       if (!balloonEl && nowPerf >= nextBalloonAt && state.lifetimeEarned >= 30 && !document.hidden && $('#modalRoot').hidden) spawnBalloon();
     }
 
@@ -1152,7 +1328,7 @@
           title: 'Welcome back!',
           html: '<p>You were away for ' + G.fmtTime(away) + '. Your managers kept the shops busy and earned</p>' +
             '<div class="big-number">' + fmt(earned) + '</div><p>coins' +
-            (away > G.OFFLINE_CAP ? ' (managers get paid for up to ' + G.fmtTime(G.OFFLINE_CAP) + ' away)' : '') + '.</p>',
+            (away > G.offlineCap(state) ? ' (managers get paid for up to ' + G.fmtTime(G.offlineCap(state)) + ' away)' : '') + '.</p>',
           buttons: [{ label: 'Collect!', cls: 'btn-mint', action: function () { Sound.play('coin'); bumpPurse(); } }],
         });
       }

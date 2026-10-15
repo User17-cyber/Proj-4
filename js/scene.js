@@ -11,6 +11,9 @@
  * conveyor belt, products ride out of the door into a waiting truck, and each
  * finished batch sends the loaded truck driving off while the next pulls in.
  *
+ * Now and then a VIP visitor in gold with a crown stops by any open shop or
+ * factory and waits with a "Tip!" bubble; the page collects the tip on a tap.
+ *
  * Drawn on a <canvas> in CSS pixels; knows nothing about the game rules. The
  * page feeds it { owned, managed, running, time, milestones } every frame.
  */
@@ -81,6 +84,8 @@
     let t = rand(0, 10);
     let people = [], particles = [], vans = [];
     let items = [], trucks = [], beltShift = 0, itemTimer = 0, loadTimer = 0;
+    let vip = null;
+    const VIP_WAIT = 22; // seconds a VIP waits before giving up
     let pending = 0, cooldown = 0, spawnTimer = 0.2, vanTimer = rand(1, 4), puffTimer = 0, passTimer = rand(0.5, 2);
     let bump = 0, build = opts.build ? 0 : 1, wave = 0, bubble = null;
     let info = { owned: 1, managed: false, running: false, time: 1, milestones: 0 };
@@ -201,6 +206,7 @@
       if (opts.locked) updatePassersby(dt);
       else if (factory) updateFactory(dt);
       else updateShop(dt);
+      updateVip(dt);
 
       particles.forEach(function (p) {
         p.life -= dt;
@@ -342,6 +348,59 @@
       trucks = trucks.filter(function (tr) { return tr.x < w + 60; });
     }
 
+    // ---- VIP visitors
+    function addVip() {
+      if (opts.locked || vip || !lay) return false;
+      vip = person(w + 16, -1);
+      vip.state = 'vipIn';
+      vip.shirt = '#FFC93C';
+      vip.hat = 'crown';
+      vip.skin = pick(SKIN);
+      vip.t = 0;
+      vip.hopT = 0;
+      return true;
+    }
+
+    function hasVip() { return !!vip && vip.state === 'vipWait'; }
+
+    // The page calls this when the street is tapped while a VIP is waiting.
+    function collectVip() {
+      if (!hasVip()) return null;
+      vip.state = 'vipOut';
+      vip.dir = 1;
+      vip.carry = true;
+      vip.hopT = 0.35;
+      const x = vip.x, y = lay.feet - 40;
+      if (!reducedMotion) {
+        for (let k = 0; k < 8; k++) particles.push({ kind: 'coin', x: x, y: y, vx: rand(-70, 70), vy: rand(-220, -130), life: 0.9, max: 0.9, size: 5 });
+      }
+      sparkles(x, y, 22, 12);
+      return { x: x, y: y };
+    }
+
+    function updateVip(dt) {
+      if (!vip) return;
+      const stop = Math.min(w - 30, Math.max(lay.front + 30, w * 0.62));
+      vip.walking = false;
+      if (vip.state === 'vipIn') {
+        vip.x = Math.max(stop, vip.x - 48 * dt);
+        vip.walking = vip.x > stop;
+        if (!vip.walking) { vip.state = 'vipWait'; vip.t = 0; }
+      } else if (vip.state === 'vipWait') {
+        vip.t += dt;
+        vip.dir = -1;
+        if (vip.t > VIP_WAIT) { vip.state = 'vipOut'; vip.dir = 1; }
+        if (!reducedMotion && Math.random() < dt * 3) sparkles(vip.x, lay.feet - 30, 14, 1);
+      } else if (vip.hopT > 0) {
+        vip.hopT -= dt;
+      } else {
+        vip.x += 70 * dt;
+        vip.walking = true;
+        if (vip.x > w + 24) vip = null;
+      }
+      if (vip && vip.walking) vip.phase += dt * 12;
+    }
+
     // Empty lots still get the odd passer-by.
     function updatePassersby(dt) {
       passTimer -= dt;
@@ -480,6 +539,14 @@
       if (factory) drawFactoryFloor();
       people.forEach(function (c) { if (c.state !== 'leave') drawPerson(c); });
       people.forEach(function (c) { if (c.state === 'leave') drawPerson(c); });
+      if (vip) {
+        ctx.fillStyle = 'rgba(255,210,63,.35)';
+        ctx.beginPath();
+        ctx.ellipse(vip.x, lay.feet + 4, 15, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+        drawPerson(vip);
+        if (vip.state === 'vipWait') drawTip(vip.x, lay.feet - 50);
+      }
       if (!opts.locked && !info.managed && !info.running) {
         if (factory) {
           drawWaiting(lay.beltStart + 36, lay.feet - 46);
@@ -661,12 +728,49 @@
       dot(ctx, x + 41, y - 4, 1.3);
     }
 
+    // A pulsing "Tip!" bubble with a coin: tap the street to collect.
+    function drawTip(x, y) {
+      const left = vip ? clamp(1 - vip.t / VIP_WAIT, 0, 1) : 1;
+      const s = reducedMotion ? 1 : 1 + Math.sin(t * 6) * 0.06;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(s, s);
+      strokeStyle(2);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.moveTo(-4, 0); ctx.lineTo(0, 6); ctx.lineTo(4, 0);
+      ctx.fill();
+      ctx.stroke();
+      roundRect(ctx, -24, -20, 48, 20, 10);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#FFC93C';
+      ctx.beginPath();
+      ctx.arc(-12, -10, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = INK;
+      ctx.font = "800 12px 'Baloo 2', 'Trebuchet MS', sans-serif";
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Tip!', 7, -9);
+      // How long the VIP will keep waiting.
+      ctx.strokeStyle = '#FF5FA2';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(-16, -3);
+      ctx.lineTo(-16 + 32 * left, -3);
+      ctx.stroke();
+      ctx.restore();
+    }
+
     function drawPerson(c) {
-      const leaving = c.state === 'leave';
+      const leaving = c.state === 'leave' || c.hat === 'crown';
       const feet = lay ? lay.feet + (leaving ? 4 : 0) : h - 20;
       const step = c.walking && !reducedMotion ? Math.sin(c.phase) : 0;
       const bob = c.walking && !reducedMotion ? Math.abs(Math.cos(c.phase)) * 1.6 : 0;
-      const hop = c.state === 'served' && !reducedMotion ? Math.sin(clamp(1 - c.timer / 0.3, 0, 1) * Math.PI) * 6 : 0;
+      let hop = c.state === 'served' && !reducedMotion ? Math.sin(clamp(1 - c.timer / 0.3, 0, 1) * Math.PI) * 6 : 0;
+      if (c.hopT > 0 && !reducedMotion) hop = Math.sin(clamp(1 - c.hopT / 0.35, 0, 1) * Math.PI) * 10;
       const x = c.x, y = feet - bob - hop, d = c.dir;
 
       ctx.fillStyle = 'rgba(43,33,71,.15)';
@@ -734,6 +838,21 @@
         ctx.stroke();
         dot(ctx, x, hy - 10, 3);
         ctx.stroke();
+      } else if (c.hat === 'crown') {
+        ctx.fillStyle = '#FFD23F';
+        ctx.beginPath();
+        ctx.moveTo(x - 7, hy - 5);
+        ctx.lineTo(x - 8, hy - 14);
+        ctx.lineTo(x - 3.5, hy - 9);
+        ctx.lineTo(x, hy - 15);
+        ctx.lineTo(x + 3.5, hy - 9);
+        ctx.lineTo(x + 8, hy - 14);
+        ctx.lineTo(x + 7, hy - 5);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#FF5FA2';
+        dot(ctx, x, hy - 8, 1.6);
       } else if (c.hat === 'bow') {
         ctx.beginPath();
         ctx.moveTo(x + 3, hy - 7);
@@ -850,6 +969,9 @@
       payout: payout,
       poke: poke,
       say: say,
+      addVip: addVip,
+      hasVip: hasVip,
+      collectVip: collectVip,
       celebrate: function () { if (lay) sparkles(lay.bx + lay.S / 2, lay.feet - lay.S / 2, 40, 16); },
     };
   }
