@@ -1,6 +1,6 @@
 # Sprinkle Town Tycoon
 
-A bright, cartoony idle tycoon game that runs in any modern browser. Start with one lemonade stand, open ten shops and seven factories, unlock twenty more on Sprinkle Street, hire animal managers to run them for you, and grow Sprinkle Town into a coin empire.
+A bright, cartoony idle tycoon game that runs in any modern browser. Start with one lemonade stand, open ten shops and seven factories on Main Street and 24 more stores along the Boardwalk, unlock twenty more on Sprinkle Street, hire animal managers to run them for you, and grow Sprinkle Town into a coin empire.
 
 ## Play
 
@@ -23,6 +23,7 @@ It also works as-is on GitHub Pages: enable Pages for this branch and open the s
 - **Buy more** of a shop to earn more per batch, and its line of customers grows. Owning 10, 25, 50, 100… of a shop makes it **twice as fast** each time and opens a new branch building behind it. Busy shops get delivery vans.
 - **Open new shops**: Lemonade Stand → Ice Cream Cart → Donut Shop → Pizza Parlor → Toy Store → Candy Factory → Bouncy Park → Cartoon Studio → Rocket Diner → Moon Mall.
 - **Build factories** once the Moon Mall is open: Crayon Factory → Sneaker Factory → Chocolate Factory → Robot Factory → Rainbow Factory → Star Factory. Factories have workers in hard hats along a conveyor belt that carries their goods out to a truck; every finished batch, the loaded truck drives off and the next one pulls in. The Candy Factory works the same way.
+- **Stroll the Boardwalk.** A third street (switch to it at the top of the Town tab) with 24 seaside stores that open one after another, like Main Street: Shave Ice Shack (25 coins) → Hot Dog Hut → Pretzel Cart → Surf Shop → Taffy Factory → Fish & Chips → Ferris Wheel → Carousel → Aquarium → Lighthouse Café → Kite Factory → Sandcastle Studio → Duck Boat Tours → Circus Big Top → Fireworks Stand → Spooky Funhouse → Bumper Cars → Pearl Boutique → Jelly Bean Factory → Planetarium → Mermaid Lagoon → UFO Diner → Balloon Port → Dream Palace. Each has its own building, treat, manager, assistant and upgrades. A badge on each street's button shows when there's a new lot you can afford there.
 - **Hire managers** (Managers tab). They stand outside their shop, wave, and keep it running without taps, even while the game is closed (up to 8 hours of pay). Once you hold 10 golden sprinkles, every shop can also hire an **assistant manager** who stands beside the manager and doubles the shop's speed.
 - **Buy upgrades** (Upgrades tab) to triple a shop's profit, or every shop's. Each one adds a star to the shop's rating. **Golden** upgrades (a fifth tier for every shop) unlock at 25 golden sprinkles and **Rainbow** upgrades (a sixth) at 250.
 - **Complete Town Goals.** Three goals sit at the top of the Town tab (own so many of a shop, make so many coins, hire a manager, pop a balloon, and so on). Finished goals pay a prize when you claim them: coins, a Sugar Rush, or golden sprinkles.
@@ -31,7 +32,18 @@ It also works as-is on GitHub Pages: enable Pages for this branch and open the s
 - **Hold a Grand Reopening** (Sprinkles tab) to start over and collect golden sprinkles for the coins you earned that run. Sprinkles add up with every reopening, and each one adds +2% profit forever.
 - **Unlock Sprinkle Street.** Twenty special shops (Cupcake Corner, Bubble Tea Bar, Taco Truck, Sushi Boat, Cookie Castle, Pixel Arcade, Magic Shop, Dino Museum, Pirate Cove, Dragon Bakery, Unicorn Castle and more) unlock once you hold enough golden sprinkles, from 1 for the Cupcake Corner to 7,500 for the Unicorn Castle. Sprinkles are never spent, so unlocked shops stay unlocked; switch the Town tab to Sprinkle Street and open them with coins in every run. They earn about 1.5x a Main Street shop at the same price.
 - **Unlock Sprinkle Perks** as your sprinkle count grows, from starting every run with 10 Lemonade Stands (5 sprinkles) to cheaper shops, half-price managers and doubled goal prizes. Perks are never spent.
-- **Customize your town** (Sprinkles → Customize): rename it, and pick a sky (Cotton Candy, Sunset, Ocean Breeze, Starry Night, Rainbow), a coin design (heart, star, donut, gem, rainbow), what your customers wear (party hats, bunny ears, top hats, halos) and a confetti style. Each look unlocks at a sprinkle count.
+- **Customize your town** (Sprinkles → Customize): rename it, and pick
+  - a sky (Cotton Candy, Sunset, Ocean Breeze, Starry Night, Rainbow)
+  - the colors of buttons, tabs and cards (Strawberry, Mint Chip, Blueberry, Grape Soda, Orange Sherbet, Rainbow Pop)
+  - a border for every shop and factory card (Bubblegum, Sky Blue, Mint, Grape, Gold, Rainbow)
+  - how the buildings are painted (Pastel, Gingerbread, Frosty, Neon Nights, Solid Gold)
+  - a coin design (heart, star, donut, gem, rainbow)
+  - what every manager and assistant wears (party hats, chef hats, top hats, crowns, wizard hats, halos, Santa hats)
+  - what your customers wear (party hats, bunny ears, top hats, halos)
+  - the paint on factory trucks and delivery vans (candy stripes, mint, gold, rainbow)
+  - a confetti style
+
+  Each look unlocks for good at a sprinkle count, from 3 sprinkles for the Bubblegum border to 3,000 for Santa hats and Solid Gold buildings.
 - **Collect trophies** for +1% profit each.
 
 Use the ×1 / ×10 / ×100 / Max switch to buy in bulk. The game saves itself in your browser every few seconds; the Trophies tab has a save code you can copy to move your town to another browser.

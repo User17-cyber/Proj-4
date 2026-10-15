@@ -76,6 +76,49 @@
     });
   });
 
+  // The Boardwalk: a third street whose stores open one after another, like
+  // Main Street, from a 25-coin Shave Ice Shack to the late-game Dream Palace.
+  // Each earns about what a Main Street shop at the same price does.
+  //  id, name, tile, bar color, kind, night sky
+  const BOARDWALK = [
+    ['shaveice',    'Shave Ice Shack',    '#DDF6FF', '#4CC9F0'],
+    ['hotdog',      'Hot Dog Hut',        '#FFF1D6', '#FF6B6B'],
+    ['pretzel',     'Pretzel Cart',       '#FCE9D6', '#C98B4F'],
+    ['surf',        'Surf Shop',          '#DDF7F3', '#2ED3A0'],
+    ['taffy',       'Taffy Factory',      '#FFE8F3', '#FF8FC7', 'factory'],
+    ['fishchips',   'Fish & Chips',       '#E6F3FF', '#FFB627'],
+    ['ferris',      'Ferris Wheel',       '#FFF0F6', '#FF5FA2'],
+    ['carousel',    'Carousel',           '#FFF5DA', '#FFB627'],
+    ['aquarium',    'Aquarium',           '#DDF4FF', '#36B9F0'],
+    ['lighthouse',  'Lighthouse Café',    '#E8F1FF', '#FF5A5F'],
+    ['kites',       'Kite Factory',       '#E8F4FF', '#5B8CFF', 'factory'],
+    ['sandcastle',  'Sandcastle Studio',  '#FFF4D6', '#E8A25B'],
+    ['duckboats',   'Duck Boat Tours',    '#E8F8FF', '#FFD23F'],
+    ['circus',      'Circus Big Top',     '#FFE8E8', '#FF5A5F'],
+    ['fireworks',   'Fireworks Stand',    '#2E2A5A', '#FF5FA2', '', true],
+    ['funhouse',    'Spooky Funhouse',    '#2A2648', '#C77DFF', '', true],
+    ['bumper',      'Bumper Cars',        '#FFF0E0', '#FF9F43'],
+    ['pearl',       'Pearl Boutique',     '#F3EEFF', '#B07DFF'],
+    ['jellybean',   'Jelly Bean Factory', '#F0FFE8', '#3DDC97', 'factory'],
+    ['planetarium', 'Planetarium',        '#2E2A5A', '#4CC9F0', '', true],
+    ['mermaid',     'Mermaid Lagoon',     '#E0FFF8', '#FF8FC7'],
+    ['ufo',         'UFO Diner',          '#2E2A5A', '#3DDC97', '', true],
+    ['balloonport', 'Balloon Port',       '#EAF6FF', '#FF9F43'],
+    ['dreampalace', 'Dream Palace',       '#2E2A5A', '#FFC93C', '', true],
+  ];
+  const WALK_START = BUSINESSES.length;
+
+  BOARDWALK.forEach(function (row, j) {
+    const cost = 25 * Math.pow(7.5, j);
+    const time = Math.max(1, Math.round(1.5 * Math.pow(1.45, j)));
+    const perCoin = 0.25 * Math.pow(cost / 4, -0.279);
+    BUSINESSES.push({
+      id: row[0], name: row[1], tile: row[2], bar: row[3], kind: row[4] || undefined, night: !!row[5], street: 'boardwalk',
+      cost: sig2(cost), rate: Math.max(1.07, 1.13 - 0.004 * j), time: time, rev: sig2(perCoin * time * cost),
+    });
+  });
+  BUSINESSES.forEach(function (b) { b.street = b.street || (b.need ? 'sprinkle' : 'main'); });
+
   // Owning this many of a shop makes it twice as fast, each time.
   const MILESTONES = [10, 25, 50, 100, 150, 200, 300, 400, 500, 750, 1000];
 
@@ -118,10 +161,38 @@
     { name: 'Peg-Leg Pig',     animal: 'pig',      color: '#FFB3C8', acc: 'pirate' },
     { name: 'Ember Dragon',    animal: 'dragon',   color: '#5ED38A' },
     { name: 'Sparkle Unicorn', animal: 'unicorn',  color: '#FFFFFF' },
+    // Boardwalk
+    { name: 'Sunny Seal',      animal: 'seal',     color: '#B8C4D6', acc: 'flower' },
+    { name: 'Frank the Dog',   animal: 'dog',      color: '#E8B97A', acc: 'chef' },
+    { name: 'Twisty Turtle',   animal: 'turtle',   color: '#7BD88F' },
+    { name: 'Kahuna Crab',     animal: 'crab',     color: '#FF6B6B', acc: 'shades' },
+    { name: 'Stretch Giraffe', animal: 'giraffe',  color: '#FFD27A', acc: 'cap' },
+    { name: 'Salty Cat',       animal: 'cat',      color: '#9DB4D9', acc: 'sailor' },
+    { name: 'Wheelie Mouse',   animal: 'mouse',    color: '#E4DBFF', acc: 'party' },
+    { name: 'Merry Pig',       animal: 'pig',      color: '#FFC8DD', acc: 'bow' },
+    { name: 'Otto Octopus',    animal: 'octopus',  color: '#C9A4FF', acc: 'glasses' },
+    { name: 'Barnacle Bear',   animal: 'bear',     color: '#C68A5B', acc: 'sailor' },
+    { name: 'Breezy Bunny',    animal: 'bunny',    color: '#E8F4FF', acc: 'cap' },
+    { name: 'Sandy Hedgehog',  animal: 'hedgehog', color: '#F6D7A7', acc: 'beanie' },
+    { name: 'Admiral Duck',    animal: 'duck',     color: '#FFE14D', acc: 'sailor' },
+    { name: 'Ringmaster Lion', animal: 'lion',     color: '#FFC857', acc: 'tophat' },
+    { name: 'Sparky Fox',      animal: 'fox',      color: '#FF8A3D', acc: 'cap' },
+    { name: 'Boo Panda',       animal: 'panda',    color: '#FFFFFF', acc: 'wizard' },
+    { name: 'Zippy Raccoon',   animal: 'raccoon',  color: '#A3A3B5', acc: 'cap' },
+    { name: 'Pearl Seal',      animal: 'seal',     color: '#E4ECF7', acc: 'tiara' },
+    { name: 'Jelly Monkey',    animal: 'monkey',   color: '#B07A4F', acc: 'chef' },
+    { name: 'Stella Owl',      animal: 'owl',      color: '#4C5FA8', acc: 'glasses' },
+    { name: 'Coral Crab',      animal: 'crab',     color: '#FF8FA3', acc: 'tiara' },
+    { name: 'Zorp Frog',       animal: 'frog',     color: '#9BE36D', acc: 'headphones' },
+    { name: 'Puff Elephant',   animal: 'elephant', color: '#B8C9E8', acc: 'cap' },
+    { name: 'Dreamy Unicorn',  animal: 'unicorn',  color: '#E4DBFF', acc: 'crown' },
   ];
   // Sprinkle Street managers cost ten times their shop's price for the first five, then five times.
+  // Boardwalk managers start at 80 times (the first store is very cheap) and come down to four times.
   MANAGERS.forEach(function (m, i) {
-    if (m.cost === undefined) m.cost = sig2(BUSINESSES[i].cost * (i - MAIN_COUNT < 5 ? 10 : 5));
+    if (m.cost !== undefined) return;
+    const b = BUSINESSES[i];
+    m.cost = b.street === 'sprinkle' ? sig2(b.cost * (i - MAIN_COUNT < 5 ? 10 : 5)) : sig2(b.cost * Math.max(4, 80 / (1 + i - WALK_START)));
   });
 
   // Assistant managers: a second hire for every shop, unlocked by the Assistant
@@ -164,6 +235,31 @@
     { name: 'Captain Moo',      animal: 'cow',      color: '#FFFFFF', acc: 'pirate' },
     { name: 'Blaze Tiger',      animal: 'tiger',    color: '#FF7A5A', acc: 'chef' },
     { name: 'Glimmer Unicorn',  animal: 'unicorn',  color: '#FFF0F6', acc: 'tiara' },
+    // Boardwalk
+    { name: 'Slushy Penguin',   animal: 'penguin',  color: '#3C4A78', acc: 'beanie' },
+    { name: 'Relish Frog',      animal: 'frog',     color: '#8BE08B', acc: 'cap' },
+    { name: 'Knotty Koala',     animal: 'koala',    color: '#B8BFD0', acc: 'chef' },
+    { name: 'Shaka Seal',       animal: 'seal',     color: '#9DB4D9', acc: 'flower' },
+    { name: 'Chewy Hamster',    animal: 'hamster',  color: '#F4C49A', acc: 'chef' },
+    { name: 'Chips Turtle',     animal: 'turtle',   color: '#8BE08B', acc: 'sailor' },
+    { name: 'Loop Lamb',        animal: 'sheep',    color: '#FFFFFF', acc: 'party' },
+    { name: 'Calliope Cow',     animal: 'cow',      color: '#FFFFFF', acc: 'flower' },
+    { name: 'Bubbles Crab',     animal: 'crab',     color: '#FF9F5A', acc: 'glasses' },
+    { name: 'Cocoa Octopus',    animal: 'octopus',  color: '#FFB36B', acc: 'chef' },
+    { name: 'Gusty Giraffe',    animal: 'giraffe',  color: '#FFE09A', acc: 'cap' },
+    { name: 'Dune Duck',        animal: 'duck',     color: '#FFF07A', acc: 'party' },
+    { name: 'Paddle Pup',       animal: 'dog',      color: '#C9A27A', acc: 'sailor' },
+    { name: 'Juggles Monkey',   animal: 'monkey',   color: '#A9744F', acc: 'party' },
+    { name: 'Boom Bear',        animal: 'bear',     color: '#8B5A3C', acc: 'cap' },
+    { name: 'Spooky Cat',       animal: 'cat',      color: '#8A82B8', acc: 'wizard' },
+    { name: 'Vroom Mouse',      animal: 'mouse',    color: '#BFC4D6', acc: 'headphones' },
+    { name: 'Pearly Pig',       animal: 'pig',      color: '#FFD6EC', acc: 'tiara' },
+    { name: 'Bean Bunny',       animal: 'bunny',    color: '#FFE3F1', acc: 'bow' },
+    { name: 'Comet Cat',        animal: 'cat',      color: '#B9A4FF', acc: 'party' },
+    { name: 'Marina Turtle',    animal: 'turtle',   color: '#5ED3C8', acc: 'flower' },
+    { name: 'Beep Octopus',     animal: 'octopus',  color: '#9BE36D', acc: 'headphones' },
+    { name: 'Puffy Panda',      animal: 'panda',    color: '#FFFFFF', acc: 'cap' },
+    { name: 'Snooze Sheep',     animal: 'sheep',    color: '#E9D5FF', acc: 'tiara' },
   ];
 
   // ---------------------------------------------------------------------------
@@ -206,6 +302,30 @@
     pirate:      ['Treasure Maps', 'Parrot Pals', 'Cannon Fireworks', 'Ghost Ship'],
     dragon:      ['Fire-Baked Bread', 'Dragon Scale Tarts', 'Baby Dragons', 'Dragon Mountain'],
     unicorn:     ['Glitter Horns', 'Rainbow Bridges', 'Flying Unicorns', 'Magic Kingdom'],
+    shaveice:    ['Syrup Rainbow', 'Mountain Scoops', 'Ice Shaver 3000', 'Glacier Express'],
+    hotdog:      ['Mustard Swirls', 'Foot-Long Buns', 'Hot Dog Cannon', 'Wiener Wagon Parade'],
+    pretzel:     ['Salt Sparkles', 'Cheese Dip', 'Giant Twists', 'Pretzel Tower'],
+    surf:        ['Wax On', 'Neon Boards', 'Wave Machine', 'Big Wave Contest'],
+    taffy:       ['Stretchier Taffy', 'Fruit Flavors', 'Pulling Robots', 'Taffy Twister'],
+    fishchips:   ['Crispy Batter', 'Golden Fries', 'Seagull Guards', 'Fish Fry Festival'],
+    ferris:      ['Twinkle Lights', 'Bigger Gondolas', 'Sunset Rides', 'Giant Wheel'],
+    carousel:    ['Painted Ponies', 'Music Box Tunes', 'Double Decker', 'Golden Ring Prize'],
+    aquarium:    ['Bubble Tanks', 'Octopus Show', 'Shark Tunnel', 'Whale Hall'],
+    lighthouse:  ['Sea Breeze Seats', 'Marshmallow Mountains', 'Beacon Brews', 'Lighthouse Lounge'],
+    kites:       ['Longer Tails', 'Dragon Kites', 'Kite Catapults', 'Sky Festival'],
+    sandcastle:  ['Wet Sand Molds', 'Seashell Walls', 'Sand Sculptors', 'Sandcastle Kingdom'],
+    duckboats:   ['Squeaky Horns', 'Duck Floaties', 'Splash Ramps', 'Mega Duck Fleet'],
+    circus:      ['Juggling Seals', 'Trapeze Act', 'Clown Car', 'Ringmaster Spectacular'],
+    fireworks:   ['Sparkler Packs', 'Rainbow Rockets', 'Finale Crates', 'Sky Painters'],
+    funhouse:    ['Wobbly Floors', 'Mirror Maze', 'Friendly Ghosts', 'Haunted Hayride'],
+    bumper:      ['Bouncy Bumpers', 'Glow Tracks', 'Turbo Cars', 'Bumper Derby'],
+    pearl:       ['Polished Pearls', 'Shell Lockets', 'Mermaid Tiaras', 'Treasure Vault'],
+    jellybean:   ['Flavor Lab', 'Speckled Beans', 'Bean Blasters', 'Jelly Bean Volcano'],
+    planetarium: ['Star Projector', 'Comet Shows', 'Moon Rocks', 'Galaxy Dome'],
+    mermaid:     ['Coral Gardens', 'Bubble Rings', 'Mermaid Choir', 'Sunken Palace'],
+    ufo:         ['Cosmic Shakes', 'Laser Grills', 'Alien Waiters', 'Mothership Drive-In'],
+    balloonport: ['Patchwork Balloons', 'Sky Picnics', 'Balloon Races', 'Cloud Harbor'],
+    dreampalace: ['Pillow Towers', 'Lullaby Bells', 'Dream Weavers', 'Sweet Dreams Forever'],
   };
   const UPGRADE_TIER_COST = [400, 4e5, 4e9, 4e14, 1e17, 1e20]; // times the shop's first price
   // The Golden and Rainbow tiers appear once their Sprinkle Perk is unlocked.
@@ -305,7 +425,60 @@
       { id: 'stars',     name: 'Stars',       need: 50 },
       { id: 'sprinkles', name: 'Sprinkles',   need: 150 },
     ],
+    // The outline around every shop and factory card.
+    border: [
+      { id: 'ink',     name: 'Classic',       need: 0 },
+      { id: 'pink',    name: 'Bubblegum',     need: 3 },
+      { id: 'blue',    name: 'Sky Blue',      need: 12 },
+      { id: 'mint',    name: 'Mint',          need: 35 },
+      { id: 'grape',   name: 'Grape',         need: 90 },
+      { id: 'gold',    name: 'Gold',          need: 350 },
+      { id: 'rainbow', name: 'Rainbow',       need: 2000 },
+    ],
+    // Buttons, tabs and cards.
+    ui: [
+      { id: 'lemon',     name: 'Lemon',          need: 0 },
+      { id: 'berry',     name: 'Strawberry',     need: 7 },
+      { id: 'mint',      name: 'Mint Chip',      need: 25 },
+      { id: 'blueberry', name: 'Blueberry',      need: 70 },
+      { id: 'grape',     name: 'Grape Soda',     need: 180 },
+      { id: 'sherbet',   name: 'Orange Sherbet', need: 450 },
+      { id: 'rainbow',   name: 'Rainbow Pop',    need: 1100 },
+    ],
+    // What every manager and assistant wears ('own': each one's usual look).
+    mgrHat: [
+      { id: 'own',    name: 'Their Own',   need: 0 },
+      { id: 'party',  name: 'Party Hats',  need: 4 },
+      { id: 'chef',   name: 'Chef Hats',   need: 18 },
+      { id: 'tophat', name: 'Top Hats',    need: 45 },
+      { id: 'crown',  name: 'Crowns',      need: 140 },
+      { id: 'wizard', name: 'Wizard Hats', need: 450 },
+      { id: 'halo',   name: 'Halos',       need: 1000 },
+      { id: 'santa',  name: 'Santa Hats',  need: 3000 },
+    ],
+    // How the shop and factory buildings are painted.
+    front: [
+      { id: 'classic',     name: 'Classic',     need: 0 },
+      { id: 'pastel',      name: 'Pastel',      need: 20 },
+      { id: 'gingerbread', name: 'Gingerbread', need: 100 },
+      { id: 'frosty',      name: 'Frosty',      need: 300 },
+      { id: 'neon',        name: 'Neon Nights', need: 800 },
+      { id: 'gold',        name: 'Solid Gold',  need: 3000 },
+    ],
+    // Paint for factory trucks and delivery vans.
+    vehicle: [
+      { id: 'classic', name: 'Shop Colors',   need: 0 },
+      { id: 'stripes', name: 'Candy Stripes', need: 10 },
+      { id: 'mint',    name: 'Mint',          need: 55 },
+      { id: 'gold',    name: 'Gold',          need: 500 },
+      { id: 'rainbow', name: 'Rainbow',       need: 1800 },
+    ],
   };
+  function defaultStyles() {
+    const out = {};
+    Object.keys(STYLES).forEach(function (g) { out[g] = STYLES[g][0].id; });
+    return out;
+  }
 
   function styleItem(group, id) { return (STYLES[group] || []).find(function (x) { return x.id === id; }); }
   function styleUnlocked(s, group, id) { const item = styleItem(group, id); return !!item && s.sprinkles >= item.need; }
@@ -361,10 +534,16 @@
     { id: 'assist10',    name: 'Dream Team',     desc: 'Hire 10 assistant managers in one run', test: function (s) { return s.assistants.filter(Boolean).length >= 10; } },
     { id: 'rainbowUp',   name: 'Over the Rainbow', desc: 'Buy a Rainbow upgrade',              test: function (s) { return Object.keys(s.upgrades).some(function (k) { return UPGRADE_BY_ID[k] && UPGRADE_BY_ID[k].perk === 'rainbowUpgrades'; }); } },
     { id: 'styleAll',    name: 'Style Icon',     desc: 'Unlock every customization',           test: function (s) { return stylesUnlocked(s) >= stylesTotal(); } },
+    { id: 'walk1',       name: 'Boardwalk Debut', desc: 'Open a Boardwalk store',              test: function (s) { return walkOpen(s) >= 1; } },
+    { id: 'walk12',      name: 'Pier Pressure',  desc: 'Open 12 Boardwalk stores in one run',  test: function (s) { return walkOpen(s) >= 12; } },
+    { id: 'walkAll',     name: 'Boardwalk Boss', desc: 'Open every Boardwalk store in one run', test: function (s) { return walkOpen(s) >= BOARDWALK.length; } },
+    { id: 'looks15',     name: 'Trendsetter',    desc: 'Unlock 15 customizations',             test: function (s) { return stylesUnlocked(s) >= 15; } },
   ];
 
   function openCount(s) { return s.biz.filter(function (b) { return b.owned > 0; }).length; }
-  function streetOpen(s) { return s.biz.slice(MAIN_COUNT).filter(function (b) { return b.owned > 0; }).length; }
+  function openOn(s, street) { return s.biz.filter(function (b, i) { return b.owned > 0 && BUSINESSES[i].street === street; }).length; }
+  function streetOpen(s) { return openOn(s, 'sprinkle'); }
+  function walkOpen(s) { return openOn(s, 'boardwalk'); }
   function indexOf(id) { return BUSINESSES.findIndex(function (b) { return b.id === id; }); }
   function factoryCount(s) { return s.biz.filter(function (b, i) { return b.owned > 0 && BUSINESSES[i].kind === 'factory'; }).length; }
   function maxOwned(s) { return s.biz.reduce(function (m, b) { return Math.max(m, b.owned); }, 0); }
@@ -391,7 +570,7 @@
       // made: coins earned by shops and factories themselves (not prizes or tips)
       stats: { taps: 0, balloons: 0, reopenings: 0, playTime: 0, bestRun: 0, goalsDone: 0, vips: 0, made: 0 },
       settings: { sound: true, floaters: true, goalsOpen: true },
-      style: { sky: 'day', coin: 'classic', hats: 'mixed', confetti: 'classic' },
+      style: defaultStyles(),
       townName: '',
       buyMode: '1',
       lastSeen: now || Date.now(),
@@ -435,11 +614,11 @@
     return Number(s.buyMode) || 1;
   }
 
-  // Main Street opens in order; Sprinkle Street shops need enough golden sprinkles.
+  // Main Street and the Boardwalk open in order; Sprinkle Street shops need enough golden sprinkles.
   function isUnlocked(s, i) {
     const b = BUSINESSES[i];
     if (b.need) return s.sprinkles >= b.need;
-    return i === 0 || s.biz[i - 1].owned > 0;
+    return i === 0 || i === WALK_START || s.biz[i - 1].owned > 0;
   }
 
   function canOpen(s, i) { return s.biz[i].owned < 1 && isUnlocked(s, i); }
@@ -908,6 +1087,7 @@
     BUSINESSES: BUSINESSES, MILESTONES: MILESTONES, MANAGERS: MANAGERS, UPGRADES: UPGRADES,
     UPGRADE_BY_ID: UPGRADE_BY_ID, TROPHIES: TROPHIES, SPRINKLE_BONUS: SPRINKLE_BONUS,
     TROPHY_BONUS: TROPHY_BONUS, OFFLINE_CAP: OFFLINE_CAP, PERKS: PERKS, GOAL_SLOTS: GOAL_SLOTS, MAIN_COUNT: MAIN_COUNT,
+    WALK_START: WALK_START,
     isUnlocked: isUnlocked, canOpen: canOpen,
     newState: newState, restore: restore, earn: earn,
     costFor: costFor, maxAffordable: maxAffordable, buyAmount: buyAmount, buy: buy,

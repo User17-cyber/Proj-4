@@ -15,7 +15,9 @@
   --sun-glow: rgba(255, 210, 63, .35);
   --sun: #FFD23F;          /* coins, main buttons */
   --sun-deep: #F5B700;
-  --sun-soft: #FFF1B8;     /* goal panel header, unlocked perks */
+  --sun-soft: #FFF1B8;
+  --accent: #FFD23F;       /* main buttons, the selected tab (the Colors customization) */
+  --accent-soft: #FFF1B8;  /* goal panel header, unlocked perks, chosen looks */
   --bubblegum: #FF5FA2;    /* accent */
   --mint: #2ED3A0;
   --grape: #8C6CFF;
@@ -102,6 +104,38 @@ svg { display: block; width: 100%; height: 100%; }
   background-position: 10px 20px, 50px 60px;
 }
 :root[data-sky="night"] .cloud { opacity: .35; }
+/* Colors customization: buttons, tabs and cards. Written as plain attribute
+   selectors so the little previews in Customize can show each one too. */
+[data-ui="lemon"] { --accent: #FFD23F; --accent-soft: #FFF1B8; --paper: #FFFBF0; --paper-2: #FFF3D6; --bubblegum: #FF5FA2; }
+[data-ui="berry"] { --accent: #FF9CCB; --accent-soft: #FFE3F1; --paper: #FFF6FA; --paper-2: #FFE3F1; --bubblegum: #8C6CFF; }
+[data-ui="mint"] { --accent: #5EE6B5; --accent-soft: #D8FBEC; --paper: #F4FFF9; --paper-2: #DDF8EC; }
+[data-ui="blueberry"] { --accent: #7CC4FF; --accent-soft: #DDF1FF; --paper: #F5FAFF; --paper-2: #DDEEFF; }
+[data-ui="grape"] { --accent: #B9A4FF; --accent-soft: #EEE7FF; --paper: #FAF7FF; --paper-2: #ECE4FF; }
+[data-ui="sherbet"] { --accent: #FFB36B; --accent-soft: #FFE9D2; --paper: #FFF8F0; --paper-2: #FFE9D2; }
+[data-ui="rainbow"] {
+  --accent: linear-gradient(100deg, #FFB3C8, #FFE08A 28%, #B8F0C8 52%, #A8DCFF 76%, #D9C9FF);
+  --accent-soft: #FFF0F7; --paper: #FFFDF7; --paper-2: #F3F0FF;
+}
+
+/* Store borders customization: the outline of every shop and factory card. */
+[data-border="ink"] { --shop-border: var(--ink); }
+[data-border="pink"] { --shop-border: #FF5FA2; }
+[data-border="blue"] { --shop-border: #2FA8F0; }
+[data-border="mint"] { --shop-border: #1FC28E; }
+[data-border="grape"] { --shop-border: #8C6CFF; }
+[data-border="gold"], [data-border="rainbow"] { --shop-border: transparent; } /* the gradient below shows through */
+:root[data-border]:not([data-border="ink"]) .shop:not(.mystery) { border-width: 5px; border-color: var(--shop-border); }
+:root[data-border="gold"] .shop:not(.mystery), .border-swatch[data-border="gold"] {
+  border-color: transparent;
+  background: linear-gradient(var(--paper), var(--paper)) padding-box,
+    linear-gradient(135deg, #FFE97A, #F5B700 30%, #FFF3B0 48%, #E09A00 68%, #FFD23F) border-box;
+}
+:root[data-border="rainbow"] .shop:not(.mystery), .border-swatch[data-border="rainbow"] {
+  border-color: transparent;
+  background: linear-gradient(var(--paper), var(--paper)) padding-box,
+    linear-gradient(135deg, #FF5A5F, #FFB627 20%, #FFE14D 40%, #3DDC97 60%, #4CC9F0 80%, #8C6CFF) border-box;
+}
+
 /* Text that sits right on the sky needs to stay readable on the dark one. */
 :root[data-sky="night"] .panel-sub,
 :root[data-sky="night"] .district-note { color: #FFFFFF; }
@@ -322,7 +356,7 @@ svg { display: block; width: 100%; height: 100%; }
   padding: 4px 14px;
   border: var(--line) solid var(--ink);
   border-radius: 14px;
-  background: var(--sun);
+  background: var(--accent);
   color: var(--ink);
   font-weight: 800;
   font-size: 1rem;
@@ -381,7 +415,7 @@ svg { display: block; width: 100%; height: 100%; }
   width: 100%;
   padding: 8px 14px;
   border: 0;
-  background: var(--sun-soft);
+  background: var(--accent-soft);
   text-align: left;
 }
 .goals-head[aria-expanded="true"] { border-bottom: var(--line) solid var(--ink); }
@@ -430,7 +464,7 @@ svg { display: block; width: 100%; height: 100%; }
 /* ------------------------------------------------------------------ streets */
 .district-toggle {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 4px;
   padding: 4px;
   border: var(--line) solid var(--ink);
@@ -445,15 +479,19 @@ svg { display: block; width: 100%; height: 100%; }
   justify-content: center;
   gap: 6px;
   min-height: 42px;
-  padding: 0 8px;
+  padding: 2px 6px;
   border: 0;
   border-radius: 11px;
   background: transparent;
   font-family: var(--font-display);
-  font-size: 1.05rem;
+  font-size: clamp(.85rem, 3.6vw, 1.05rem);
+  line-height: 1.05;
   color: var(--ink-soft);
+  min-width: 0;
 }
-.district-toggle button[aria-selected="true"] { background: var(--sun); color: var(--ink); }
+.district-label { min-width: 0; text-align: center; text-wrap: balance; }
+.district-toggle button[aria-selected="true"] { background: var(--accent); color: var(--ink); }
+.district-toggle button[data-district="boardwalk"][aria-selected="true"] { background: #4CC9F0; color: var(--ink); }
 .district-toggle button[data-district="sprinkle"][aria-selected="true"] { background: var(--bubblegum); color: #FFFFFF; }
 .district-icon { width: 20px; height: 20px; flex: none; }
 .district-toggle .badge { top: -10px; right: -6px; }
@@ -852,7 +890,7 @@ button.shop-scene:active { transform: translateY(1px); }
   gap: 12px;
 }
 .perk { display: grid; gap: 4px; padding: 12px; align-content: start; }
-.perk.got { background: var(--sun-soft); }
+.perk.got { background: var(--accent-soft); }
 .perk:not(.got) { border-style: dashed; box-shadow: none; background: rgba(255, 251, 240, .8); }
 .perk-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .perk-need { display: inline-flex; align-items: center; gap: 4px; font-weight: 800; font-variant-numeric: tabular-nums; }
@@ -891,7 +929,7 @@ button.shop-scene:active { transform: translateY(1px); }
   align-items: center;
   gap: 10px;
   padding: 10px 14px;
-  background: var(--sun-soft);
+  background: var(--accent-soft);
   border-style: dashed;
   box-shadow: none;
 }
@@ -960,7 +998,7 @@ button.shop-scene:active { transform: translateY(1px); }
   font-size: .8rem;
   text-align: center;
 }
-.style-tile.on { background: var(--sun-soft); border-color: var(--bubblegum); box-shadow: 0 3px 0 var(--bubblegum); }
+.style-tile.on { background: var(--accent-soft); border-color: var(--bubblegum); box-shadow: 0 3px 0 var(--bubblegum); }
 .style-tile:disabled { cursor: default; border-style: dashed; box-shadow: none; background: rgba(255, 251, 240, .7); }
 .style-tile:disabled .style-art { filter: grayscale(1) opacity(.5); }
 .style-art { width: 48px; height: 48px; display: grid; place-items: center; }
@@ -976,6 +1014,33 @@ button.shop-scene:active { transform: translateY(1px); }
 .sky-swatch[data-sky="ocean"] { background: linear-gradient(#5FD3D8, #B8F2E6 60%, #4CC9F0 60%); }
 .sky-swatch[data-sky="night"] { background: radial-gradient(circle at 70% 25%, #FFF3C4 0 5px, transparent 6px), linear-gradient(#2B2A63, #4B3F8F 60%, #3E6E5A 60%); }
 .sky-swatch[data-sky="rainbow"] { background: linear-gradient(#FF8FA3, #FFC48A, #FFF09A, #A8F0B8, #9BD8FF, #C9B6FF); }
+/* A tiny card in the Colors look: a button and a line of text. */
+.ui-swatch {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 5px;
+  width: 48px;
+  height: 44px;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  background: var(--paper);
+}
+.ui-swatch i { width: 32px; height: 14px; border: 2px solid var(--ink); border-radius: 6px; background: var(--accent); box-shadow: 0 2px 0 var(--ink); }
+.ui-swatch b { width: 26px; height: 4px; border-radius: 2px; background: var(--bubblegum); }
+/* A tiny shop card with the border look. */
+.border-swatch {
+  display: grid;
+  width: 46px;
+  height: 42px;
+  padding: 4px;
+  border: 5px solid var(--shop-border);
+  border-radius: 10px;
+  background: var(--paper);
+  box-shadow: 0 2px 0 var(--ink);
+}
+.border-swatch[data-border="ink"] { border-width: 3px; }
+.border-swatch i { border: 2px solid var(--ink); border-radius: 4px; background: #CFF3FF; }
 
 /* ------------------------------------------------------------------ trophies & settings */
 .trophy-grid {
@@ -1098,7 +1163,7 @@ button.shop-scene:active { transform: translateY(1px); }
 .tab-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .tab[aria-selected="true"] {
   border-color: var(--ink);
-  background: var(--sun);
+  background: var(--accent);
   color: var(--ink);
   box-shadow: 0 4px 0 var(--ink);
   transform: translateY(-4px);

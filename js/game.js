@@ -30,19 +30,27 @@
 
   function rand(a, b) { return a + Math.random() * (b - a); }
 
-  // Which street the Town tab shows: 'main' or 'sprinkle'.
+  // Which street the Town tab shows: 'main', 'boardwalk' or 'sprinkle'.
   let district = 'main';
-  function isStreet(i) { return !!G.BUSINESSES[i].need; }
+  const DISTRICTS = ['main', 'boardwalk', 'sprinkle'];
+  function streetOf(i) { return G.BUSINESSES[i].street; }
+  function isStreet(i) { return streetOf(i) === 'sprinkle'; }
   function needText(i) { return G.BUSINESSES[i].need.toLocaleString('en-US'); }
+
+  // The Manager Hats customization dresses every manager and assistant alike.
+  function hatOn() {
+    const hat = G.activeStyle(state, 'mgrHat');
+    return hat === 'own' ? undefined : hat;
+  }
 
   function mgrFace(i) {
     const m = G.MANAGERS[i];
-    return A.face(m.animal, m.color, m.acc);
+    return A.face(m.animal, m.color, m.acc, hatOn());
   }
 
   function astFace(i) {
     const a = G.ASSISTANTS[i];
-    return A.face(a.animal, a.color, a.acc);
+    return A.face(a.animal, a.color, a.acc, hatOn());
   }
 
   function el(tag, cls, html) {
@@ -374,9 +382,9 @@
     if (sceneWatch.visible) sceneWatch.visible.disconnect();
     if (sceneWatch.size) sceneWatch.size.disconnect();
     syncDistrict();
-    const street = G.BUSINESSES.map(function (b, i) { return i; }).filter(function (i) { return isStreet(i) === (district === 'sprinkle'); });
-    if (district === 'main') {
-      // Main Street opens in order: show the next empty lot and tease the rest.
+    const street = G.BUSINESSES.map(function (b, i) { return i; }).filter(function (i) { return streetOf(i) === district; });
+    if (district !== 'sprinkle') {
+      // Main Street and the Boardwalk open in order: show the next empty lot and tease the rest.
       let lockedShown = 0;
       street.forEach(function (i, k) {
         if (state.biz[i].owned > 0) {
@@ -385,7 +393,7 @@
           list.appendChild(lockedCard(i));
           lockedShown++;
         } else if (lockedShown === 1) {
-          list.appendChild(mysteryCard(street.length - k, false));
+          list.appendChild(mysteryCard(street.length - k, district));
           lockedShown++;
         }
       });
@@ -398,7 +406,7 @@
         else if (!teased) { list.appendChild(sprinkleLockedCard(i)); teased = true; }
         else hidden++;
       });
-      if (hidden) list.appendChild(mysteryCard(hidden, true));
+      if (hidden) list.appendChild(mysteryCard(hidden, 'sprinkle'));
     }
     // Scenes measure themselves, so they're made once the cards are on the page.
     refs.shops.forEach(function (r) {
@@ -507,9 +515,11 @@
     return card;
   }
 
-  function mysteryCard(remaining, sprinkleStreet) {
+  function mysteryCard(remaining, where) {
     const card = el('article', 'card shop mystery');
-    const what = remaining + ' more ' + (sprinkleStreet ? 'Sprinkle Street ' : '') + (remaining === 1 ? 'shop' : 'shops');
+    const sprinkleStreet = where === 'sprinkle';
+    const what = remaining + ' more ' + (sprinkleStreet ? 'Sprinkle Street ' : where === 'boardwalk' ? 'Boardwalk ' : '') +
+      (where === 'boardwalk' ? 'store' : 'shop') + (remaining === 1 ? '' : 's');
     card.innerHTML =
       '<div class="shop-icon">' + A.mystery() + '</div>' +
       '<div class="shop-body">' +
@@ -541,7 +551,11 @@
       b.setAttribute('aria-selected', String(on));
       b.tabIndex = on ? 0 : -1;
     });
-    $('#districtNote').hidden = district !== 'sprinkle';
+    const note = $('#districtNote');
+    note.hidden = district === 'main';
+    setText(note, district === 'sprinkle'
+      ? 'Sprinkle Street shops unlock for good once you hold enough golden sprinkles. Open them with coins in every run.'
+      : 'Boardwalk stores open one after another, like Main Street. Open one to find the next.');
   }
 
   function upgradesOwned(i) {
@@ -768,7 +782,8 @@
         '<p><strong>Assistant managers</strong> unlock at 10 golden sprinkles. Each one doubles their shop\'s speed.</p>'));
     }
     const groups = [
-      ['Main Street', function (i) { return !isStreet(i); }],
+      ['Main Street', function (i) { return streetOf(i) === 'main'; }],
+      ['Boardwalk', function (i) { return streetOf(i) === 'boardwalk' && G.isUnlocked(state, i); }],
       ['Sprinkle Street', function (i) { return isStreet(i) && (G.isUnlocked(state, i) || state.biz[i].owned > 0); }],
     ];
     groups.forEach(function (gr) {
@@ -909,7 +924,20 @@
   // ---------------------------------------------------------------------------
   // Sprinkles tab
   // ---------------------------------------------------------------------------
-  const STYLE_GROUPS = [['sky', 'Sky'], ['coin', 'Coins'], ['hats', 'Customer hats'], ['confetti', 'Confetti']];
+  const STYLE_GROUPS = [['sky', 'Sky'], ['ui', 'Colors'], ['border', 'Store borders'], ['front', 'Storefronts'], ['coin', 'Coins'],
+    ['mgrHat', 'Manager hats'], ['hats', 'Customer hats'], ['vehicle', 'Trucks & vans'], ['confetti', 'Confetti']];
+  // A small preview of each look.
+  const STYLE_ART = {
+    sky: function (id) { return '<span class="sky-swatch" data-sky="' + id + '"></span>'; },
+    ui: function (id) { return '<span class="ui-swatch" data-ui="' + id + '"><i></i><b></b></span>'; },
+    border: function (id) { return '<span class="border-swatch" data-border="' + id + '"><i></i></span>'; },
+    front: function (id) { return A.shop('donut', id); },
+    coin: function (id) { return A.coin(id); },
+    mgrHat: function (id) { return A.face('cat', '#C9B6FF', 'tiara', id === 'own' ? undefined : id); },
+    hats: function (id) { return A.customer(id); },
+    vehicle: function (id) { return A.van(id); },
+    confetti: function (id) { return A.confettiSample(id); },
+  };
 
   function renderSprinkles() {
     const view = $('#sprinkleView');
@@ -965,10 +993,7 @@
   function styleTile(group, item) {
     const got = state.sprinkles >= item.need;
     const on = G.activeStyle(state, group) === item.id;
-    const art = group === 'sky' ? '<span class="sky-swatch" data-sky="' + item.id + '"></span>'
-      : group === 'coin' ? A.coin(item.id)
-        : group === 'hats' ? A.customer(item.id)
-          : A.confettiSample(item.id);
+    const art = STYLE_ART[group](item.id);
     return '<button type="button" class="style-tile' + (on ? ' on' : '') + '" data-group="' + group + '" data-style="' + item.id + '"' +
         (got ? '' : ' disabled') + ' aria-pressed="' + on + '">' +
       '<span class="style-art">' + art + '</span><span class="style-name">' + item.name + '</span>' +
@@ -996,10 +1021,14 @@
     name.addEventListener('change', save);
     box.querySelectorAll('.style-tile').forEach(function (b) {
       b.addEventListener('click', function () {
-        if (!G.setStyle(state, b.getAttribute('data-group'), b.getAttribute('data-style'))) return;
+        const group = b.getAttribute('data-group'), id = b.getAttribute('data-style');
+        if (!G.setStyle(state, group, id)) return;
         Sound.play('tap');
         applyStyle();
-        renderCustomize();
+        // Storefronts also repaint the Sprinkle Street pictures below.
+        if (group === 'front') renderSprinkles(); else renderCustomize();
+        const again = $('.style-tile[data-group="' + group + '"][data-style="' + id + '"]');
+        if (again) again.focus({ preventScroll: true });
         afterChange();
         save();
       });
@@ -1008,9 +1037,14 @@
 
   // Put the chosen customizations on screen.
   function applyStyle() {
-    document.documentElement.setAttribute('data-sky', G.activeStyle(state, 'sky'));
+    const root = document.documentElement;
+    root.setAttribute('data-sky', G.activeStyle(state, 'sky'));
+    root.setAttribute('data-ui', G.activeStyle(state, 'ui'));
+    root.setAttribute('data-border', G.activeStyle(state, 'border'));
     A.setCoinStyle(G.activeStyle(state, 'coin'));
+    A.setFrontStyle(G.activeStyle(state, 'front'));
     Scene.setHats(G.activeStyle(state, 'hats'));
+    Scene.setVehicles(G.activeStyle(state, 'vehicle'));
     $('#purseCoin').innerHTML = A.coin();
     setText($('.brand'), state.townName || 'Sprinkle Town');
   }
@@ -1261,10 +1295,16 @@
     setBadge('sprinkles', gain >= Math.max(10, state.sprinkles) ? '!' : 0);
     setBadge('more', unseenTrophies);
     setBadge('town', goalsReady);
-    const openable = G.BUSINESSES.filter(function (b, i) { return isStreet(i) && G.canOpen(state, i); }).length;
-    const streetBadge = $('#street-sprinkle .badge');
-    streetBadge.hidden = !openable || district === 'sprinkle';
-    setText(streetBadge, String(openable));
+    // Each street's button counts what you could open there right now: unlocked
+    // Sprinkle Street shops, or the next Main Street or Boardwalk lot once you can afford it.
+    DISTRICTS.forEach(function (d) {
+      const openable = G.BUSINESSES.filter(function (b, i) {
+        return b.street === d && G.canOpen(state, i) && (d === 'sprinkle' || state.coins >= G.costFor(i, 0, 1, state));
+      }).length;
+      const badge = $('#street-' + d + ' .badge');
+      badge.hidden = !openable || district === d;
+      setText(badge, String(openable));
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -1527,6 +1567,7 @@
       });
     });
     $('#districtIcon').innerHTML = A.sprinkle();
+    $('#walkIcon').innerHTML = A.product('surf');
     $('#muteBtn').addEventListener('click', function () { setSound(!state.settings.sound); });
     $('#sprinkleChip').addEventListener('click', function () { showTab('sprinkles'); });
 

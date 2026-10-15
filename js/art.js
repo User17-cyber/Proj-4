@@ -327,6 +327,64 @@
         '<path d="M18 50L50 16L82 50z" fill="' + c.a1 + '"/><path d="M50 16L38 50h10zM50 16L60 50h10z" fill="' + c.a2 + '" stroke="none"/>' +
         '<path d="M18 50L50 16L82 50z" fill="none"/>' + sign(id, 38, 58, 24);
     },
+    // Boardwalk styles
+    tiki: function (c, id) {
+      let fringe = 'M8 50';
+      for (let x = 8; x < 92; x += 7) fringe += 'l3.5 8l3.5-8';
+      return shadow +
+        '<rect x="20" y="50" width="7" height="36" fill="#A0643C"/><rect x="73" y="50" width="7" height="36" fill="#A0643C"/>' +
+        '<rect x="14" y="58" width="72" height="22" rx="3" fill="' + c.body + '"/>' +
+        '<path d="M26 58v22M38 58v22M50 58v22M62 58v22M74 58v22" fill="none" stroke="#FFFFFF" stroke-width="2" opacity=".55"/>' +
+        '<rect x="14" y="58" width="72" height="22" rx="3" fill="none"/>' +
+        '<path d="M6 50L50 12L94 50z" fill="' + c.roof + '"/><path d="' + fringe + 'z" fill="' + c.roof + '"/>' +
+        '<path d="M28 40l8-10M44 44l6-12M64 40l-6-10" fill="none" stroke="#FFFFFF" stroke-width="2" opacity=".5"/>' +
+        sign(id, 37, 24, 26) + sign(id, 42, 61, 16);
+    },
+    ferris: function (c, id) {
+      let spokes = '', cars = '';
+      for (let k = 0; k < 8; k++) {
+        const a = k * Math.PI / 4, x = (50 + Math.cos(a) * 34).toFixed(1), y = (40 + Math.sin(a) * 34).toFixed(1);
+        spokes += 'M50 40L' + x + ' ' + y;
+        cars += '<rect x="' + (x - 6) + '" y="' + y + '" width="12" height="10" rx="3" fill="' + (k % 2 ? c.c1 : c.c2) + '" stroke-width="2.5"/>';
+      }
+      return shadow + '<path d="M50 40L30 86M50 40L70 86" fill="none" stroke-width="6"/><path d="M50 40L30 86M50 40L70 86" fill="none" stroke="#FFFFFF" stroke-width="2"/>' +
+        '<path d="' + spokes + '" fill="none" stroke-width="2"/>' +
+        '<circle cx="50" cy="40" r="34" fill="none" stroke-width="9"/><circle cx="50" cy="40" r="34" fill="none" stroke="' + c.rim + '" stroke-width="4"/>' +
+        cars + '<circle cx="50" cy="40" r="11" fill="#FFFFFF"/>' + sign(id, 42, 32, 16) +
+        '<rect x="36" y="70" width="28" height="16" rx="3" fill="' + c.booth + '"/>' + awning(34, 66, 32, 7, 4, c.rim, '#FFFFFF');
+    },
+    dome: function (c, id) {
+      return shadow + '<rect x="10" y="60" width="80" height="26" rx="3" fill="' + c.body + '"/>' +
+        (c.antenna ? '<path d="M50 26V12" fill="none"/><circle cx="50" cy="10" r="4.5" fill="#FF5FA2"/>' : '') +
+        '<path d="M16 60a34 34 0 0 1 68 0z" fill="' + c.dome + '"/>' + sign(id, 35, 31, 30) +
+        '<path d="M50 26v34M33 31q8 14 6 29M67 31q-8 14-6 29" fill="none" stroke="#FFFFFF" stroke-width="2" opacity=".7"/>' +
+        '<path d="M16 60a34 34 0 0 1 68 0z" fill="none"/><path d="M25 44q3-9 12-13" fill="none" stroke="#FFFFFF" stroke-width="4"/>' +
+        (c.ring ? '<ellipse cx="50" cy="60" rx="45" ry="7" fill="' + c.ring + '"/><circle cx="20" cy="60" r="2.5" fill="#FFE14D"/><circle cx="35" cy="62" r="2.5" fill="#FFE14D"/>' +
+          '<circle cx="50" cy="63" r="2.5" fill="#FFE14D"/><circle cx="65" cy="62" r="2.5" fill="#FFE14D"/><circle cx="80" cy="60" r="2.5" fill="#FFE14D"/>' : '') +
+        '<rect x="42" y="68" width="16" height="18" rx="2" fill="' + c.door + '"/>' +
+        '<circle cx="24" cy="75" r="5" fill="#9BE7FF"/><circle cx="76" cy="75" r="5" fill="#9BE7FF"/>';
+    },
+    lighthouse: function (c, id) {
+      return shadow + '<path d="M60 16L96 6v22z" fill="#FFF07A" opacity=".7" stroke="none"/>' +
+        '<path d="M36 86L40 30h20l4 56z" fill="#FFFFFF"/>' +
+        '<path d="M39 44h22l.7 10h-23.4zM37.6 64h24.8l.7 10h-26.2z" fill="' + c.stripe + '" stroke="none"/>' +
+        '<path d="M36 86L40 30h20l4 56z" fill="none"/>' +
+        '<rect x="42" y="14" width="16" height="14" rx="2" fill="#FFF07A"/><path d="M38 14L50 2L62 14z" fill="' + c.trim + '"/>' +
+        '<rect x="34" y="27" width="32" height="6" rx="2" fill="' + c.trim + '"/>' +
+        '<path d="M45 86V77a5 5 0 0 1 10 0v9z" fill="#8B4A2B"/>' +
+        '<rect x="62" y="62" width="30" height="24" rx="2" fill="' + c.body + '"/>' + awning(60, 58, 34, 8, 4, c.a1, '#FFFFFF') + sign(id, 68, 66, 18) +
+        '<rect x="8" y="70" width="22" height="16" rx="2" fill="' + c.body + '"/><rect x="13" y="74" width="12" height="8" rx="2" fill="#9BE7FF"/>';
+    },
+    factory: function (c, id) {
+      return shadow +
+        '<rect x="68" y="12" width="12" height="36" fill="' + c.chimney + '"/><path d="M68 22h12M68 32h12" fill="none" stroke="' + c.stripe + '" stroke-width="4"/>' +
+        '<rect x="68" y="12" width="12" height="36" fill="none"/><rect x="65" y="8" width="18" height="6" rx="2" fill="' + c.chimney + '"/>' +
+        '<path d="M10 46V28l18 18V28l18 18V28l18 18z" fill="' + c.roof + '"/>' +
+        '<rect x="10" y="46" width="80" height="40" fill="' + c.body + '"/>' +
+        '<rect x="16" y="54" width="14" height="11" rx="2" fill="#9BE7FF"/><rect x="36" y="54" width="14" height="11" rx="2" fill="#9BE7FF"/>' +
+        '<rect x="18" y="70" width="30" height="16" fill="' + c.door + '"/><path d="M18 75h30M18 80h30" fill="none" stroke-width="2"/>' +
+        sign(id, 58, 52, 28);
+    },
   };
 
   // Building style and colors for each Sprinkle Street shop.
@@ -351,12 +409,106 @@
     pirate:      ['boat',       { hull: '#8B4A2B', cabin: '#C98B4F', mast: true, flag: '#2B2147' }],
     dragon:      ['castle',     { wall: '#FF8A65', tower: '#FF6B6B', roof: '#5ED38A', flag: '#FFE14D' }],
     unicorn:     ['castle',     { wall: '#FFF0F6', tower: '#E4DBFF', roof: '#FF8FC7', flag: '#C77DFF' }],
+    // Boardwalk
+    shaveice:    ['tiki',       { body: '#A6E9FF', roof: '#F6C177' }],
+    hotdog:      ['stall',      { body: '#FFD23F', a1: '#FF6B6B', a2: '#FFFFFF', roof: '#FF6B6B' }],
+    pretzel:     ['cart',       { body: '#E8A25B', roof: '#FF5A5F', wheel: '#FFD23F' }],
+    surf:        ['tiki',       { body: '#5EE6C8', roof: '#E8B97A' }],
+    taffy:       ['factory',    { body: '#FFD6EC', roof: '#FF8FC7', chimney: '#FFFFFF', stripe: '#FF5FA2', door: '#8C6CFF' }],
+    fishchips:   ['boat',       { hull: '#4C5FA8', cabin: '#FFF3D6' }],
+    ferris:      ['ferris',     { rim: '#FF5FA2', c1: '#FFD23F', c2: '#4CC9F0', booth: '#FFF3D6' }],
+    carousel:    ['tent',       { a1: '#FFB627', a2: '#FFFFFF', flag: '#FF5FA2' }],
+    aquarium:    ['dome',       { body: '#4CC9F0', dome: '#BDEBFF', door: '#FFD23F' }],
+    lighthouse:  ['lighthouse', { stripe: '#FF5A5F', trim: '#4C5FA8', body: '#FFF3D6', a1: '#FF5A5F' }],
+    kites:       ['factory',    { body: '#DDE8FF', roof: '#5B8CFF', chimney: '#FFD23F', stripe: '#FF5FA2', door: '#FF9F43' }],
+    sandcastle:  ['castle',     { wall: '#F6D7A7', tower: '#FFE3A3', roof: '#E8A25B', flag: '#4CC9F0' }],
+    duckboats:   ['boat',       { hull: '#FFD23F', cabin: '#FFFFFF', mast: true, flag: '#FF9F43' }],
+    circus:      ['tent',       { a1: '#FF5A5F', a2: '#FFFFFF', flag: '#FFD23F' }],
+    fireworks:   ['stall',      { body: '#4A3F8F', a1: '#FF5FA2', a2: '#FFD23F', roof: '#8C6CFF' }],
+    funhouse:    ['castle',     { wall: '#8A82B8', tower: '#6B5BAE', roof: '#3E3A55', flag: '#3DDC97' }],
+    bumper:      ['dome',       { body: '#FF9F43', dome: '#FFE3A3', door: '#5B8CFF' }],
+    pearl:       ['storefront', { body: '#F3EEFF', a1: '#B07DFF', a2: '#FFFFFF', door: '#4CC9F0' }],
+    jellybean:   ['factory',    { body: '#E3FFD6', roof: '#3DDC97', chimney: '#FF5FA2', stripe: '#FFFFFF', door: '#FFD23F' }],
+    planetarium: ['dome',       { body: '#5B4BB7', dome: '#8FA8FF', door: '#FFD23F', antenna: true }],
+    mermaid:     ['castle',     { wall: '#7FE0D0', tower: '#B8F2E6', roof: '#FF8FC7', flag: '#FFD23F' }],
+    ufo:         ['dome',       { body: '#6B5BAE', dome: '#C9F7FF', door: '#FF5FA2', ring: '#C9C3E6' }],
+    balloonport: ['museum',     { body: '#FFF3D6', roof: '#FF9F43' }],
+    dreampalace: ['castle',     { wall: '#E9D5FF', tower: '#C9B6FF', roof: '#FFC93C', flag: '#FF8FC7' }],
   };
 
-  function shop(id) {
-    if (SHOPS[id]) return svg(SHOPS[id](), '');
-    const art = STREET_ART[id];
-    return svg(BUILDINGS[art[0]](art[1], id), '');
+  // ---------------------------------------------------------------------------
+  // Storefront looks (a Customization): repaint a whole building drawing by
+  // mapping every color in it. shop() draws the look in use.
+  // ---------------------------------------------------------------------------
+  function rgb(hex) { const n = parseInt(hex.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
+  function toHex(c) {
+    return '#' + c.map(function (v) { return ('0' + Math.round(Math.max(0, Math.min(255, v))).toString(16)).slice(-2); }).join('').toUpperCase();
+  }
+  function blend(a, b, t) { return a.map(function (v, k) { return v + (b[k] - v) * t; }); }
+  function lum(c) { return (0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]) / 255; }
+  // Piecewise-linear color ramp over brightness: stops are [at, [r, g, b]].
+  function ramp(stops, x) {
+    for (let k = 1; k < stops.length; k++) {
+      if (x <= stops[k][0]) return blend(stops[k - 1][1], stops[k][1], (x - stops[k - 1][0]) / (stops[k][0] - stops[k - 1][0]));
+    }
+    return stops[stops.length - 1][1];
+  }
+  // Each look maps one color; ink is the outline color, window is the light blue of the windows.
+  const FRONTS = {
+    classic: null,
+    pastel: function (c, ink) { return ink ? c : blend(c, [255, 255, 255], 0.5); },
+    gingerbread: function (c, ink) {
+      if (ink) return [92, 44, 22];
+      const L = lum(c);
+      return L > 0.8 ? [255, 250, 240] : ramp([[0, [122, 62, 29]], [0.8, [228, 160, 92]]], L);
+    },
+    frosty: function (c, ink) { return ink ? [47, 74, 122] : blend(c, [214, 242, 255], 0.55); },
+    neon: function (c, ink, window) {
+      if (ink) return [108, 246, 255];
+      if (window) return [255, 240, 122];
+      return blend(c, [34, 26, 72], 0.62);
+    },
+    gold: function (c, ink) { return ink ? c : ramp([[0, [138, 90, 0]], [0.55, [255, 201, 60]], [1, [255, 246, 201]]], lum(c)); },
+  };
+  let frontStyle = 'classic';
+  function setFrontStyle(style) { frontStyle = style in FRONTS ? style : 'classic'; }
+
+  function restyle(text, style) {
+    const f = FRONTS[style];
+    if (!f) return text;
+    return text.replace(/#[0-9A-Fa-f]{6}\b/g, function (h) {
+      const up = h.toUpperCase();
+      return toHex(f(rgb(up), up === INK, up === '#9BE7FF'));
+    });
+  }
+
+  // A shop or factory building, in the chosen storefront look (or the one given).
+  function shop(id, style) {
+    let out;
+    if (SHOPS[id]) out = svg(SHOPS[id](), '');
+    else out = svg(BUILDINGS[STREET_ART[id][0]](STREET_ART[id][1], id), '');
+    return restyle(out, style || frontStyle);
+  }
+
+  // A delivery van in one of the Trucks & Vans paint jobs, for previews.
+  function van(paint) {
+    const body = 'M8 34h52v34h-52z';
+    let fill;
+    if (paint === 'stripes') {
+      fill = '<clipPath id="vanStripes"><path d="' + body + '"/></clipPath><path d="' + body + '" fill="#FFFFFF" stroke="none"/>' +
+        '<path d="M0 74L34 24M18 74L52 24M36 74L70 24" fill="none" stroke="#FF5FA2" stroke-width="8" clip-path="url(#vanStripes)"/>';
+    } else if (paint === 'rainbow') {
+      fill = ['#FF5A5F', '#FFB627', '#FFE14D', '#3DDC97', '#4CC9F0', '#8C6CFF'].map(function (c, k) {
+        return '<rect x="8" y="' + (34 + k * 34 / 6).toFixed(1) + '" width="52" height="' + (34 / 6 + 0.3).toFixed(1) + '" fill="' + c + '" stroke="none"/>';
+      }).join('');
+    } else {
+      const c = paint === 'mint' ? '#5EE6B5' : paint === 'gold' ? '#FFD23F' : '#FF8FC7';
+      fill = '<path d="' + body + '" fill="' + c + '" stroke="none"/>' + (paint === 'gold' ? '<path d="M14 40l10 0M14 46l20 0" fill="none" stroke="#FFF6C9" stroke-width="4"/>' : '');
+    }
+    return svg(fill + '<path d="' + body + '" fill="none"/>' +
+      '<path d="M60 44h18q12 0 14 14v10h-32z" fill="#FFFFFF"/><path d="M66 48h10q6 0 8 8h-18z" fill="#9BE7FF"/>' +
+      '<circle cx="24" cy="70" r="9" fill="' + INK + '"/><circle cx="74" cy="70" r="9" fill="' + INK + '"/>' +
+      '<circle cx="24" cy="70" r="3" fill="#FFFFFF" stroke="none"/><circle cx="74" cy="70" r="3" fill="#FFFFFF" stroke="none"/>', '');
   }
 
   function mystery() {
@@ -547,6 +699,31 @@
       eyes(54) + '<path d="M35 51l-4-3M65 51l4-3" fill="none" stroke-width="2"/>' + cheeks + '<path d="M44 68q6 5 12 0" fill="none"/>';
   };
 
+  // Boardwalk animals.
+  ANIMALS.seal = function (c) {
+    return head(c) + eyes(50, 11) + cheeks +
+      '<circle cx="43" cy="65" r="8" fill="#F1F4FA"/><circle cx="57" cy="65" r="8" fill="#F1F4FA"/>' +
+      '<ellipse cx="50" cy="59" rx="5.5" ry="4" fill="' + INK + '"/>' +
+      '<circle cx="40" cy="65" r="1.2" fill="' + INK + '" stroke="none"/><circle cx="45" cy="68" r="1.2" fill="' + INK + '" stroke="none"/>' +
+      '<circle cx="60" cy="65" r="1.2" fill="' + INK + '" stroke="none"/><circle cx="55" cy="68" r="1.2" fill="' + INK + '" stroke="none"/>' +
+      '<path d="M30 64l-12 2M30 69l-11 5M70 64l12 2M70 69l11 5" fill="none" stroke-width="2"/>';
+  };
+  ANIMALS.octopus = function (c) {
+    return '<path d="M22 70q-6 18 6 22q4-10 10-6q4 12 12 6q8 6 12-6q6-4 10 6q12-4 6-22z" fill="' + c + '"/>' +
+      head(c) + '<circle cx="36" cy="38" r="5" fill="#FFFFFF" fill-opacity=".45" stroke="none"/><circle cx="62" cy="34" r="3.5" fill="#FFFFFF" fill-opacity=".45" stroke="none"/>' +
+      eyes(54) + cheeks + '<path d="M44 66q6 6 12 0" fill="none"/>';
+  };
+  ANIMALS.turtle = function (c) {
+    return '<path d="M6 100q2-30 44-30t44 30z" fill="#C98B4F"/><path d="M28 78l6 10h32l6-10M34 88l-6 12M66 88l6 12" fill="none" stroke-width="2.5"/>' +
+      head(c) + eyes(52) + cheeks + '<circle cx="46" cy="61" r="1.5" fill="' + INK + '" stroke="none"/><circle cx="54" cy="61" r="1.5" fill="' + INK + '" stroke="none"/>' +
+      '<path d="M40 66q10 8 20 0" fill="none"/>';
+  };
+  ANIMALS.crab = function (c) {
+    return '<path d="M18 58q-14-6-12-22q2-10 10-12l2 10l8-4q4 14-8 28z" fill="' + c + '"/><path d="M82 58q14-6 12-22q-2-10-10-12l-2 10l-8-4q-4 14 8 28z" fill="' + c + '"/>' +
+      '<path d="M22 74l-10 8M24 82l-8 10M78 74l10 8M76 82l8 10" fill="none" stroke-width="4"/>' +
+      '<ellipse cx="50" cy="60" rx="32" ry="26" fill="' + c + '"/>' + eyes(54, 11) + cheeks + '<path d="M42 68q8 7 16 0" fill="none"/>';
+  };
+
   // Accessories drawn over a face, sized for the standard round head.
   const ACCESSORIES = {
     bowtie: '<path d="M50 88l-14-8v16zM50 88l14-8v16z" fill="#FF5A5F"/><circle cx="50" cy="88" r="4" fill="#FF5A5F"/>',
@@ -565,10 +742,20 @@
     beanie: '<path d="M24 40a26 26 0 0 1 52 0z" fill="#FF5FA2"/><rect x="22" y="35" width="56" height="9" rx="4" fill="#FF8FC7"/><circle cx="50" cy="12" r="6" fill="#FFFFFF"/>',
     crown: '<path d="M30 34l-2-20l11 10l11-14l11 14l11-10l-2 20z" fill="#FFD23F"/><circle cx="50" cy="26" r="3" fill="#FF5FA2"/>',
     party: '<path d="M38 34L50 2L62 34z" fill="#8C6CFF"/><path d="M45 17h10M41 27h18" fill="none" stroke="#FFE14D" stroke-width="3"/><circle cx="50" cy="3" r="4" fill="#FF5FA2"/>',
+    sailor: '<path d="M32 32q0-18 18-18t18 18z" fill="#FFFFFF"/><path d="M22 36q2-10 8-8q20 6 40 0q6-2 8 8q-28 8-56 0z" fill="#FFFFFF"/>' +
+      '<path d="M30 33q20 5 40 0" fill="none" stroke="#4C5FA8" stroke-width="3"/>',
+    tophat: '<rect x="34" y="2" width="32" height="30" rx="2" fill="#3E3A55"/><rect x="34" y="20" width="32" height="7" fill="#FF5FA2" stroke="none"/>' +
+      '<rect x="34" y="2" width="32" height="30" rx="2" fill="none"/><rect x="20" y="29" width="60" height="7" rx="3.5" fill="#3E3A55"/>',
+    halo: '<ellipse cx="50" cy="14" rx="22" ry="7" fill="none" stroke-width="11"/><ellipse cx="50" cy="14" rx="22" ry="7" fill="none" stroke="#FFD23F" stroke-width="5"/>',
+    santa: '<path d="M30 34L58 2L72 34z" fill="#FF5A5F"/><circle cx="58" cy="4" r="6" fill="#FFFFFF"/><rect x="24" y="28" width="52" height="11" rx="5.5" fill="#FFFFFF"/>',
   };
 
-  function face(animal, color, acc) {
-    return svg((ANIMALS[animal] || ANIMALS.cat)(color) + (ACCESSORIES[acc] || ''), '');
+  // Accessories worn on top of the head. A Manager Hats look replaces these and keeps the rest (glasses, bow ties...).
+  const HEADWEAR = ['chef', 'tiara', 'bow', 'flower', 'wizard', 'pirate', 'cap', 'beanie', 'crown', 'party', 'sailor', 'tophat', 'halo', 'santa'];
+
+  function face(animal, color, acc, hat) {
+    const own = hat && HEADWEAR.indexOf(acc) >= 0 ? '' : ACCESSORIES[acc] || '';
+    return svg((ANIMALS[animal] || ANIMALS.cat)(color) + own + (ACCESSORIES[hat] || ''), '');
   }
 
   // ---------------------------------------------------------------------------
@@ -661,6 +848,80 @@
       '<path d="M22 52l10 6l8-8l10 8l8-6l10 6l8-4" fill="none" stroke-width="5"/>',
     unicorn: '<path d="M50 4L72 90H28z" fill="#FFD23F"/><path d="M36 70l28-12M40 50l20-9M45 30l10-5" fill="none" stroke="#FF8FC7" stroke-width="7"/>' +
       '<path d="M50 4L72 90H28z" fill="none"/>',
+    // Boardwalk
+    shaveice: '<path d="M24 52l26 42l26-42z" fill="#FFFFFF"/><path d="M36 60l14 24" fill="none" stroke="#4CC9F0" stroke-width="5"/>' +
+      '<circle cx="33" cy="44" r="15" fill="#FF5FA2"/><circle cx="67" cy="44" r="15" fill="#4CC9F0"/><circle cx="50" cy="30" r="18" fill="#FFE14D"/>',
+    hotdog: '<rect x="6" y="34" width="88" height="26" rx="13" fill="#FF6B6B"/>' +
+      '<path d="M22 44q5-6 10 0t10 0t10 0t10 0t10 0" fill="none" stroke="#FFE14D" stroke-width="5"/>' +
+      '<path d="M12 54q0 26 22 26h32q22 0 22-26z" fill="#F6B04E"/>',
+    pretzel: '<path d="M30 76C4 66 10 22 34 22C46 22 50 36 50 48C50 36 54 22 66 22C90 22 96 66 70 76M30 78L68 40M70 78L32 40" fill="none" stroke-width="22"/>' +
+      '<path d="M30 76C4 66 10 22 34 22C46 22 50 36 50 48C50 36 54 22 66 22C90 22 96 66 70 76M30 78L68 40M70 78L32 40" fill="none" stroke="#C98B4F" stroke-width="10"/>' +
+      '<circle cx="22" cy="40" r="2.5" fill="#FFFFFF" stroke="none"/><circle cx="78" cy="40" r="2.5" fill="#FFFFFF" stroke="none"/><circle cx="50" cy="60" r="2.5" fill="#FFFFFF" stroke="none"/>',
+    surf: '<g transform="rotate(30 50 50)"><path d="M50 2q22 30 15 76q-4 16-15 18q-11-2-15-18q-7-46 15-76z" fill="#2ED3A0"/>' +
+      '<path d="M50 12v78" fill="none" stroke="#FFFFFF" stroke-width="6"/><path d="M50 2q22 30 15 76q-4 16-15 18q-11-2-15-18q-7-46 15-76z" fill="none"/></g>',
+    taffy: '<path d="M6 30l26 12v16l-26 12z" fill="#FF8FC7"/><path d="M94 30l-26 12v16l26 12z" fill="#FF8FC7"/>' +
+      '<ellipse cx="50" cy="50" rx="24" ry="19" fill="#FFFFFF"/><path d="M36 36l12 28M52 32l12 28" fill="none" stroke="#FF5FA2" stroke-width="6"/>' +
+      '<ellipse cx="50" cy="50" rx="24" ry="19" fill="none"/>',
+    fishchips: '<rect x="28" y="14" width="9" height="34" rx="2" fill="#FFD23F"/><rect x="40" y="8" width="9" height="40" rx="2" fill="#FFD23F"/>' +
+      '<ellipse cx="66" cy="32" rx="16" ry="10" fill="#F6B04E" transform="rotate(-25 66 32)"/>' +
+      '<path d="M20 42l30 52l30-52z" fill="#FFFFFF"/><path d="M27 54h46M34 66h32" fill="none" stroke="#5B8CFF" stroke-width="5"/><path d="M20 42l30 52l30-52z" fill="none"/>',
+    ferris: '<g transform="rotate(-15 50 50)"><path d="M8 28h84v14a8 8 0 0 0 0 16v14h-84v-14a8 8 0 0 0 0-16z" fill="#FF5FA2"/>' +
+      '<path d="M30 34v32" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-dasharray="5 6"/><path d="' + star5(62, 50, 15, 6.5) + '" fill="#FFE14D" stroke-width="4"/></g>',
+    carousel: '<path d="M50 50v46" fill="none" stroke-width="8"/>' +
+      ['#FF5FA2', '#4CC9F0', '#FFE14D', '#3DDC97'].map(function (c, k) {
+        return '<path d="M50 50V10a20 20 0 0 1 20 20z" fill="' + c + '" transform="rotate(' + k * 90 + ' 50 50)"/>';
+      }).join('') + '<circle cx="50" cy="50" r="6" fill="#FFFFFF"/>',
+    aquarium: '<path d="M38 24h24q24 30 16 56q-6 14-28 14t-28-14q-8-26 16-56z" fill="#BDEBFF"/>' +
+      '<ellipse cx="46" cy="66" rx="14" ry="10" fill="#FF9F43"/><path d="M58 66l14-9v18z" fill="#FF9F43"/><circle cx="40" cy="63" r="2.5" fill="' + INK + '" stroke="none"/>' +
+      '<path d="M40 14l10 10l10-10" fill="none" stroke="#FF5FA2" stroke-width="6"/>',
+    lighthouse: '<path d="M36 22q-6-8 0-16M52 22q-6-8 0-16" fill="none" stroke-width="5"/>' +
+      '<rect x="14" y="32" width="54" height="58" rx="8" fill="#FF5A5F"/><path d="M68 46q18 0 18 14t-18 14" fill="none" stroke-width="9"/>' +
+      '<path d="M16 62h50" fill="none" stroke="#FFFFFF" stroke-width="6"/><rect x="14" y="32" width="54" height="58" rx="8" fill="none"/>' +
+      '<rect x="22" y="22" width="16" height="14" rx="3" fill="#FFFFFF"/><rect x="42" y="24" width="16" height="12" rx="3" fill="#FFFFFF"/>',
+    kites: '<path d="M50 78q-12 6-2 12t-6 10" fill="none" stroke-width="4"/><path d="M42 86l8-4l-2 9z" fill="#FF5FA2" stroke-width="3"/>' +
+      '<path d="M50 4L82 40L50 78L18 40z" fill="#5B8CFF"/><path d="M50 4L82 40L50 40z" fill="#FFE14D" stroke="none"/><path d="M50 40L18 40L50 78z" fill="#FFE14D" stroke="none"/>' +
+      '<path d="M50 4L82 40L50 78L18 40zM50 4V78M18 40H82" fill="none"/>',
+    sandcastle: '<path d="M24 34q2-14 14-10q8-14 22-6q14-6 16 16z" fill="#F6D7A7"/><path d="M24 36q26-36 52 0" fill="none" stroke-width="5"/>' +
+      '<path d="M20 34h60l-8 56h-44z" fill="#FF5FA2"/><path d="M23 50h54" fill="none" stroke="#FFFFFF" stroke-width="6"/><path d="M20 34h60l-8 56h-44z" fill="none"/>',
+    duckboats: '<ellipse cx="54" cy="66" rx="38" ry="24" fill="#FFD23F"/><circle cx="36" cy="36" r="20" fill="#FFD23F"/>' +
+      '<path d="M18 36q-16 2-14 9q8 5 18 0z" fill="#FF9F43"/><circle cx="34" cy="31" r="3.5" fill="' + INK + '" stroke="none"/>' +
+      '<path d="M50 62q16-10 30 4q-14 12-30-4z" fill="#FFE97A"/>',
+    circus: '<circle cx="30" cy="34" r="11" fill="#FFF7D6"/><circle cx="70" cy="34" r="11" fill="#FFF7D6"/><circle cx="50" cy="24" r="13" fill="#FFF0A6"/>' +
+      '<circle cx="40" cy="38" r="10" fill="#FFF0A6"/><circle cx="60" cy="38" r="10" fill="#FFF7D6"/>' +
+      '<path d="M20 42h60l-8 50h-44z" fill="#FFFFFF"/><path d="M33 42l3 50h11v-50zM55 42v50h11l3-50z" fill="#FF5A5F" stroke="none"/><path d="M20 42h60l-8 50h-44z" fill="none"/>',
+    fireworks: '<path d="M50 76v20" fill="none" stroke-width="5"/><path d="M38 62l-12 18h12zM62 62l12 18h-12z" fill="#4CC9F0"/>' +
+      '<rect x="38" y="30" width="24" height="48" rx="4" fill="#FF5FA2"/><path d="M40 50h20" fill="none" stroke="#FFFFFF" stroke-width="6"/>' +
+      '<rect x="38" y="30" width="24" height="48" rx="4" fill="none"/><path d="M36 32L50 4L64 32z" fill="#FFE14D"/>',
+    funhouse: '<path d="M20 90V44q0-32 30-32t30 32v46l-10-8l-10 8l-10-8l-10 8l-10-8z" fill="#FFFFFF"/>' +
+      '<ellipse cx="40" cy="46" rx="5" ry="7" fill="' + INK + '" stroke="none"/><ellipse cx="60" cy="46" rx="5" ry="7" fill="' + INK + '" stroke="none"/>' +
+      '<ellipse cx="50" cy="64" rx="6" ry="7" fill="' + INK + '" stroke="none"/><ellipse cx="32" cy="58" rx="5" ry="3" fill="#FF8FC7" stroke="none"/><ellipse cx="68" cy="58" rx="5" ry="3" fill="#FF8FC7" stroke="none"/>',
+    bumper: '<path d="M74 44V8" fill="none" stroke-width="5"/>' + sparkle(74, 10, 10, '#FFE14D').replace('stroke-width="2"', 'stroke-width="4"') +
+      '<rect x="50" y="22" width="18" height="26" rx="5" fill="#4CC9F0"/><rect x="10" y="40" width="80" height="32" rx="14" fill="#FF9F43"/>' +
+      '<rect x="4" y="64" width="92" height="16" rx="8" fill="' + INK + '"/><path d="M20 52h22" fill="none" stroke="#FFFFFF" stroke-width="6"/>',
+    pearl: '<path d="M16 38q34-50 68 0q-34-8-68 0z" fill="#FFB3D9"/><path d="M50 32L36 12M50 32V6M50 32L64 12" fill="none" stroke="#FFFFFF" stroke-width="4"/>' +
+      '<path d="M16 38q34-50 68 0q-34-8-68 0z" fill="none"/>' +
+      '<path d="M8 66q42-12 84 0q-42 40-84 0z" fill="#FF8FC7"/><path d="M30 74l4 8M50 72v12M70 74l-4 8" fill="none" stroke="#FFFFFF" stroke-width="4"/>' +
+      '<circle cx="50" cy="56" r="15" fill="#FFFFFF"/><path d="M42 51q3-5 9-6" fill="none" stroke="#DCD6EA" stroke-width="4"/>',
+    jellybean: '<rect x="26" y="10" width="48" height="14" rx="4" fill="#3DDC97"/><rect x="18" y="24" width="64" height="68" rx="14" fill="#E8FAFF"/>' +
+      [[34, 46, 20, '#FF5FA2'], [56, 42, -30, '#FFE14D'], [44, 62, 60, '#8C6CFF'], [66, 62, 10, '#FF9F43'], [34, 78, -20, '#4CC9F0'], [56, 80, 40, '#3DDC97']].map(function (b) {
+        return '<ellipse cx="' + b[0] + '" cy="' + b[1] + '" rx="9" ry="6" transform="rotate(' + b[2] + ' ' + b[0] + ' ' + b[1] + ')" fill="' + b[3] + '" stroke-width="3"/>';
+      }).join('') + '<rect x="18" y="24" width="64" height="68" rx="14" fill="none"/>',
+    planetarium: '<ellipse cx="50" cy="52" rx="44" ry="12" transform="rotate(-15 50 52)" fill="none" stroke-width="14"/>' +
+      '<ellipse cx="50" cy="52" rx="44" ry="12" transform="rotate(-15 50 52)" fill="none" stroke="#FFE14D" stroke-width="6"/>' +
+      '<circle cx="50" cy="50" r="26" fill="#8C6CFF"/><path d="M34 40q8-10 20-10" fill="none" stroke="#B9A4FF" stroke-width="5"/>' +
+      '<path d="M6 52a44 12 0 0 0 88 0" transform="rotate(-15 50 52)" fill="none" stroke-width="14"/>' +
+      '<path d="M6 52a44 12 0 0 0 88 0" transform="rotate(-15 50 52)" fill="none" stroke="#FFE14D" stroke-width="6"/>',
+    mermaid: '<path d="M50 92L10 42q0-30 40-34q40 4 40 34z" fill="#FF8FC7"/>' +
+      '<path d="M50 88L26 16M50 88V10M50 88L74 16" fill="none" stroke="#FFFFFF" stroke-width="4"/><path d="M50 92L10 42q0-30 40-34q40 4 40 34z" fill="none"/>',
+    ufo: '<circle cx="50" cy="38" r="9" fill="#9BE36D"/><path d="M50 29v-8" fill="none" stroke-width="4"/>' +
+      '<path d="M28 48a22 22 0 0 1 44 0z" fill="#C9F7FF" fill-opacity=".6"/><ellipse cx="50" cy="56" rx="44" ry="14" fill="#C9C3E6"/>' +
+      '<circle cx="26" cy="58" r="4" fill="#FFE14D" stroke-width="3"/><circle cx="50" cy="62" r="4" fill="#FFE14D" stroke-width="3"/><circle cx="74" cy="58" r="4" fill="#FFE14D" stroke-width="3"/>',
+    balloonport: '<path d="M40 76l2 10M60 76l-2 10" fill="none" stroke-width="4"/><rect x="36" y="84" width="28" height="12" rx="2" fill="#C98B4F"/>' +
+      '<path d="M50 4c24 0 36 16 36 32c0 18-20 30-26 42h-20c-6-12-26-24-26-42c0-16 12-32 36-32z" fill="#FF9F43"/>' +
+      '<path d="M50 6c-12 10-14 50-6 70M50 6c12 10 14 50 6 70" fill="none" stroke="#FFE14D" stroke-width="7"/>' +
+      '<path d="M50 4c24 0 36 16 36 32c0 18-20 30-26 42h-20c-6-12-26-24-26-42c0-16 12-32 36-32z" fill="none"/>',
+    dreampalace: '<path d="M60 8a42 42 0 1 0 30 62a34 34 0 1 1-30-62z" fill="#FFE14D"/>' +
+      sparkle(78, 22, 12, '#FFFFFF').replace('stroke-width="2"', 'stroke-width="4"') + sparkle(86, 50, 7, '#FFFFFF').replace('stroke-width="2"', 'stroke-width="3"'),
   };
 
   function product(id) {
@@ -784,5 +1045,6 @@
   }
 
   root.Art = { shop: shop, product: product, mystery: mystery, face: face, coin: coin, setCoinStyle: setCoinStyle,
+    setFrontStyle: setFrontStyle, van: van,
     customer: customer, confettiSample: confettiSample, sprinkle: sprinkle, sprinkleJar: sprinkleJar, trophy: trophy, crown: crown, balloon: balloon, icon: icon };
 })(this);

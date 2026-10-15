@@ -27,6 +27,10 @@
   // The Customer Hats customization: 'mixed' picks from HATS, anything else dresses everyone alike.
   let hatStyle = 'mixed';
   function setHats(style) { hatStyle = style || 'mixed'; }
+  // The Trucks & Vans customization: 'classic' paints them in the shop's own color.
+  let vehicleStyle = 'classic';
+  function setVehicles(style) { vehicleStyle = style || 'classic'; }
+  const RAINBOW = ['#FF5A5F', '#FFB627', '#FFE14D', '#3DDC97', '#4CC9F0', '#8C6CFF'];
   const GAP = 25;          // space between people in line
   const BRANCH = 40;       // spacing of the branch buildings behind the shop
   const reducedMotion = !!(root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -45,16 +49,17 @@
     return 'rgb(' + from.map(function (v, k) { return Math.round(v + (to[k] - v) * a); }).join(',') + ')';
   }
 
-  // The cartoon SVGs, turned into images the canvas can draw.
-  const images = {};
-  function image(key, svg) {
-    if (!images[key]) {
+  // The cartoon SVGs, turned into images the canvas can draw. Keyed by the
+  // drawing itself, so a restyled building or a manager in a new hat gets a new image.
+  const images = new Map();
+  function image(svg) {
+    if (!images.has(svg)) {
       const img = new Image();
       img.src = 'data:image/svg+xml;charset=utf-8,' +
         encodeURIComponent(svg.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" '));
-      images[key] = img;
+      images.set(svg, img);
     }
-    return images[key];
+    return images.get(svg);
   }
   function ready(img) { return !!img && img.complete && img.naturalWidth > 0; }
 
@@ -79,10 +84,10 @@
   function createLane(canvas, opts) {
     const ctx = canvas.getContext('2d');
     const factory = opts.kind === 'factory' && !opts.locked;
-    const shopImg = image('shop:' + opts.key, opts.shopSvg);
-    const productImg = opts.productSvg ? image('product:' + opts.key, opts.productSvg) : null;
-    const faceImg = opts.faceSvg ? image('face:' + opts.key, opts.faceSvg) : null;
-    const helperImg = opts.assistantSvg ? image('helper:' + opts.key, opts.assistantSvg) : null;
+    const shopImg = image(opts.shopSvg);
+    const productImg = opts.productSvg ? image(opts.productSvg) : null;
+    const faceImg = opts.faceSvg ? image(opts.faceSvg) : null;
+    const helperImg = opts.assistantSvg ? image(opts.assistantSvg) : null;
 
     let w = 0, h = 0, dpr = 1, lay = null;
     let bg = null, bgKey = '';
@@ -749,11 +754,7 @@
       if (ready(productImg)) {
         for (let k = 0; k < shown; k++) ctx.drawImage(productImg, x + 3 + k * 10, y - 31 - (k % 2) * 3, 14, 14);
       }
-      strokeStyle(2);
-      ctx.fillStyle = opts.bar;
-      roundRect(ctx, x, y - 20, 36, 15, 3);
-      ctx.fill();
-      ctx.stroke();
+      paintBody(x, y - 20, 36, 15);
       ctx.fillStyle = '#FFFFFF';
       roundRect(ctx, x + 35, y - 23, 15, 18, 4);
       ctx.fill();
@@ -992,14 +993,49 @@
       ctx.globalAlpha = 1;
     }
 
+    // A truck or van body in the chosen paint job, outlined.
+    function paintBody(x, y, bw, bh) {
+      strokeStyle(2);
+      roundRect(ctx, x, y, bw, bh, 3);
+      if (vehicleStyle === 'stripes' || vehicleStyle === 'rainbow') {
+        ctx.save();
+        ctx.clip();
+        if (vehicleStyle === 'stripes') {
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(x, y, bw, bh);
+          ctx.strokeStyle = '#FF5FA2';
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          for (let sx = x - bh; sx < x + bw + bh; sx += 10) { ctx.moveTo(sx, y + bh); ctx.lineTo(sx + bh, y); }
+          ctx.stroke();
+        } else {
+          RAINBOW.forEach(function (c, k) {
+            ctx.fillStyle = c;
+            ctx.fillRect(x, y + k * bh / RAINBOW.length, bw, bh / RAINBOW.length + 0.5);
+          });
+        }
+        ctx.restore();
+      } else if (vehicleStyle === 'gold') {
+        const g = ctx.createLinearGradient(x, y, x + bw, y + bh);
+        g.addColorStop(0, '#FFE97A');
+        g.addColorStop(0.45, '#FFC93C');
+        g.addColorStop(0.55, '#FFF3B0');
+        g.addColorStop(1, '#F5B700');
+        ctx.fillStyle = g;
+        ctx.fill();
+      } else {
+        ctx.fillStyle = vehicleStyle === 'mint' ? '#5EE6B5' : opts.bar;
+        ctx.fill();
+      }
+      strokeStyle(2);
+      roundRect(ctx, x, y, bw, bh, 3);
+      ctx.stroke();
+    }
+
     // A delivery van in the shop's color with its treat painted on the side.
     function drawVan(v) {
       const y = h - 4, x = v.x;
-      strokeStyle(2);
-      ctx.fillStyle = opts.bar;
-      roundRect(ctx, x, y - 19, 34, 15, 3);
-      ctx.fill();
-      ctx.stroke();
+      paintBody(x, y - 19, 34, 15);
       ctx.fillStyle = '#FFFFFF';
       roundRect(ctx, x + 33, y - 15, 13, 11, 4);
       ctx.fill();
@@ -1054,5 +1090,5 @@
     };
   }
 
-  root.Scene = { createLane: createLane, setHats: setHats };
+  root.Scene = { createLane: createLane, setHats: setHats, setVehicles: setVehicles };
 })(this);
