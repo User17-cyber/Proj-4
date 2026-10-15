@@ -33,6 +33,49 @@
     { id: 'star',     name: 'Star Factory',      cost: 7.5e16, rate: 1.07, time: 8748, rev: 6.6e15, tile: '#2E2A5A', bar: '#FFC93C', kind: 'factory', night: true },
   ];
 
+  // Sprinkle Street: shops that unlock once you hold enough golden sprinkles
+  // (need). Sprinkles are never spent, so they stay unlocked through every Grand
+  // Reopening; you still open them with coins each run. Prices are spread over
+  // the whole game, and each earns about 1.5x a Main Street shop at its price.
+  //  id, name, sprinkles needed, tile, bar color, night sky
+  const STREET = [
+    ['cupcake',     'Cupcake Corner',    1,    '#FFE3F1', '#FF8FC7'],
+    ['bubbletea',   'Bubble Tea Bar',    5,    '#E3F9EE', '#3DDC97'],
+    ['cottoncandy', 'Cotton Candy Cart', 15,   '#F1E8FF', '#C77DFF'],
+    ['popsicle',    'Popsicle Stand',    30,   '#DDF4FF', '#4CC9F0'],
+    ['pancake',     'Pancake House',     50,   '#FFEED6', '#E89B4A'],
+    ['taco',        'Taco Truck',        75,   '#FFF6CC', '#FFB627'],
+    ['sushi',       'Sushi Boat',        100,  '#DDF1FF', '#FF6B6B'],
+    ['cookie',      'Cookie Castle',     150,  '#FCE9D6', '#C98B4F'],
+    ['waffle',      'Waffle Windmill',   200,  '#FFF4D6', '#F6B04E'],
+    ['pets',        'Pet Parlor',        300,  '#E4F1FF', '#5B8CFF'],
+    ['flowers',     'Flower Shop',       400,  '#EFFFF4', '#FF5FA2'],
+    ['comics',      'Comic Book Store',  550,  '#FFF8DC', '#FF5A5F'],
+    ['arcade',      'Pixel Arcade',      750,  '#2E2A5A', '#FF5FA2', true],
+    ['music',       'Music Shop',        1000, '#EDE7FF', '#8C6CFF'],
+    ['skate',       'Skate Shop',        1400, '#FFE8D6', '#FF9F43'],
+    ['magic',       'Magic Shop',        1900, '#EFE6FF', '#8C6CFF'],
+    ['dino',        'Dino Museum',       2600, '#EAF7DD', '#3DDC97'],
+    ['pirate',      'Pirate Cove',       3500, '#DDF1FF', '#A0643C'],
+    ['dragon',      'Dragon Bakery',     5000, '#FFE3DA', '#FF6B6B'],
+    ['unicorn',     'Unicorn Castle',    7500, '#FCEBFF', '#C77DFF'],
+  ];
+  const MAIN_COUNT = BUSINESSES.length;
+
+  // Round to two significant digits so prices read nicely.
+  function sig2(v) { return Number(v.toPrecision(2)); }
+
+  STREET.forEach(function (row, j) {
+    const cost = 150 * Math.pow(6.8, j);
+    const time = Math.round(2 * Math.pow(1.5, j));
+    // Main Street earns about 0.25 * (price / 4)^-0.28 coins per second per coin spent.
+    const perCoin = 1.5 * 0.25 * Math.pow(cost / 4, -0.279);
+    BUSINESSES.push({
+      id: row[0], name: row[1], need: row[2], tile: row[3], bar: row[4], night: !!row[5],
+      cost: sig2(cost), rate: Math.max(1.07, 1.12 - 0.003 * j), time: time, rev: sig2(perCoin * time * cost),
+    });
+  });
+
   // Owning this many of a shop makes it twice as fast, each time.
   const MILESTONES = [10, 25, 50, 100, 150, 200, 300, 400, 500, 750, 1000];
 
@@ -54,7 +97,32 @@
     { name: 'Ellie Elephant', animal: 'elephant', color: '#9DB4D9', cost: 2.1e15 },
     { name: 'Rocco Raccoon',  animal: 'raccoon',  color: '#A3A3B5', cost: 2.5e16 },
     { name: 'Shelly Sheep',   animal: 'sheep',    color: '#F3DCC2', cost: 3e17 },
+    // Sprinkle Street (acc: an accessory drawn on the face)
+    { name: 'Coco Cow',        animal: 'cow',      color: '#FFFFFF' },
+    { name: 'Momo Monkey',     animal: 'monkey',   color: '#A9744F' },
+    { name: 'Hattie Hamster',  animal: 'hamster',  color: '#F4B07A' },
+    { name: 'Pip Penguin',     animal: 'penguin',  color: '#4C5FA8', acc: 'bowtie' },
+    { name: 'Chef Bruno',      animal: 'bear',     color: '#B07A4F', acc: 'chef' },
+    { name: 'Tico Tiger',      animal: 'tiger',    color: '#FF9F43' },
+    { name: 'Captain Quack',   animal: 'duck',     color: '#FFE14D' },
+    { name: 'Duchess Kitty',   animal: 'cat',      color: '#C9B6FF', acc: 'tiara' },
+    { name: 'Henny Hedgehog',  animal: 'hedgehog', color: '#F3D3B0' },
+    { name: 'Daisy Dog',       animal: 'dog',      color: '#F3D3B0', acc: 'bow' },
+    { name: 'Bella Bunny',     animal: 'bunny',    color: '#FFE3F1', acc: 'flower' },
+    { name: 'Max Raccoon',     animal: 'raccoon',  color: '#A3A3B5', acc: 'glasses' },
+    { name: 'Pixel Panda',     animal: 'panda',    color: '#FFFFFF', acc: 'headphones' },
+    { name: 'Funky Fox',       animal: 'fox',      color: '#FF8A3D', acc: 'shades' },
+    { name: 'Gigi Giraffe',    animal: 'giraffe',  color: '#FFD27A' },
+    { name: 'Merlin Owl',      animal: 'owl',      color: '#8A6BBE', acc: 'wizard' },
+    { name: 'Professor Frog',  animal: 'frog',     color: '#6BD86B', acc: 'bowtie' },
+    { name: 'Peg-Leg Pig',     animal: 'pig',      color: '#FFB3C8', acc: 'pirate' },
+    { name: 'Ember Dragon',    animal: 'dragon',   color: '#5ED38A' },
+    { name: 'Sparkle Unicorn', animal: 'unicorn',  color: '#FFFFFF' },
   ];
+  // Sprinkle Street managers cost ten times their shop's price for the first five, then five times.
+  MANAGERS.forEach(function (m, i) {
+    if (m.cost === undefined) m.cost = sig2(BUSINESSES[i].cost * (i - MAIN_COUNT < 5 ? 10 : 5));
+  });
 
   // ---------------------------------------------------------------------------
   // Upgrades: each one triples a shop's profit (or every shop's, for town-wide).
@@ -76,6 +144,26 @@
     robot:    ['Shiny Bolts', 'Dancing Robots', 'Robot Helpers', 'Mega Mech Line'],
     rainbow:  ['Brighter Colors', 'Double Rainbows', 'Pot of Gold', 'Rainbow Pipeline'],
     star:     ['Twinkle Polish', 'Wishing Stars', 'Shooting Star Cannon', 'Galaxy Assembly'],
+    cupcake:     ['Rainbow Frosting', 'Sprinkle Shower', 'Cupcake Towers', 'Cupcake Fountain'],
+    bubbletea:   ['Extra Pearls', 'Rainbow Jellies', 'Giant Straws', 'Bubble Tea Fountain'],
+    cottoncandy: ['Fluffier Fluff', 'Glitter Sugar', 'Cloud Machines', 'Cotton Candy Sky'],
+    popsicle:    ['Double Sticks', 'Fizzy Pops', 'Rainbow Layers', 'Snowcone Volcano'],
+    pancake:     ['Fluffy Batter', 'Maple Rivers', 'Tall Stacks', 'Flip-o-Matic'],
+    taco:        ['Crunchy Shells', 'Secret Salsa', 'Taco Tuesdays', 'Fiesta Parade'],
+    sushi:       ['Fresh Rolls', 'Rainbow Rolls', 'Sushi Conveyor', 'Sushi Submarine'],
+    cookie:      ['Extra Chips', 'Cookie Moat', 'Royal Recipe', 'Cookie Cannons'],
+    waffle:      ['Crispy Edges', 'Syrup Streams', 'Waffle Towers', 'Breeze Power'],
+    pets:        ['Bubble Baths', 'Fancy Bows', 'Doggy Day Spa', 'Pet Talent Show'],
+    flowers:     ['Sunny Seeds', 'Rainbow Roses', 'Flower Crowns', 'Blooming Garden'],
+    comics:      ['Shiny Covers', 'Superhero Signings', 'Collector Editions', 'Comic Convention'],
+    arcade:      ['Extra Lives', 'Neon Lights', 'High Score Board', 'Mega Jackpot'],
+    music:       ['Tuned Strings', 'Drum Solos', 'Rock Concert', 'Golden Records'],
+    skate:       ['Grippy Wheels', 'Big Ramps', 'Half-Pipe', 'Skate Championship'],
+    magic:       ['Bunny in a Hat', 'Disappearing Act', 'Spell Books', 'Grand Illusion'],
+    dino:        ['Fossil Dig', 'Roaring Robots', 'T-Rex Hall', 'Time Machine'],
+    pirate:      ['Treasure Maps', 'Parrot Pals', 'Cannon Fireworks', 'Ghost Ship'],
+    dragon:      ['Fire-Baked Bread', 'Dragon Scale Tarts', 'Baby Dragons', 'Dragon Mountain'],
+    unicorn:     ['Glitter Horns', 'Rainbow Bridges', 'Flying Unicorns', 'Magic Kingdom'],
   };
   const UPGRADE_TIER_COST = [400, 4e5, 4e9, 4e14]; // times the shop's first price
 
@@ -108,8 +196,11 @@
   // ---------------------------------------------------------------------------
   const SPRINKLE_BONUS = 0.02;   // +2% profit per sprinkle
   const TROPHY_BONUS = 0.01;     // +1% profit per trophy
-  const SPRINKLE_SCALE = 10;     // sprinkles = SCALE * sqrt(lifetime coins / BASE)
-  const SPRINKLE_BASE = 1e11;
+  // A Grand Reopening pays SCALE * (digits of this run's coins past BASE)^2
+  // sprinkles, and they add up run after run. Paying for each run, rather than
+  // for lifetime coins, keeps the +2%-per-sprinkle bonus from snowballing.
+  const SPRINKLE_SCALE = 3;
+  const SPRINKLE_BASE = 1e8;
   const OFFLINE_CAP = 8 * 3600;  // seconds of away-time that managers get paid for
   const RUSH_SECONDS = 30;       // how long a Sugar Rush (triple profit) lasts
 
@@ -143,8 +234,8 @@
     { id: 'million',     name: 'Millionaire',    desc: 'Earn 1M coins in one run',             test: function (s) { return s.runEarned >= 1e6; } },
     { id: 'upgrades10',  name: 'Upgrade Fan',    desc: 'Buy 10 upgrades',                      test: function (s) { return Object.keys(s.upgrades).length >= 10; } },
     { id: 'billion',     name: 'Billionaire',    desc: 'Earn 1B coins in one run',             test: function (s) { return s.runEarned >= 1e9; } },
-    { id: 'staff',       name: 'Full Staff',     desc: 'Hire every manager',                   test: function (s) { return s.managers.every(Boolean); } },
-    { id: 'shops10',     name: 'Town Complete',  desc: 'Open every shop and factory',          test: function (s) { return openCount(s) >= BUSINESSES.length; } },
+    { id: 'staff',       name: 'Full Staff',     desc: 'Hire every Main Street manager',       test: function (s) { return s.managers.slice(0, MAIN_COUNT).every(Boolean); } },
+    { id: 'shops10',     name: 'Town Complete',  desc: 'Open every Main Street shop and factory', test: function (s) { return s.biz.slice(0, MAIN_COUNT).every(function (b) { return b.owned > 0; }); } },
     { id: 'reopen',      name: 'Fresh Start',    desc: 'Hold a Grand Reopening',               test: function (s) { return s.stats.reopenings >= 1; } },
     { id: 'balloon25',   name: 'Balloon Pro',    desc: 'Pop 25 lucky balloons',                test: function (s) { return s.stats.balloons >= 25; } },
     { id: 'mega',        name: 'Mega Chain',     desc: 'Own 500 of any shop',                  test: function (s) { return maxOwned(s) >= 500; } },
@@ -152,7 +243,7 @@
     { id: 'sprinkles100', name: 'Sprinkle Hoard', desc: 'Collect 100 golden sprinkles',        test: function (s) { return s.sprinkles >= 100; } },
     { id: 'galaxy',      name: 'Coin Galaxy',    desc: 'Earn 1Qa coins in one run',            test: function (s) { return s.runEarned >= 1e15; } },
     { id: 'factories4',  name: 'Smokestack City', desc: 'Open 4 factories',                    test: function (s) { return factoryCount(s) >= 4; } },
-    { id: 'starmaker',   name: 'Star Maker',     desc: 'Open the Star Factory',                test: function (s) { return s.biz[BUSINESSES.length - 1].owned > 0; } },
+    { id: 'starmaker',   name: 'Star Maker',     desc: 'Open the Star Factory',                test: function (s) { return s.biz[indexOf('star')].owned > 0; } },
     { id: 'vip1',        name: 'VIP Treatment',  desc: 'Collect a tip from a VIP visitor',     test: function (s) { return s.stats.vips >= 1; } },
     { id: 'goals10',     name: 'Goal Getter',    desc: 'Complete 10 Town Goals',               test: function (s) { return s.stats.goalsDone >= 10; } },
     { id: 'allstar',     name: 'All-Star',       desc: 'Buy all 4 upgrades for one shop',      test: function (s) { return BUSINESSES.some(function (b, i) { return shopMult(s, i) >= 81; }); } },
@@ -161,9 +252,14 @@
     { id: 'vip25',       name: 'Red Carpet',     desc: 'Collect 25 VIP tips',                  test: function (s) { return s.stats.vips >= 25; } },
     { id: 'goals50',     name: 'Goal Machine',   desc: 'Complete 50 Town Goals',               test: function (s) { return s.stats.goalsDone >= 50; } },
     { id: 'allPerks',    name: 'Sprinkle Royalty', desc: 'Unlock every Sprinkle Perk',         test: function (s) { return perkCount(s) >= PERKS.length; } },
+    { id: 'street1',     name: 'Sprinkle Street', desc: 'Open a Sprinkle Street shop',         test: function (s) { return streetOpen(s) >= 1; } },
+    { id: 'street10',    name: 'Sweet Street',   desc: 'Open 10 Sprinkle Street shops in one run', test: function (s) { return streetOpen(s) >= 10; } },
+    { id: 'unicorn',     name: 'Unicorn Royalty', desc: 'Open the Unicorn Castle',             test: function (s) { return s.biz[indexOf('unicorn')].owned > 0; } },
   ];
 
   function openCount(s) { return s.biz.filter(function (b) { return b.owned > 0; }).length; }
+  function streetOpen(s) { return s.biz.slice(MAIN_COUNT).filter(function (b) { return b.owned > 0; }).length; }
+  function indexOf(id) { return BUSINESSES.findIndex(function (b) { return b.id === id; }); }
   function factoryCount(s) { return s.biz.filter(function (b, i) { return b.owned > 0 && BUSINESSES[i].kind === 'factory'; }).length; }
   function maxOwned(s) { return s.biz.reduce(function (m, b) { return Math.max(m, b.owned); }, 0); }
 
@@ -230,9 +326,19 @@
     return Number(s.buyMode) || 1;
   }
 
+  // Main Street opens in order; Sprinkle Street shops need enough golden sprinkles.
+  function isUnlocked(s, i) {
+    const b = BUSINESSES[i];
+    if (b.need) return s.sprinkles >= b.need;
+    return i === 0 || s.biz[i - 1].owned > 0;
+  }
+
+  function canOpen(s, i) { return s.biz[i].owned < 1 && isUnlocked(s, i); }
+
   function buy(s, i, n) {
     const cost = costFor(i, s.biz[i].owned, n, s);
     if (n < 1 || cost > s.coins) return false;
+    if (s.biz[i].owned < 1 && !isUnlocked(s, i)) return false;
     s.coins -= cost;
     s.biz[i].owned += n;
     return true;
@@ -386,25 +492,26 @@
   // ---------------------------------------------------------------------------
   // Grand Reopening
   // ---------------------------------------------------------------------------
-  function sprinklesForLifetime(coins) {
-    return Math.floor(SPRINKLE_SCALE * Math.sqrt(Math.max(0, coins) / SPRINKLE_BASE));
+  function sprinklesForRun(coins) {
+    if (!(coins > SPRINKLE_BASE)) return 0;
+    return Math.floor(SPRINKLE_SCALE * Math.pow(Math.log10(coins / SPRINKLE_BASE), 2));
   }
 
-  // Sprinkles earned from coins (goal prizes are counted separately).
-  function earnedSprinkles(s) { return Math.max(0, s.sprinkles - s.bonusSprinkles); }
-
-  function sprinkleGain(s) {
-    return Math.max(0, sprinklesForLifetime(s.lifetimeEarned) - earnedSprinkles(s));
+  // Coins a run needs to earn to be worth this many sprinkles.
+  function coinsForSprinkles(n) {
+    return SPRINKLE_BASE * Math.pow(10, Math.sqrt(n / SPRINKLE_SCALE));
   }
 
-  // Lifetime coins still needed for the next sprinkle, and how far along it is (0..1).
+  function sprinkleGain(s) { return sprinklesForRun(s.runEarned); }
+
+  // Coins still needed this run for one more sprinkle, and how far along it is (0..1).
   function nextSprinkle(s) {
-    const have = Math.max(sprinklesForLifetime(s.lifetimeEarned), earnedSprinkles(s));
-    const lo = SPRINKLE_BASE * Math.pow(have / SPRINKLE_SCALE, 2);
-    const hi = SPRINKLE_BASE * Math.pow((have + 1) / SPRINKLE_SCALE, 2);
+    const have = sprinkleGain(s);
+    const lo = have > 0 ? coinsForSprinkles(have) : 0;
+    const hi = coinsForSprinkles(have + 1);
     return {
-      need: Math.max(0, hi - s.lifetimeEarned),
-      progress: Math.min(1, Math.max(0, (s.lifetimeEarned - lo) / (hi - lo))),
+      need: Math.max(0, hi - s.runEarned),
+      progress: Math.min(1, Math.max(0, (s.runEarned - lo) / (hi - lo))),
     };
   }
 
@@ -477,7 +584,8 @@
       return i !== undefined && reachable(s, managerCost(s, i)) ? { type: 'manager', i: i } : null;
     }
     if (type === 'open') {
-      const i = s.biz.findIndex(function (b) { return b.owned < 1; });
+      let i = -1;
+      BUSINESSES.forEach(function (b, k) { if (canOpen(s, k) && (i < 0 || b.cost < BUSINESSES[i].cost)) i = k; });
       return i >= 0 && reachable(s, costFor(i, 0, 1, s)) ? { type: 'open', i: i } : null;
     }
     if (type === 'vip') {
@@ -640,14 +748,15 @@
   function fmt(n) {
     if (!isFinite(n)) return '∞';
     if (n < 0) return '-' + fmt(-n);
-    if (n < 100) return String(Math.floor(n * 100) / 100);
+    // The tiny nudge keeps float noise (2.3 * 100 = 229.999...) from rounding a digit away.
+    if (n < 100) return String(Math.floor(n * 100 + 1e-6) / 100);
     if (n < 1000) return String(Math.floor(n));
     const tier = Math.floor(Math.log10(n) / 3);
     if (tier >= SUFFIXES.length) return n.toExponential(2).replace('+', '');
     const v = n / Math.pow(1000, tier);
     const digits = v >= 100 ? 0 : v >= 10 ? 1 : 2;
     const p = Math.pow(10, digits);
-    return (Math.floor(v * p) / p).toFixed(digits) + SUFFIXES[tier];
+    return (Math.floor(v * p + 1e-6) / p).toFixed(digits) + SUFFIXES[tier];
   }
 
   function fmtTime(sec) {
@@ -665,7 +774,8 @@
   const api = {
     BUSINESSES: BUSINESSES, MILESTONES: MILESTONES, MANAGERS: MANAGERS, UPGRADES: UPGRADES,
     UPGRADE_BY_ID: UPGRADE_BY_ID, TROPHIES: TROPHIES, SPRINKLE_BONUS: SPRINKLE_BONUS,
-    TROPHY_BONUS: TROPHY_BONUS, OFFLINE_CAP: OFFLINE_CAP, PERKS: PERKS, GOAL_SLOTS: GOAL_SLOTS,
+    TROPHY_BONUS: TROPHY_BONUS, OFFLINE_CAP: OFFLINE_CAP, PERKS: PERKS, GOAL_SLOTS: GOAL_SLOTS, MAIN_COUNT: MAIN_COUNT,
+    isUnlocked: isUnlocked, canOpen: canOpen,
     newState: newState, restore: restore, earn: earn,
     costFor: costFor, maxAffordable: maxAffordable, buyAmount: buyAmount, buy: buy,
     hireManager: hireManager, managerCost: managerCost, upgradeAvailable: upgradeAvailable, buyUpgrade: buyUpgrade,

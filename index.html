@@ -58,6 +58,11 @@
         </div>
       </div>
       <section class="card goals" id="goalBox" aria-label="Town Goals"></section>
+      <div class="district-toggle" role="tablist" aria-label="Streets">
+        <button type="button" role="tab" id="street-main" data-district="main" aria-controls="shopList">Main Street</button>
+        <button type="button" role="tab" id="street-sprinkle" data-district="sprinkle" aria-controls="shopList"><span class="district-icon" id="districtIcon"></span>Sprinkle Street<span class="badge" hidden></span></button>
+      </div>
+      <p class="district-note" id="districtNote" hidden>Sprinkle Street shops unlock for good once you hold enough golden sprinkles. Open them with coins in every run.</p>
       <div class="shop-list" id="shopList"></div>
     </section>
 

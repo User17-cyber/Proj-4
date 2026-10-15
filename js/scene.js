@@ -71,7 +71,7 @@
     ctx.fill();
   }
 
-  // opts: { key, kind, shopSvg, productSvg, faceSvg, tile, bar, night, locked, build, onServe(x, y) }
+  // opts: { key, kind, shopSvg, productSvg, faceSvg, tile, bar, night, locked, signText, build, onServe(x, y) }
   function createLane(canvas, opts) {
     const ctx = canvas.getContext('2d');
     const factory = opts.kind === 'factory' && !opts.locked;
@@ -504,21 +504,23 @@
         b.drawImage(shopImg, lay.bx, lay.feet + 1 - lay.S * 0.91, lay.S, lay.S);
         b.globalAlpha = 1;
       }
-      const sx = lay.bx + lay.S + 46, top = lay.feet - 50;
+      const label = opts.signText || 'FOR SALE';
+      b.font = "16px 'Lilita One', 'Arial Rounded MT Bold', sans-serif";
+      const bw = Math.max(68, b.measureText(label).width + 20);
+      const sx = lay.bx + lay.S + 12 + bw / 2, top = lay.feet - 50;
       b.strokeStyle = INK;
       b.lineWidth = 3;
       b.fillStyle = '#C98B4F';
       b.fillRect(sx - 2, top + 20, 5, lay.feet - top - 20);
       b.strokeRect(sx - 2, top + 20, 5, lay.feet - top - 20);
       b.fillStyle = '#FFFFFF';
-      roundRect(b, sx - 34, top, 68, 26, 6);
+      roundRect(b, sx - bw / 2, top, bw, 26, 6);
       b.fill();
       b.stroke();
-      b.fillStyle = '#FF5A5F';
-      b.font = "16px 'Lilita One', 'Arial Rounded MT Bold', sans-serif";
+      b.fillStyle = opts.signText ? '#8C6CFF' : '#FF5A5F';
       b.textAlign = 'center';
       b.textBaseline = 'middle';
-      b.fillText('FOR SALE', sx, top + 14);
+      b.fillText(label, sx, top + 14);
     }
 
     // ------------------------------------------------------------- drawing

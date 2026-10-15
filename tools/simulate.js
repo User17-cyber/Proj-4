@@ -40,7 +40,7 @@ function options() {
   const opts = [];
   G.BUSINESSES.forEach((b, i) => {
     const owned = s.biz[i].owned;
-    if (i > 0 && s.biz[i - 1].owned < 1) return;
+    if (owned < 1 && !G.canOpen(s, i)) return;
     const gain = shopIncome(i, owned + 1) - shopIncome(i, owned);
     opts.push({ cost: G.costFor(i, owned, 1, s), gain: gain, act: () => G.buy(s, i, 1) });
     if (owned > 0 && !s.managers[i]) {

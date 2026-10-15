@@ -1,6 +1,6 @@
 # Sprinkle Town Tycoon
 
-A bright, cartoony idle tycoon game that runs in any modern browser. Start with one lemonade stand, open ten shops and seven factories, hire animal managers to run them for you, and grow Sprinkle Town into a coin empire.
+A bright, cartoony idle tycoon game that runs in any modern browser. Start with one lemonade stand, open ten shops and seven factories, unlock twenty more on Sprinkle Street, hire animal managers to run them for you, and grow Sprinkle Town into a coin empire.
 
 ## Play
 
@@ -28,7 +28,8 @@ It also works as-is on GitHub Pages: enable Pages for this branch and open the s
 - **Complete Town Goals.** Three goals sit at the top of the Town tab (own so many of a shop, make so many coins, hire a manager, pop a balloon, and so on). Finished goals pay a prize when you claim them: coins, a Sugar Rush, or golden sprinkles.
 - **Tip-hunting VIPs.** Every minute or so a VIP visitor in gold with a crown stops by one of your streets. Tap that street before they leave for a big tip.
 - **Pop lucky balloons** when they float by for a coin shower or a 30-second Sugar Rush (triple profit).
-- **Hold a Grand Reopening** (Sprinkles tab) to start over with golden sprinkles. Each sprinkle adds +2% profit forever.
+- **Hold a Grand Reopening** (Sprinkles tab) to start over and collect golden sprinkles for the coins you earned that run. Sprinkles add up with every reopening, and each one adds +2% profit forever.
+- **Unlock Sprinkle Street.** Twenty special shops (Cupcake Corner, Bubble Tea Bar, Taco Truck, Sushi Boat, Cookie Castle, Pixel Arcade, Magic Shop, Dino Museum, Pirate Cove, Dragon Bakery, Unicorn Castle and more) unlock once you hold enough golden sprinkles, from 1 for the Cupcake Corner to 7,500 for the Unicorn Castle. Sprinkles are never spent, so unlocked shops stay unlocked; switch the Town tab to Sprinkle Street and open them with coins in every run. They earn about 1.5x a Main Street shop at the same price.
 - **Unlock Sprinkle Perks** as your sprinkle count grows, from starting every run with 10 Lemonade Stands (5 sprinkles) to cheaper shops, half-price managers and doubled goal prizes. Perks are never spent.
 - **Collect trophies** for +1% profit each.
 

@@ -30,6 +30,16 @@
 
   function rand(a, b) { return a + Math.random() * (b - a); }
 
+  // Which street the Town tab shows: 'main' or 'sprinkle'.
+  let district = 'main';
+  function isStreet(i) { return !!G.BUSINESSES[i].need; }
+  function needText(i) { return G.BUSINESSES[i].need.toLocaleString('en-US'); }
+
+  function mgrFace(i) {
+    const m = G.MANAGERS[i];
+    return A.face(m.animal, m.color, m.acc);
+  }
+
   function el(tag, cls, html) {
     const e = document.createElement(tag);
     if (cls) e.className = cls;
@@ -337,11 +347,12 @@
       kind: b.kind,
       shopSvg: A.shop(b.id),
       productSvg: A.product(b.id),
-      faceSvg: A.face(m.animal, m.color),
+      faceSvg: mgrFace(i),
       tile: b.tile,
       bar: b.bar,
       night: !!b.night,
       locked: locked,
+      signText: r.sprinkleLocked ? 'NEEDS ' + needText(i) : '',
       build: build,
       onServe: function (x, y) { onServe(r, x, y); },
     });
@@ -355,18 +366,33 @@
     refs.shops = [];
     if (sceneWatch.visible) sceneWatch.visible.disconnect();
     if (sceneWatch.size) sceneWatch.size.disconnect();
-    let lockedShown = 0;
-    G.BUSINESSES.forEach(function (b, i) {
-      if (state.biz[i].owned > 0) {
-        list.appendChild(shopCard(i));
-      } else if (lockedShown === 0) {
-        list.appendChild(lockedCard(i));
-        lockedShown++;
-      } else if (lockedShown === 1) {
-        list.appendChild(mysteryCard(G.BUSINESSES.length - i));
-        lockedShown++;
-      }
-    });
+    syncDistrict();
+    const street = G.BUSINESSES.map(function (b, i) { return i; }).filter(function (i) { return isStreet(i) === (district === 'sprinkle'); });
+    if (district === 'main') {
+      // Main Street opens in order: show the next empty lot and tease the rest.
+      let lockedShown = 0;
+      street.forEach(function (i, k) {
+        if (state.biz[i].owned > 0) {
+          list.appendChild(shopCard(i));
+        } else if (lockedShown === 0) {
+          list.appendChild(lockedCard(i));
+          lockedShown++;
+        } else if (lockedShown === 1) {
+          list.appendChild(mysteryCard(street.length - k, false));
+          lockedShown++;
+        }
+      });
+    } else {
+      // Sprinkle Street: every unlocked shop, then the next one you're saving sprinkles for.
+      let teased = false, hidden = 0;
+      street.forEach(function (i) {
+        if (state.biz[i].owned > 0) list.appendChild(shopCard(i));
+        else if (G.isUnlocked(state, i)) list.appendChild(lockedCard(i));
+        else if (!teased) { list.appendChild(sprinkleLockedCard(i)); teased = true; }
+        else hidden++;
+      });
+      if (hidden) list.appendChild(mysteryCard(hidden, true));
+    }
     // Scenes measure themselves, so they're made once the cards are on the page.
     refs.shops.forEach(function (r) {
       makeLane(r, r.i, !!r.locked, r.i === justOpened);
@@ -474,15 +500,41 @@
     return card;
   }
 
-  function mysteryCard(remaining) {
+  function mysteryCard(remaining, sprinkleStreet) {
     const card = el('article', 'card shop mystery');
+    const what = remaining + ' more ' + (sprinkleStreet ? 'Sprinkle Street ' : '') + (remaining === 1 ? 'shop' : 'shops');
     card.innerHTML =
       '<div class="shop-icon">' + A.mystery() + '</div>' +
       '<div class="shop-body">' +
         '<div class="shop-name-row"><h2 class="shop-name">Coming soon</h2></div>' +
-        '<p class="shop-note">' + remaining + ' more ' + (remaining === 1 ? 'shop' : 'shops') + ' to discover. Keep growing your town!</p>' +
+        '<p class="shop-note">' + what + (sprinkleStreet ? ' unlock as you collect golden sprinkles.' : ' to discover. Keep growing your town!') + '</p>' +
       '</div>';
     return card;
+  }
+
+  // A Sprinkle Street shop you don't have enough sprinkles for yet.
+  function sprinkleLockedCard(i) {
+    const b = G.BUSINESSES[i];
+    const card = el('article', 'card shop locked');
+    card.style.setProperty('--tile', b.tile);
+    card.innerHTML =
+      '<div class="shop-head"><h2 class="shop-name">' + b.name + '</h2>' +
+        '<span class="need-chip"><span class="chip-icon">' + A.sprinkle() + '</span>' + needText(i) + '</span></div>' +
+      '<div class="shop-scene"><canvas aria-hidden="true"></canvas></div>' +
+      '<p class="shop-note">Unlocks for good when you hold ' + needText(i) + ' golden sprinkles. You have ' + fmt(state.sprinkles) + '.</p>' +
+      '<div class="milestone"><div class="mini-bar"><span style="transform:scaleX(' + Math.min(1, state.sprinkles / b.need) + ')"></span></div>' +
+        '<span>' + fmt(Math.max(0, b.need - state.sprinkles)) + ' to go</span></div>';
+    refs.shops.push({ i: i, locked: true, sprinkleLocked: true, scene: $('.shop-scene', card) });
+    return card;
+  }
+
+  function syncDistrict() {
+    document.querySelectorAll('.district-toggle button').forEach(function (b) {
+      const on = b.getAttribute('data-district') === district;
+      b.setAttribute('aria-selected', String(on));
+      b.tabIndex = on ? 0 : -1;
+    });
+    $('#districtNote').hidden = district !== 'sprinkle';
   }
 
   function upgradesOwned(i) {
@@ -498,7 +550,7 @@
       const i = r.i;
       const b = state.biz[i];
       if (r.locked) {
-        r.buy.disabled = state.coins < G.costFor(i, 0, 1, state);
+        if (r.buy) r.buy.disabled = state.coins < G.costFor(i, 0, 1, state);
         return;
       }
       const managed = state.managers[i];
@@ -580,7 +632,7 @@
   function goalArt(g) {
     switch (g.type) {
       case 'own': case 'open': return A.shop(G.BUSINESSES[g.i].id);
-      case 'manager': return A.face(G.MANAGERS[g.i].animal, G.MANAGERS[g.i].color);
+      case 'manager': return mgrFace(g.i);
       case 'balloon': return A.balloon('#FF5FA2');
       case 'upgrade': return A.icon('upgrades');
       case 'vip': return A.crown();
@@ -694,35 +746,47 @@
     const list = $('#managerList');
     list.textContent = '';
     refs.managers = [];
-    G.MANAGERS.forEach(function (m, i) {
-      const b = G.BUSINESSES[i];
-      const open = state.biz[i].owned > 0;
-      const hired = state.managers[i];
-      const card = el('article', 'card mgr' + (open ? '' : ' unavailable'));
-      card.style.setProperty('--tile', b.tile);
-      card.innerHTML =
-        '<div class="mgr-face">' + A.face(m.animal, m.color) + '</div>' +
-        '<div class="mgr-info">' +
-          '<h2 class="mgr-name">' + m.name + '</h2>' +
-          '<p class="mgr-job">' + (open ? 'Runs your ' + b.name + ' for you.' : 'Wants to run a ' + b.name + '.') + '</p>' +
-          (hired ? '<span class="stamp">ON THE JOB!</span>'
-            : open ? '<button class="btn btn-mint btn-small" type="button"><span>Hire</span><span class="buy-cost">' + coinCost(G.managerCost(state, i)) + '</span></button>'
-              : '<button class="btn btn-small" type="button" disabled>Open the shop first</button>') +
-        '</div>';
-      const btn = $('.btn', card);
-      if (btn && open && !hired) {
-        btn.addEventListener('click', function () {
-          if (!G.hireManager(state, i)) { Sound.play('nope'); return; }
-          Sound.play('fanfare');
-          confettiAt(btn, 30);
-          toast(A.face(m.animal, m.color), m.name + ' is hired!', 'Your ' + b.name + ' now runs by itself.');
-          renderManagers();
-          afterChange();
-        });
-        refs.managers.push({ i: i, btn: btn });
-      }
-      list.appendChild(card);
+    const groups = [
+      ['Main Street', function (i) { return !isStreet(i); }],
+      ['Sprinkle Street', function (i) { return isStreet(i) && (G.isUnlocked(state, i) || state.biz[i].owned > 0); }],
+    ];
+    groups.forEach(function (gr) {
+      const ids = G.MANAGERS.map(function (m, i) { return i; }).filter(gr[1]);
+      if (!ids.length) return;
+      list.appendChild(el('h2', 'section-title grid-title', gr[0]));
+      ids.forEach(function (i) { list.appendChild(managerCard(i)); });
     });
+  }
+
+  function managerCard(i) {
+    const m = G.MANAGERS[i];
+    const b = G.BUSINESSES[i];
+    const open = state.biz[i].owned > 0;
+    const hired = state.managers[i];
+    const card = el('article', 'card mgr' + (open ? '' : ' unavailable'));
+    card.style.setProperty('--tile', b.tile);
+    card.innerHTML =
+      '<div class="mgr-face">' + mgrFace(i) + '</div>' +
+      '<div class="mgr-info">' +
+        '<h2 class="mgr-name">' + m.name + '</h2>' +
+        '<p class="mgr-job">' + (open ? 'Runs your ' + b.name + ' for you.' : 'Wants to run a ' + b.name + '.') + '</p>' +
+        (hired ? '<span class="stamp">ON THE JOB!</span>'
+          : open ? '<button class="btn btn-mint btn-small" type="button"><span>Hire</span><span class="buy-cost">' + coinCost(G.managerCost(state, i)) + '</span></button>'
+            : '<button class="btn btn-small" type="button" disabled>Open the shop first</button>') +
+      '</div>';
+    const btn = $('.btn', card);
+    if (btn && open && !hired) {
+      btn.addEventListener('click', function () {
+        if (!G.hireManager(state, i)) { Sound.play('nope'); return; }
+        Sound.play('fanfare');
+        confettiAt(btn, 30);
+        toast(mgrFace(i), m.name + ' is hired!', 'Your ' + b.name + ' now runs by itself.');
+        renderManagers();
+        afterChange();
+      });
+      refs.managers.push({ i: i, btn: btn });
+    }
+    return card;
   }
 
   function updateManagers() {
@@ -807,11 +871,11 @@
         '</section>' +
         '<section class="card reopen">' +
           '<h2>Grand Reopening</h2>' +
-          '<p>Start your town over from one lemonade stand and collect golden sprinkles for all the coins you\'ve earned.</p>' +
+          '<p>Start your town over from one lemonade stand and collect golden sprinkles for the coins you\'ve earned this run. Sprinkles add up with every reopening.</p>' +
           '<div class="gain-line"><span class="chip-icon">' + A.sprinkle() + '</span><span data-r="gain"></span></div>' +
           '<div class="milestone"><div class="mini-bar"><span data-r="nextBar"></span></div><span data-r="next"></span></div>' +
           '<div class="keep-lose">' +
-            '<div class="keep"><strong>YOU KEEP</strong>Golden sprinkles, perks, trophies</div>' +
+            '<div class="keep"><strong>YOU KEEP</strong>Golden sprinkles, perks, Sprinkle Street unlocks, trophies</div>' +
             '<div class="lose"><strong>STARTS OVER</strong>Coins, shops, managers, upgrades</div>' +
           '</div>' +
           '<button class="btn btn-pink" type="button" data-r="btn">Hold a Grand Reopening</button>' +
@@ -819,6 +883,9 @@
         '<h2 class="section-title">Sprinkle Perks</h2>' +
         '<p class="panel-sub">Perks unlock for good once you hold enough golden sprinkles. You never spend sprinkles on them.</p>' +
         '<div class="perk-grid">' + G.PERKS.map(perkCard).join('') + '</div>' +
+        '<h2 class="section-title">Sprinkle Street</h2>' +
+        '<p class="panel-sub">Special shops that unlock for good when you hold enough golden sprinkles. Open them with coins from the Town tab.</p>' +
+        '<div class="street-grid">' + G.BUSINESSES.map(function (b, i) { return isStreet(i) ? streetCard(i) : ''; }).join('') + '</div>' +
       '</div>';
     const r = {};
     view.querySelectorAll('[data-r]').forEach(function (n) { r[n.getAttribute('data-r')] = n; });
@@ -834,6 +901,17 @@
         (got ? '<span class="stamp">UNLOCKED</span>' : '') + '</div>' +
       '<h3 class="perk-name">' + p.name + '</h3><p class="perk-desc">' + p.desc + '</p>' +
       (got ? '' : '<div class="mini-bar"><span style="transform:scaleX(' + Math.min(1, state.sprinkles / p.need) + ')"></span></div>') +
+    '</div>';
+  }
+
+  function streetCard(i) {
+    const b = G.BUSINESSES[i];
+    const got = G.isUnlocked(state, i);
+    return '<div class="card street-card' + (got ? ' got' : '') + '" style="--tile:' + b.tile + '">' +
+      '<div class="street-art">' + A.shop(b.id) + '</div>' +
+      '<div class="street-info"><h3 class="perk-name">' + b.name + '</h3>' +
+        '<span class="perk-need"><span class="chip-icon">' + A.sprinkle() + '</span>' + needText(i) + '</span></div>' +
+      (got ? '<span class="stamp">OPEN</span>' : '') +
     '</div>';
   }
 
@@ -1057,6 +1135,10 @@
     setBadge('sprinkles', gain >= Math.max(10, state.sprinkles) ? '!' : 0);
     setBadge('more', unseenTrophies);
     setBadge('town', goalsReady);
+    const openable = G.BUSINESSES.filter(function (b, i) { return isStreet(i) && G.canOpen(state, i); }).length;
+    const streetBadge = $('#street-sprinkle .badge');
+    streetBadge.hidden = !openable || district === 'sprinkle';
+    setText(streetBadge, String(openable));
   }
 
   // ---------------------------------------------------------------------------
@@ -1141,7 +1223,7 @@
     const h = state.hints;
     if (!h.manager && !state.managers[0] && state.coins >= G.managerCost(state, 0)) {
       h.manager = true;
-      toast(A.face(G.MANAGERS[0].animal, G.MANAGERS[0].color), 'You can hire a manager!', 'Open Managers so your Lemonade Stand runs by itself.', true);
+      toast(mgrFace(0), 'You can hire a manager!', 'Open Managers so your Lemonade Stand runs by itself.', true);
     } else if (!h.upgrade && G.UPGRADES.some(function (u) { return G.upgradeAvailable(state, u) && state.coins >= u.cost; })) {
       h.upgrade = true;
       toast(A.shop('lemon'), 'Upgrade ready!', 'Check the Upgrades menu to triple a shop\'s profit.', true);
@@ -1183,6 +1265,13 @@
         toast(A.trophy(true), won.length + ' new trophies!', won.map(function (t) { return t.name; }).join(', ') + '.', true);
       }
       if (tab === 'more') renderMore();
+    }
+    const unlocked = G.BUSINESSES.filter(function (b) { return b.need && state.sprinkles >= b.need && !state.hints['street-' + b.id]; });
+    if (unlocked.length) {
+      unlocked.forEach(function (b) { state.hints['street-' + b.id] = true; });
+      toast(A.shop(unlocked[0].id), unlocked.length === 1 ? 'New on Sprinkle Street: ' + unlocked[0].name + '!' : unlocked.length + ' new Sprinkle Street shops!',
+        (unlocked.length === 1 ? '' : unlocked.map(function (b) { return b.name; }).join(', ') + '. ') + 'Open them from the Town tab on Sprinkle Street.', true);
+      if (tab === 'town' && district === 'sprinkle') renderTown();
     }
     const perks = G.PERKS.filter(function (p) { return state.sprinkles >= p.need && !state.hints['perk-' + p.id]; });
     if (perks.length) {
@@ -1289,6 +1378,14 @@
       });
     });
 
+    document.querySelectorAll('.district-toggle button').forEach(function (b) {
+      b.addEventListener('click', function () {
+        district = b.getAttribute('data-district');
+        renderTown();
+        updateBadges();
+      });
+    });
+    $('#districtIcon').innerHTML = A.sprinkle();
     $('#muteBtn').addEventListener('click', function () { setSound(!state.settings.sound); });
     $('#sprinkleChip').addEventListener('click', function () { showTab('sprinkles'); });
 
@@ -1324,7 +1421,7 @@
       if (away > 30 && earned > 0) {
         G.earn(state, earned);
         openModal({
-          art: A.face(G.MANAGERS[0].animal, G.MANAGERS[0].color),
+          art: mgrFace(0),
           title: 'Welcome back!',
           html: '<p>You were away for ' + G.fmtTime(away) + '. Your managers kept the shops busy and earned</p>' +
             '<div class="big-number">' + fmt(earned) + '</div><p>coins' +

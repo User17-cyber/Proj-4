@@ -235,8 +235,128 @@
     },
   };
 
+  // ---------------------------------------------------------------------------
+  // Sprinkle Street buildings: ten building styles in each shop's colors, most
+  // topped with a giant copy of what the shop sells.
+  // ---------------------------------------------------------------------------
+  function sign(id, x, y, size) {
+    return '<g transform="translate(' + x + ' ' + y + ') scale(' + size / 100 + ')"><g stroke-width="7">' + PRODUCTS[id] + '</g></g>';
+  }
+
+  const DOOR_DOT = '<circle cx="54" cy="76" r="1.5" fill="' + INK + '"/>';
+
+  const BUILDINGS = {
+    storefront: function (c, id) {
+      return shadow + '<path d="M40 46v-6M60 46v-6" fill="none"/>' + sign(id, 29, -1, 42) +
+        '<rect x="14" y="48" width="72" height="38" fill="' + c.body + '"/>' +
+        awning(12, 46, 76, 11, 6, c.a1, c.a2) +
+        '<rect x="42" y="64" width="16" height="22" rx="2" fill="' + c.door + '"/>' + DOOR_DOT +
+        '<rect x="20" y="64" width="15" height="11" rx="2" fill="#9BE7FF"/><rect x="65" y="64" width="15" height="11" rx="2" fill="#9BE7FF"/>';
+    },
+    cottage: function (c, id) {
+      return shadow + sign(id, 33, -2, 34) +
+        '<rect x="18" y="52" width="64" height="34" fill="' + c.body + '"/>' +
+        '<path d="M10 56q40-44 80 0z" fill="' + c.roof + '"/>' +
+        '<path d="M43 86V73a7 7 0 0 1 14 0v13z" fill="' + c.door + '"/>' +
+        '<circle cx="30" cy="68" r="6" fill="#9BE7FF"/><circle cx="70" cy="68" r="6" fill="#9BE7FF"/>' +
+        (c.flowers ? '<path d="M20 78h20M60 78h20" fill="none" stroke="#3DDC97" stroke-width="5"/>' +
+          '<circle cx="24" cy="75" r="3" fill="#FF5FA2"/><circle cx="33" cy="75" r="3" fill="#FFE14D"/><circle cx="67" cy="75" r="3" fill="#8C6CFF"/><circle cx="76" cy="75" r="3" fill="#FF5FA2"/>' : '');
+    },
+    stall: function (c, id) {
+      return shadow +
+        '<rect x="22" y="30" width="6" height="56" fill="#C98B4F"/><rect x="72" y="30" width="6" height="56" fill="#C98B4F"/>' +
+        '<rect x="10" y="14" width="80" height="9" rx="4" fill="' + c.roof + '"/>' + awning(12, 22, 76, 14, 8, c.a1, c.a2) +
+        sign(id, 26, 42, 16) + sign(id, 58, 42, 16) +
+        '<rect x="14" y="58" width="72" height="28" rx="4" fill="' + c.body + '"/>' + sign(id, 37, 58, 26);
+    },
+    cart: function (c, id) {
+      return shadow + '<path d="M50 50V22" fill="none"/>' +
+        '<path d="M16 28Q50-6 84 28z" fill="' + c.roof + '"/>' +
+        '<path d="M16 28q5 6 11.3 0q5.7 6 11.3 0q5.7 6 11.4 0q5.7 6 11.3 0q5.7 6 11.4 0q5.7 6 11.3 0" fill="none"/>' +
+        '<rect x="16" y="50" width="66" height="28" rx="7" fill="' + c.body + '"/><path d="M82 58l10-8" fill="none"/>' +
+        '<circle cx="32" cy="82" r="8" fill="' + c.wheel + '"/><circle cx="68" cy="82" r="8" fill="' + c.wheel + '"/>' +
+        sign(id, 37, 50, 26);
+    },
+    truck: function (c, id) {
+      return shadow + sign(id, 26, 0, 36) +
+        '<rect x="8" y="38" width="66" height="42" rx="6" fill="' + c.body + '"/>' +
+        '<path d="M74 52h12q8 0 8 10v18h-20z" fill="' + c.trim + '"/><rect x="80" y="56" width="10" height="9" rx="2" fill="#9BE7FF"/>' +
+        '<rect x="16" y="48" width="44" height="16" rx="2" fill="#FFF7D6"/><rect x="13" y="43" width="50" height="5" rx="2" fill="' + c.trim + '"/>' +
+        '<path d="M10 71h62" fill="none" stroke="' + c.trim + '" stroke-width="4"/>' +
+        '<circle cx="26" cy="82" r="8" fill="' + INK + '"/><circle cx="78" cy="82" r="8" fill="' + INK + '"/>' +
+        '<circle cx="26" cy="82" r="3" fill="#FFFFFF" stroke="none"/><circle cx="78" cy="82" r="3" fill="#FFFFFF" stroke="none"/>';
+    },
+    boat: function (c, id) {
+      return '<path d="M0 84q12-8 25 0t25 0t25 0t25 0v16h-100z" fill="#4CC9F0"/>' +
+        (c.mast ? '<path d="M80 66V8" fill="none"/><path d="M80 10l16 7l-16 7z" fill="' + c.flag + '"/>' : '') +
+        '<rect x="28" y="46" width="44" height="22" rx="3" fill="' + c.cabin + '"/>' +
+        '<circle cx="40" cy="57" r="5" fill="#9BE7FF"/><circle cx="60" cy="57" r="5" fill="#9BE7FF"/>' + sign(id, 33, 10, 34) +
+        '<path d="M8 66h84l-12 20h-60z" fill="' + c.hull + '"/><path d="M15 74h70" fill="none" stroke="#FFFFFF" stroke-width="3"/>';
+    },
+    castle: function (c, id) {
+      return shadow +
+        '<path d="M19 14v-8l7 3l-7 3" fill="' + c.flag + '"/><path d="M81 14v-8l7 3l-7 3" fill="' + c.flag + '"/>' +
+        '<path d="M8 32l11-18l11 18z" fill="' + c.roof + '"/><path d="M70 32l11-18l11 18z" fill="' + c.roof + '"/>' +
+        '<rect x="10" y="32" width="18" height="54" fill="' + c.tower + '"/><rect x="72" y="32" width="18" height="54" fill="' + c.tower + '"/>' +
+        '<rect x="15" y="44" width="8" height="10" rx="4" fill="#9BE7FF"/><rect x="77" y="44" width="8" height="10" rx="4" fill="#9BE7FF"/>' +
+        sign(id, 33, 4, 34) +
+        '<path d="M26 86V48h8v-6h8v6h8v-6h8v6h8v-6h8v6V86z" fill="' + c.wall + '"/>' +
+        '<path d="M42 86V72a8 8 0 0 1 16 0v14z" fill="#8B4A2B"/>';
+    },
+    windmill: function (c, id) {
+      let blades = '';
+      [20, 110, 200, 290].forEach(function (a) {
+        blades += '<rect x="46" y="2" width="8" height="28" rx="3" fill="' + c.blade + '" transform="rotate(' + a + ' 50 30)"/>';
+      });
+      return shadow + '<path d="M30 86L36 42h28l6 44z" fill="' + c.body + '"/><path d="M32 44L50 26L68 44z" fill="' + c.roof + '"/>' +
+        blades + '<circle cx="50" cy="30" r="4" fill="' + c.roof + '"/>' + sign(id, 40, 50, 20) +
+        '<path d="M44 86V79a6 6 0 0 1 12 0v7z" fill="#8B4A2B"/>';
+    },
+    museum: function (c, id) {
+      let cols = '';
+      [18, 34, 58, 74].forEach(function (x) { cols += '<rect x="' + x + '" y="54" width="8" height="24" fill="' + c.body + '"/>'; });
+      return shadow + sign(id, 36, 0, 28) +
+        '<path d="M10 48L50 26L90 48z" fill="' + c.roof + '"/><rect x="12" y="48" width="76" height="6" fill="' + c.body + '"/>' + cols +
+        '<rect x="44" y="60" width="12" height="18" rx="2" fill="#8B4A2B"/><rect x="8" y="78" width="84" height="8" fill="' + c.body + '"/>';
+    },
+    tent: function (c, id) {
+      return shadow + '<path d="M50 16V4" fill="none"/><path d="M50 4l12 4l-12 4z" fill="' + c.flag + '"/>' +
+        '<path d="M14 86L22 48H78L86 86z" fill="' + c.a2 + '"/>' +
+        '<path d="M30 48h10l-2 38h-12zM45 48h10v38h-10zM60 48h10l4 38h-12z" fill="' + c.a1 + '" stroke="none"/>' +
+        '<path d="M14 86L22 48H78L86 86z" fill="none"/>' +
+        '<path d="M18 50L50 16L82 50z" fill="' + c.a1 + '"/><path d="M50 16L38 50h10zM50 16L60 50h10z" fill="' + c.a2 + '" stroke="none"/>' +
+        '<path d="M18 50L50 16L82 50z" fill="none"/>' + sign(id, 38, 58, 24);
+    },
+  };
+
+  // Building style and colors for each Sprinkle Street shop.
+  const STREET_ART = {
+    cupcake:     ['storefront', { body: '#FFE3F1', a1: '#FF8FC7', a2: '#FFFFFF', door: '#8C6CFF' }],
+    bubbletea:   ['storefront', { body: '#E9F7EF', a1: '#3DDC97', a2: '#FFFFFF', door: '#C98B4F' }],
+    cottoncandy: ['cart',       { body: '#C9B6FF', roof: '#FF8FC7', wheel: '#4CC9F0' }],
+    popsicle:    ['stall',      { body: '#F6C177', a1: '#4CC9F0', a2: '#FFFFFF', roof: '#FF5FA2' }],
+    pancake:     ['cottage',    { body: '#FFF3D6', roof: '#E89B4A', door: '#8B4A2B' }],
+    taco:        ['truck',      { body: '#FFD23F', trim: '#FF5A5F' }],
+    sushi:       ['boat',       { hull: '#FF6B6B', cabin: '#FFFFFF' }],
+    cookie:      ['castle',     { wall: '#E8A25B', tower: '#F6C177', roof: '#8B4A2B', flag: '#FF5FA2' }],
+    waffle:      ['windmill',   { body: '#FFE3A3', roof: '#FF9F43', blade: '#FFFFFF' }],
+    pets:        ['cottage',    { body: '#E4F1FF', roof: '#5B8CFF', door: '#FF9F43' }],
+    flowers:     ['cottage',    { body: '#FFF0F6', roof: '#3DDC97', door: '#FF5FA2', flowers: true }],
+    comics:      ['storefront', { body: '#FFF8DC', a1: '#FF5A5F', a2: '#FFE14D', door: '#5B8CFF' }],
+    arcade:      ['storefront', { body: '#4A3F8F', a1: '#FF5FA2', a2: '#4CC9F0', door: '#FFE14D' }],
+    music:       ['storefront', { body: '#EDE7FF', a1: '#8C6CFF', a2: '#FFFFFF', door: '#FF9F43' }],
+    skate:       ['truck',      { body: '#FF9F43', trim: '#2B2147' }],
+    magic:       ['tent',       { a1: '#8C6CFF', a2: '#FFFFFF', flag: '#FFE14D' }],
+    dino:        ['museum',     { body: '#F1EAD8', roof: '#C9B99A' }],
+    pirate:      ['boat',       { hull: '#8B4A2B', cabin: '#C98B4F', mast: true, flag: '#2B2147' }],
+    dragon:      ['castle',     { wall: '#FF8A65', tower: '#FF6B6B', roof: '#5ED38A', flag: '#FFE14D' }],
+    unicorn:     ['castle',     { wall: '#FFF0F6', tower: '#E4DBFF', roof: '#FF8FC7', flag: '#C77DFF' }],
+  };
+
   function shop(id) {
-    return svg(SHOPS[id](), '');
+    if (SHOPS[id]) return svg(SHOPS[id](), '');
+    const art = STREET_ART[id];
+    return svg(BUILDINGS[art[0]](art[1], id), '');
   }
 
   function mystery() {
@@ -368,8 +488,83 @@
     },
   };
 
-  function face(animal, color) {
-    return svg((ANIMALS[animal] || ANIMALS.cat)(color), '');
+  // New faces for Sprinkle Street managers.
+  ANIMALS.cow = function (c) {
+    return '<ellipse cx="18" cy="44" rx="12" ry="7" transform="rotate(-20 18 44)" fill="' + c + '"/><ellipse cx="82" cy="44" rx="12" ry="7" transform="rotate(20 82 44)" fill="' + c + '"/>' +
+      '<path d="M32 30l-5-13l11 7zM68 30l5-13l-11 7z" fill="#FFF3D6"/>' + head(c) +
+      '<path d="M28 46q8-16 20-6q-4 12-20 6z" fill="#3E3A55" stroke="none"/><circle cx="70" cy="40" r="6" fill="#3E3A55" stroke="none"/>' +
+      eyes(50, 11) + '<ellipse cx="50" cy="70" rx="16" ry="11" fill="#FFB3C8"/>' +
+      '<ellipse cx="44" cy="70" rx="2.5" ry="3.5" fill="' + INK + '" stroke="none"/><ellipse cx="56" cy="70" rx="2.5" ry="3.5" fill="' + INK + '" stroke="none"/>';
+  };
+  ANIMALS.monkey = function (c) {
+    return '<circle cx="20" cy="54" r="11" fill="' + c + '"/><circle cx="80" cy="54" r="11" fill="' + c + '"/>' +
+      '<circle cx="20" cy="54" r="5" fill="#F3D3B0" stroke="none"/><circle cx="80" cy="54" r="5" fill="#F3D3B0" stroke="none"/>' + head(c) +
+      '<path d="M50 44c-6-8-22-8-22 6c0 4 2 6 4 8c-4 4-6 8-6 12c0 10 12 16 24 16s24-6 24-16c0-4-2-8-6-12c2-2 4-4 4-8c0-14-16-14-22-6z" fill="#F3D3B0"/>' +
+      eyes(52, 9) + '<circle cx="46" cy="64" r="1.6" fill="' + INK + '" stroke="none"/><circle cx="54" cy="64" r="1.6" fill="' + INK + '" stroke="none"/>' +
+      '<path d="M42 70q8 7 16 0" fill="none"/>';
+  };
+  ANIMALS.hamster = function (c) {
+    return '<circle cx="30" cy="32" r="9" fill="' + c + '"/><circle cx="70" cy="32" r="9" fill="' + c + '"/>' +
+      '<circle cx="30" cy="32" r="4" fill="#FFB3C8" stroke="none"/><circle cx="70" cy="32" r="4" fill="#FFB3C8" stroke="none"/>' + head(c) +
+      '<circle cx="28" cy="66" r="10" fill="#FFF3E6"/><circle cx="72" cy="66" r="10" fill="#FFF3E6"/><ellipse cx="50" cy="70" rx="18" ry="13" fill="#FFF3E6"/>' +
+      eyes(50, 11) + '<ellipse cx="50" cy="60" rx="3.5" ry="2.5" fill="#FF7EB6" stroke-width="2"/>' +
+      '<path d="M46 64q4 4 8 0" fill="none" stroke-width="2.5"/><rect x="47" y="66" width="6" height="6" rx="1" fill="#FFFFFF" stroke-width="2"/>';
+  };
+  ANIMALS.tiger = function (c) {
+    return '<path d="M24 42l2-20l16 10z" fill="' + c + '"/><path d="M76 42l-2-20l-16 10z" fill="' + c + '"/>' + head(c) +
+      '<path d="M50 26v10M42 28l3 8M58 28l-3 8M20 52h10M22 62h9M80 52h-10M78 62h-9" fill="none" stroke-width="3.5"/>' +
+      '<ellipse cx="50" cy="68" rx="16" ry="11" fill="#FFFFFF"/>' + eyes(50) +
+      '<path d="M45 61h10l-5 5z" fill="#FF7EB6" stroke-width="2"/><path d="M44 71q6 4 12 0" fill="none"/>';
+  };
+  ANIMALS.duck = function (c) {
+    return '<path d="M50 28q-6-10 2-16q0 8 6 10" fill="' + c + '"/>' + head(c) + eyes(50, 11) + cheeks +
+      '<ellipse cx="50" cy="66" rx="16" ry="8" fill="#FF9F43"/><path d="M36 66h28" fill="none" stroke-width="2"/>';
+  };
+  ANIMALS.hedgehog = function (c) {
+    return '<path d="M14 64L8 44L22 40L18 24L34 28L36 12L50 22L64 12L66 28L82 24L78 40L92 44L86 64z" fill="#8A5A33"/>' +
+      '<ellipse cx="50" cy="64" rx="26" ry="23" fill="' + c + '"/>' + eyes(58, 10) +
+      '<circle cx="50" cy="70" r="4.5" fill="' + INK + '"/><path d="M45 77q5 3 10 0" fill="none"/>' +
+      '<ellipse cx="34" cy="70" rx="4" ry="2.6" fill="#FF7EB6" opacity=".55" stroke="none"/><ellipse cx="66" cy="70" rx="4" ry="2.6" fill="#FF7EB6" opacity=".55" stroke="none"/>';
+  };
+  ANIMALS.giraffe = function (c) {
+    return '<path d="M40 30V12M60 30V12" fill="none"/><circle cx="40" cy="10" r="5" fill="#A0643C"/><circle cx="60" cy="10" r="5" fill="#A0643C"/>' +
+      '<ellipse cx="18" cy="46" rx="11" ry="6" transform="rotate(-25 18 46)" fill="' + c + '"/><ellipse cx="82" cy="46" rx="11" ry="6" transform="rotate(25 82 46)" fill="' + c + '"/>' +
+      head(c) + '<circle cx="33" cy="38" r="5" fill="#C98B4F" stroke="none"/><circle cx="66" cy="36" r="4" fill="#C98B4F" stroke="none"/><circle cx="73" cy="60" r="4" fill="#C98B4F" stroke="none"/>' +
+      eyes(50, 11) + '<ellipse cx="50" cy="70" rx="16" ry="11" fill="#FFE8B8"/>' +
+      '<circle cx="45" cy="68" r="2" fill="' + INK + '" stroke="none"/><circle cx="55" cy="68" r="2" fill="' + INK + '" stroke="none"/><path d="M44 76q6 3 12 0" fill="none"/>';
+  };
+  ANIMALS.dragon = function (c) {
+    return '<path d="M32 34q-10-14-6-26q6 10 14 18z" fill="#FFF3D6"/><path d="M68 34q10-14 6-26q-6 10-14 18z" fill="#FFF3D6"/>' +
+      '<path d="M14 52l-8-14l18 4z" fill="' + c + '"/><path d="M86 52l8-14l-18 4z" fill="' + c + '"/>' +
+      '<path d="M44 28l6-10l6 10z" fill="#FFB627"/>' + head(c) + eyes(48, 11) + cheeks +
+      '<ellipse cx="50" cy="68" rx="18" ry="12" fill="#A8EDBE"/><circle cx="44" cy="66" r="2.2" fill="' + INK + '" stroke="none"/><circle cx="56" cy="66" r="2.2" fill="' + INK + '" stroke="none"/>' +
+      '<path d="M42 74q8 5 16 0" fill="none"/>';
+  };
+  ANIMALS.unicorn = function (c) {
+    return '<circle cx="26" cy="34" r="9" fill="#FF8FC7"/><circle cx="20" cy="50" r="9" fill="#C77DFF"/><circle cx="22" cy="66" r="9" fill="#4CC9F0"/><circle cx="38" cy="26" r="9" fill="#FFE14D"/>' +
+      '<path d="M64 36l8-18l6 20z" fill="' + c + '"/>' + head(c) +
+      '<path d="M45 30L52 4L59 30z" fill="#FFD23F"/><path d="M48 22h8M50 14h5" fill="none" stroke="#FF8FC7" stroke-width="2.5"/>' +
+      eyes(54) + '<path d="M35 51l-4-3M65 51l4-3" fill="none" stroke-width="2"/>' + cheeks + '<path d="M44 68q6 5 12 0" fill="none"/>';
+  };
+
+  // Accessories drawn over a face, sized for the standard round head.
+  const ACCESSORIES = {
+    bowtie: '<path d="M50 88l-14-8v16zM50 88l14-8v16z" fill="#FF5A5F"/><circle cx="50" cy="88" r="4" fill="#FF5A5F"/>',
+    chef: '<circle cx="38" cy="18" r="10" fill="#FFFFFF"/><circle cx="62" cy="18" r="10" fill="#FFFFFF"/><circle cx="50" cy="12" r="12" fill="#FFFFFF"/>' +
+      '<rect x="34" y="20" width="32" height="12" rx="2" fill="#FFFFFF"/>',
+    tiara: '<path d="M34 32l4-12l6 8l6-12l6 12l6-8l4 12z" fill="#FFD23F"/><circle cx="50" cy="23" r="2.5" fill="#FF5FA2"/>',
+    bow: '<path d="M66 30l-10-8v16zM66 30l10-8v16z" fill="#FF5FA2"/><circle cx="66" cy="30" r="4" fill="#FF5FA2"/>',
+    flower: '<circle cx="70" cy="28" r="9" fill="#FF8FC7"/><circle cx="70" cy="28" r="4" fill="#FFE14D"/>',
+    glasses: '<circle cx="40" cy="52" r="8" fill="#FFFFFF" fill-opacity=".3"/><circle cx="60" cy="52" r="8" fill="#FFFFFF" fill-opacity=".3"/><path d="M48 52h4M32 51l-8-2M68 51l8-2" fill="none"/>',
+    shades: '<rect x="28" y="45" width="19" height="11" rx="4" fill="#2B2147"/><rect x="53" y="45" width="19" height="11" rx="4" fill="#2B2147"/>' +
+      '<path d="M47 49h6" fill="none"/><path d="M31 48l4 0M56 48l4 0" fill="none" stroke="#FFFFFF" stroke-width="2"/>',
+    headphones: '<path d="M20 58a30 30 0 0 1 60 0" fill="none" stroke-width="6"/><rect x="12" y="50" width="12" height="18" rx="5" fill="#FF5FA2"/><rect x="76" y="50" width="12" height="18" rx="5" fill="#FF5FA2"/>',
+    wizard: '<path d="M28 32L50 0L72 32z" fill="#5B4BB7"/><path d="M22 34q28-10 56 0q-28 6-56 0z" fill="#5B4BB7"/>' + sparkle(52, 18, 5, '#FFE14D'),
+    pirate: '<path d="M20 34q30-32 60 0q-30-6-60 0z" fill="#2B2147"/><circle cx="50" cy="22" r="4" fill="#FFFFFF" stroke="none"/>',
+  };
+
+  function face(animal, color, acc) {
+    return svg((ANIMALS[animal] || ANIMALS.cat)(color) + (ACCESSORIES[acc] || ''), '');
   }
 
   // ---------------------------------------------------------------------------
@@ -413,6 +608,55 @@
       '<circle cx="14" cy="78" r="12" fill="#FFFFFF"/><circle cx="86" cy="78" r="12" fill="#FFFFFF"/>',
     star: '<path d="' + star5(50, 54, 46, 21) + '" fill="#FFE14D"/>' +
       '<circle cx="41" cy="52" r="4" fill="' + INK + '" stroke="none"/><circle cx="59" cy="52" r="4" fill="' + INK + '" stroke="none"/><path d="M43 63q7 6 14 0" fill="none" stroke-width="5"/>',
+    // Sprinkle Street
+    cupcake: '<path d="M24 54h52l-8 38h-36z" fill="#8C6CFF"/><path d="M38 57l2 33M50 57v33M62 57l-2 33" fill="none" stroke="#B9A4FF" stroke-width="5"/>' +
+      '<path d="M24 54h52l-8 38h-36z" fill="none"/><path d="M16 56q0-16 14-18q0-18 20-18t20 18q14 2 14 18z" fill="#FF8FC7"/>' +
+      '<circle cx="50" cy="13" r="8" fill="#FF3B6B"/><path d="M31 46l4-3M50 34l4 2M65 46l-3-4" fill="none" stroke="#FFFFFF" stroke-width="5"/>',
+    bubbletea: '<path d="M58 30l12-26" fill="none" stroke="#FF5FA2" stroke-width="10"/><path d="M22 36h56l-8 56h-40z" fill="#F3D3B0"/>' +
+      '<path d="M18 36q32-26 64 0z" fill="#FFFFFF"/>' +
+      '<circle cx="38" cy="80" r="5" fill="' + INK + '" stroke="none"/><circle cx="52" cy="84" r="5" fill="' + INK + '" stroke="none"/>' +
+      '<circle cx="62" cy="74" r="5" fill="' + INK + '" stroke="none"/><circle cx="45" cy="68" r="5" fill="' + INK + '" stroke="none"/>',
+    cottoncandy: '<path d="M50 96V62" fill="none" stroke-width="9"/><circle cx="34" cy="44" r="18" fill="#FF8FC7"/><circle cx="64" cy="40" r="20" fill="#C9B6FF"/>' +
+      '<circle cx="50" cy="22" r="16" fill="#FFB3D9"/><circle cx="50" cy="56" r="14" fill="#FF8FC7"/>',
+    popsicle: '<rect x="43" y="66" width="14" height="30" rx="7" fill="#E8B97A"/><path d="M24 28q0-22 26-22t26 22v46h-52z" fill="#4CC9F0"/>' +
+      '<path d="M26 46h48" fill="none" stroke="#FFFFFF" stroke-width="7"/><path d="M24 28q0-22 26-22t26 22v46h-52z" fill="none"/>',
+    pancake: '<ellipse cx="50" cy="86" rx="44" ry="9" fill="#FFFFFF"/><ellipse cx="50" cy="74" rx="36" ry="11" fill="#E8A25B"/>' +
+      '<ellipse cx="50" cy="60" rx="36" ry="11" fill="#E8A25B"/><ellipse cx="50" cy="46" rx="36" ry="11" fill="#F6B04E"/>' +
+      '<path d="M24 46q6 14 10 2q4 16 10 2q6 12 12 0q4 10 10-4" fill="#8B4A2B"/><rect x="42" y="30" width="16" height="12" rx="3" fill="#FFE14D"/>',
+    taco: '<path d="M10 48q4-14 12-6q6-14 14-6q6-14 14-6q6-14 14-6q6-14 14-6q6-12 12 4z" fill="#3DDC97"/>' +
+      '<circle cx="34" cy="40" r="6" fill="#FF5A5F"/><circle cx="62" cy="38" r="6" fill="#FF5A5F"/>' +
+      '<path d="M8 46a42 42 0 0 0 84 0z" fill="#FFD23F"/><path d="M24 56q26 22 52 0" fill="none" stroke="#F6B04E" stroke-width="5"/>',
+    sushi: '<circle cx="50" cy="50" r="42" fill="' + INK + '"/><circle cx="50" cy="50" r="31" fill="#FFFFFF" stroke="none"/>' +
+      '<circle cx="50" cy="50" r="14" fill="#FF8A65"/><circle cx="64" cy="36" r="5" fill="#3DDC97"/>',
+    cookie: '<circle cx="50" cy="50" r="42" fill="#E8A25B"/><ellipse cx="34" cy="34" rx="6" ry="5" fill="#6B3A1E" stroke="none"/>' +
+      '<ellipse cx="60" cy="30" rx="6" ry="5" fill="#6B3A1E" stroke="none"/><ellipse cx="68" cy="58" rx="6" ry="5" fill="#6B3A1E" stroke="none"/>' +
+      '<ellipse cx="40" cy="64" rx="6" ry="5" fill="#6B3A1E" stroke="none"/><ellipse cx="52" cy="48" rx="5" ry="4" fill="#6B3A1E" stroke="none"/>',
+    waffle: '<rect x="12" y="12" width="76" height="76" rx="16" fill="#F6B04E"/>' +
+      '<path d="M31 16v68M50 14v72M69 16v68M16 31h68M14 50h72M16 69h68" fill="none" stroke="#C98B4F" stroke-width="5"/>' +
+      '<rect x="12" y="12" width="76" height="76" rx="16" fill="none"/><rect x="40" y="40" width="20" height="16" rx="3" fill="#FFE14D"/>',
+    pets: '<ellipse cx="50" cy="66" rx="24" ry="20" fill="#C68A5B"/><circle cx="22" cy="42" r="10" fill="#C68A5B"/>' +
+      '<circle cx="38" cy="24" r="10" fill="#C68A5B"/><circle cx="62" cy="24" r="10" fill="#C68A5B"/><circle cx="78" cy="42" r="10" fill="#C68A5B"/>',
+    flowers: '<path d="M30 54l20 42l20-42z" fill="#3DDC97"/><circle cx="30" cy="42" r="18" fill="#FF5FA2"/><circle cx="70" cy="42" r="18" fill="#C77DFF"/>' +
+      '<circle cx="50" cy="22" r="18" fill="#FF9F43"/><circle cx="30" cy="42" r="6" fill="#FFE14D" stroke="none"/><circle cx="70" cy="42" r="6" fill="#FFE14D" stroke="none"/><circle cx="50" cy="22" r="6" fill="#FFE14D" stroke="none"/>',
+    comics: '<rect x="16" y="8" width="68" height="84" rx="4" fill="#FFFFFF"/><rect x="16" y="8" width="68" height="18" fill="#FF5A5F"/>' +
+      '<path d="' + star5(50, 60, 26, 12) + '" fill="#FFE14D"/><rect x="16" y="8" width="68" height="84" rx="4" fill="none"/>',
+    arcade: '<path d="M24 34h52q16 0 18 22t-12 24q-8 0-14-12h-36q-6 12-14 12t-12-24t18-22z" fill="#8C6CFF"/>' +
+      '<path d="M30 52h14M37 45v14" fill="none" stroke="#FFFFFF" stroke-width="7"/><circle cx="64" cy="48" r="5" fill="#FF5A5F"/><circle cx="74" cy="58" r="5" fill="#3DDC97"/>',
+    music: '<path d="M36 76V24l44-12v52" fill="none" stroke-width="10"/><ellipse cx="26" cy="78" rx="14" ry="10" fill="#FF5FA2"/><ellipse cx="70" cy="66" rx="14" ry="10" fill="#FF5FA2"/>',
+    skate: '<rect x="6" y="38" width="88" height="18" rx="9" fill="#FF9F43"/><path d="M22 47h56" fill="none" stroke="#FFE14D" stroke-width="6"/>' +
+      '<rect x="6" y="38" width="88" height="18" rx="9" fill="none"/><circle cx="26" cy="68" r="9" fill="#4CC9F0"/><circle cx="74" cy="68" r="9" fill="#4CC9F0"/>',
+    magic: '<path d="M18 90L60 48" fill="none" stroke-width="14"/><path d="M18 90L60 48" fill="none" stroke="#FFFFFF" stroke-width="5"/>' +
+      '<path d="' + star5(66, 32, 26, 11) + '" fill="#FFE14D"/>',
+    dino: '<path d="M24 64L4 76l22-2z" fill="#3DDC97"/><rect x="30" y="66" width="10" height="20" rx="4" fill="#3DDC97"/><rect x="58" y="66" width="10" height="20" rx="4" fill="#3DDC97"/>' +
+      '<path d="M34 48l6-16l8 12l8-16l8 16" fill="#FFB627"/><ellipse cx="50" cy="60" rx="30" ry="18" fill="#3DDC97"/>' +
+      '<circle cx="82" cy="44" r="12" fill="#3DDC97"/><circle cx="85" cy="41" r="3" fill="' + INK + '" stroke="none"/>',
+    pirate: '<path d="M14 46q0-26 36-26t36 26z" fill="#A0643C"/><rect x="14" y="46" width="72" height="40" rx="4" fill="#C98B4F"/>' +
+      '<path d="M30 23v62M70 23v62" fill="none" stroke="#FFD23F" stroke-width="6"/><rect x="42" y="40" width="16" height="16" rx="3" fill="#FFD23F"/>',
+    dragon: '<path d="M50 6c22 0 36 32 36 54c0 18-16 32-36 32s-36-14-36-32c0-22 14-54 36-54z" fill="#5ED38A"/>' +
+      '<circle cx="38" cy="40" r="6" fill="#FFD23F" stroke="none"/><circle cx="62" cy="56" r="8" fill="#FFD23F" stroke="none"/><circle cx="42" cy="74" r="5" fill="#FFD23F" stroke="none"/>' +
+      '<path d="M22 52l10 6l8-8l10 8l8-6l10 6l8-4" fill="none" stroke-width="5"/>',
+    unicorn: '<path d="M50 4L72 90H28z" fill="#FFD23F"/><path d="M36 70l28-12M40 50l20-9M45 30l10-5" fill="none" stroke="#FF8FC7" stroke-width="7"/>' +
+      '<path d="M50 4L72 90H28z" fill="none"/>',
   };
 
   function product(id) {

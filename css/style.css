@@ -398,6 +398,48 @@ svg { display: block; width: 100%; height: 100%; }
 .goal-claim.ready { background: var(--mint); animation: pulse 1s ease-in-out infinite; }
 .goal-claim:disabled { cursor: default; }
 
+/* ------------------------------------------------------------------ streets */
+.district-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border: var(--line) solid var(--ink);
+  border-radius: 16px;
+  background: var(--paper);
+  box-shadow: 0 4px 0 var(--ink);
+}
+.district-toggle button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  color: var(--ink-soft);
+}
+.district-toggle button[aria-selected="true"] { background: var(--sun); color: var(--ink); }
+.district-toggle button[data-district="sprinkle"][aria-selected="true"] { background: var(--bubblegum); color: #FFFFFF; }
+.district-icon { width: 20px; height: 20px; flex: none; }
+.district-toggle .badge { top: -10px; right: -6px; }
+.district-note { margin: 0; font-weight: 700; }
+.need-chip {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 800;
+  font-size: .9rem;
+  white-space: nowrap;
+}
+.need-chip .chip-icon { width: 20px; height: 20px; }
+
 /* ------------------------------------------------------------------ shops */
 .shop-list {
   display: grid;
@@ -786,6 +828,28 @@ button.shop-scene:active { transform: translateY(1px); }
 .perk-desc { margin: 0; font-size: .85rem; font-weight: 700; color: var(--ink-soft); }
 .perk .stamp { font-size: .75rem; padding: 0 8px; }
 .perk .mini-bar { margin-top: 4px; }
+
+/* Sprinkle Street roadmap on the Sprinkles tab */
+.street-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
+  gap: 10px;
+}
+.street-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+}
+.street-card:not(.got) { border-style: dashed; box-shadow: none; background: rgba(255, 251, 240, .8); }
+.street-art { width: 56px; height: 56px; padding: 3px; border: var(--line) solid var(--ink); border-radius: 14px; background: var(--tile); }
+.street-card:not(.got) .street-art { background: #E2DDF0; }
+.street-card:not(.got) .street-art svg { filter: grayscale(1) opacity(.55); }
+.street-info { display: grid; gap: 2px; min-width: 0; }
+.street-card .stamp { position: absolute; top: 6px; right: 8px; font-size: .7rem; padding: 0 6px; }
+.grid-title { grid-column: 1 / -1; }
 
 /* ------------------------------------------------------------------ trophies & settings */
 .trophy-grid {
