@@ -30,6 +30,23 @@
       'Q' + x + ' ' + y + ' ' + (x - r) + ' ' + y + 'Q' + x + ' ' + y + ' ' + x + ' ' + (y - r) + 'z" fill="' + fill + '" stroke-width="2"/>';
   }
 
+  // Five-pointed star as a path.
+  function star5(cx, cy, R, r) {
+    let d = '';
+    for (let k = 0; k < 10; k++) {
+      const a = -Math.PI / 2 + k * Math.PI / 5, rad = k % 2 ? r : R;
+      d += (k ? 'L' : 'M') + (cx + Math.cos(a) * rad).toFixed(1) + ' ' + (cy + Math.sin(a) * rad).toFixed(1);
+    }
+    return d + 'z';
+  }
+
+  // A crayon standing on end, used as the Crayon Factory's chimneys.
+  function crayonStack(x, top, color) {
+    return '<path d="M' + x + ' 46V' + top + 'h10V46z" fill="' + color + '"/>' +
+      '<path d="M' + x + ' ' + top + 'l5-10l5 10z" fill="' + color + '"/>' +
+      '<path d="M' + (x + 1.5) + ' ' + (top + 7) + 'h7M' + (x + 1.5) + ' ' + (top + 14) + 'h7" fill="none" stroke="#FFFFFF" stroke-width="2.5"/>';
+  }
+
   // Circle with a hole, as one path (even-odd fill).
   function ring(cx, cy, r, hole) {
     return 'M' + (cx - r) + ' ' + cy + 'a' + r + ' ' + r + ' 0 1 0 ' + (2 * r) + ' 0a' + r + ' ' + r + ' 0 1 0 ' + (-2 * r) + ' 0z' +
@@ -151,6 +168,71 @@
         '<rect x="24" y="64" width="52" height="10" rx="4" fill="#C77DFF"/>' +
         '<rect x="44" y="52" width="12" height="12" rx="2" fill="#FFD23F"/>';
     },
+    crayon: function () {
+      return shadow +
+        crayonStack(22, 22, '#FF5A5F') + crayonStack(45, 14, '#4CC9F0') + crayonStack(68, 26, '#3DDC97') +
+        '<rect x="12" y="44" width="76" height="42" rx="3" fill="#FFE8A3"/>' +
+        '<path d="M15 54q9-6 18 0t18 0t18 0t16 0" fill="none" stroke="#C77DFF" stroke-width="3"/>' +
+        '<rect x="43" y="64" width="14" height="22" rx="2" fill="#FF8A3D"/><circle cx="53" cy="76" r="1.5" fill="' + INK + '"/>' +
+        '<rect x="20" y="62" width="15" height="11" rx="2" fill="#9BE7FF"/><rect x="65" y="62" width="15" height="11" rx="2" fill="#9BE7FF"/>';
+    },
+    sneaker: function () {
+      return shadow +
+        '<rect x="12" y="52" width="76" height="34" rx="3" fill="#C9F2DB"/>' +
+        '<path d="M20 46V30q0-6 6-6h12l8 10q20 0 34 8q6 4 2 4z" fill="#FF5A5F"/>' +
+        '<path d="M18 46h66q0 7-7 7h-52q-7 0-7-7z" fill="#FFFFFF"/>' +
+        '<path d="M34 30l8 6M40 27l8 6" fill="none" stroke="#FFFFFF" stroke-width="3"/>' +
+        '<path d="M28 40q16-6 30 0" fill="none" stroke="#FFD23F" stroke-width="3"/>' +
+        '<rect x="43" y="64" width="14" height="22" rx="2" fill="#2ED3A0"/><circle cx="53" cy="76" r="1.5" fill="' + INK + '"/>' +
+        '<rect x="20" y="62" width="15" height="11" rx="2" fill="#9BE7FF"/><rect x="65" y="62" width="15" height="11" rx="2" fill="#9BE7FF"/>';
+    },
+    choco: function () {
+      return shadow +
+        '<rect x="22" y="22" width="11" height="26" fill="#E8A25B"/><rect x="66" y="14" width="11" height="34" fill="#E8A25B"/>' +
+        '<circle cx="27" cy="15" r="5" fill="#C98B5B"/><circle cx="72" cy="7" r="5" fill="#C98B5B"/>' +
+        '<rect x="12" y="44" width="76" height="42" rx="3" fill="#B5754A"/>' +
+        '<path d="M12 44h76v6q-4 8-8 0q-4 9-9 0q-5 6-9 0q-4 9-9 0q-5 7-9 0q-4 8-9 0q-5 6-9 0q-4 8-14 0z" fill="#6B3A1E"/>' +
+        '<rect x="34" y="56" width="32" height="16" rx="2" fill="#6B3A1E"/>' +
+        '<path d="M44.7 57.5v13M55.3 57.5v13M35.5 64h29" fill="none" stroke="#8B4A2B" stroke-width="2.5"/>' +
+        '<rect x="43" y="74" width="14" height="12" rx="2" fill="#FFD23F"/>' +
+        '<rect x="18" y="58" width="10" height="10" rx="2" fill="#FFE3C7"/><rect x="72" y="58" width="10" height="10" rx="2" fill="#FFE3C7"/>';
+    },
+    robot: function () {
+      return shadow +
+        '<path d="M50 20V11" fill="none"/><circle cx="50" cy="8" r="4" fill="#FF5A5F"/>' +
+        '<rect x="25" y="28" width="6" height="12" rx="2" fill="#9DB4D9"/><rect x="69" y="28" width="6" height="12" rx="2" fill="#9DB4D9"/>' +
+        '<rect x="30" y="20" width="40" height="30" rx="7" fill="#E4ECF7"/>' +
+        '<circle cx="41" cy="33" r="6" fill="#4CC9F0"/><circle cx="59" cy="33" r="6" fill="#4CC9F0"/>' +
+        '<circle cx="41" cy="33" r="2" fill="' + INK + '" stroke="none"/><circle cx="59" cy="33" r="2" fill="' + INK + '" stroke="none"/>' +
+        '<rect x="40" y="41" width="20" height="5" rx="2" fill="#FFFFFF"/><path d="M45 41v5M50 41v5M55 41v5" fill="none" stroke-width="2"/>' +
+        '<rect x="12" y="50" width="76" height="36" rx="3" fill="#B8C7DD"/>' +
+        '<circle cx="28" cy="68" r="9" fill="none" stroke-width="6" stroke-dasharray="3.5 3.6"/><circle cx="28" cy="68" r="7.5" fill="#FFD23F"/><circle cx="28" cy="68" r="2.5" fill="#B8C7DD"/>' +
+        '<rect x="44" y="64" width="14" height="22" rx="2" fill="#5B8CFF"/><circle cx="54" cy="76" r="1.5" fill="' + INK + '"/>' +
+        '<rect x="66" y="60" width="14" height="11" rx="2" fill="#9BE7FF"/>';
+    },
+    rainbow: function () {
+      let bands = '';
+      [['#FF5A5F', 26], ['#FF9F43', 23], ['#FFE14D', 20], ['#3DDC97', 17], ['#4CC9F0', 14]].forEach(function (b) {
+        bands += '<path d="M' + (48 - b[1]) + ' 36a' + b[1] + ' ' + b[1] + ' 0 0 1 ' + (2 * b[1]) + ' 0" fill="none" stroke="' + b[0] + '" stroke-width="3.6" stroke-linecap="butt"/>';
+      });
+      return shadow +
+        '<path d="M20.2 36a27.8 27.8 0 0 1 55.6 0M35.8 36a12.2 12.2 0 0 1 24.4 0" fill="none" stroke-width="2"/>' + bands +
+        '<rect x="59" y="32" width="20" height="16" fill="#FF8FC7"/>' +
+        '<circle cx="20" cy="40" r="7" fill="#FFFFFF"/><circle cx="30" cy="38" r="8" fill="#FFFFFF"/><circle cx="38" cy="42" r="6" fill="#FFFFFF"/>' +
+        '<path d="M12 86V50l12-8v8l12-8v8l12-8v8h40v36z" fill="#FFF7FB"/>' +
+        '<circle cx="24" cy="64" r="5" fill="#FF5A5F"/><circle cx="36" cy="64" r="5" fill="#FFE14D"/><circle cx="72" cy="64" r="5" fill="#4CC9F0"/>' +
+        '<rect x="45" y="64" width="14" height="22" rx="2" fill="#C77DFF"/><circle cx="55" cy="76" r="1.5" fill="' + INK + '"/>';
+    },
+    star: function () {
+      return sparkle(14, 16, 5, '#FFE14D') + sparkle(88, 44, 4, '#FFFFFF') + sparkle(30, 30, 3, '#FFFFFF') +
+        '<path d="M60 50L68 24l11 3L74 52z" fill="#C77DFF"/><path d="M66.5 30l11 3" fill="none" stroke="#FFFFFF" stroke-width="3"/>' +
+        '<path d="M72 18l-6-6M78 16l-1-8" fill="none" stroke="#FFE14D" stroke-width="3"/>' +
+        '<path d="' + star5(82, 11, 9, 4) + '" fill="#FFE14D"/>' +
+        '<path d="M12 86V50l13-10v10l13-10v10l13-10v10h37v36z" fill="#8C6CFF"/>' +
+        '<rect x="20" y="60" width="12" height="10" rx="2" fill="#FFE14D"/><rect x="68" y="60" width="12" height="10" rx="2" fill="#FFE14D"/>' +
+        '<path d="' + star5(50, 60, 7, 3) + '" fill="#FFE14D" stroke-width="2"/>' +
+        '<rect x="43" y="70" width="14" height="16" rx="2" fill="#2E2A5A"/>';
+    },
   };
 
   function shop(id) {
@@ -241,6 +323,49 @@
         '<ellipse cx="50" cy="61" rx="5.5" ry="4" fill="' + INK + '"/>' + '<path d="M45 68q5 4 10 0" fill="none"/>' +
         '<path d="M48 70q2 8 6 0" fill="#FF7EB6" stroke-width="2"/>' + cheeks;
     },
+    owl: function (c) {
+      return '<path d="M24 40l-2-22l16 12z" fill="' + c + '"/><path d="M76 40l2-22l-16 12z" fill="' + c + '"/>' + head(c) +
+        '<circle cx="39" cy="52" r="11" fill="#FFFFFF"/><circle cx="61" cy="52" r="11" fill="#FFFFFF"/>' + eyes(52, 11) +
+        '<path d="M45 62l5 8l5-8z" fill="#FF9F43"/><path d="M36 77q14 6 28 0" fill="none" stroke="#8A5A33" stroke-width="2.5"/>';
+    },
+    lion: function (c) {
+      let mane = '';
+      for (let k = 0; k < 12; k++) {
+        const a = k * Math.PI / 6;
+        mane += '<circle cx="' + (50 + Math.cos(a) * 31).toFixed(1) + '" cy="' + (56 + Math.sin(a) * 31).toFixed(1) + '" r="10" fill="#E07A2E"/>';
+      }
+      return mane + '<circle cx="29" cy="35" r="7" fill="' + c + '"/><circle cx="71" cy="35" r="7" fill="' + c + '"/>' +
+        '<circle cx="50" cy="56" r="27" fill="' + c + '"/>' + eyes(51) + cheeks +
+        '<ellipse cx="50" cy="65" rx="11" ry="8" fill="#FFF3D6"/><path d="M46 60h8l-4 4z" fill="' + INK + '"/><path d="M45 68q5 4 10 0" fill="none"/>';
+    },
+    koala: function (c) {
+      return '<circle cx="22" cy="36" r="16" fill="' + c + '"/><circle cx="78" cy="36" r="16" fill="' + c + '"/>' +
+        '<circle cx="22" cy="36" r="8" fill="#F4F0FF" stroke="none"/><circle cx="78" cy="36" r="8" fill="#F4F0FF" stroke="none"/>' +
+        head(c) + eyes(50, 13) + cheeks + '<ellipse cx="50" cy="62" rx="8" ry="11" fill="' + INK + '"/><path d="M44 78q6 3 12 0" fill="none"/>';
+    },
+    elephant: function (c) {
+      return '<ellipse cx="20" cy="54" rx="16" ry="22" fill="' + c + '"/><ellipse cx="80" cy="54" rx="16" ry="22" fill="' + c + '"/>' +
+        '<ellipse cx="20" cy="54" rx="9" ry="14" fill="#FFB3C8" stroke="none"/><ellipse cx="80" cy="54" rx="9" ry="14" fill="#FFB3C8" stroke="none"/>' +
+        head(c) + eyes(48, 11) + cheeks + '<path d="M43 56q-1 24 11 30q6 2 6-4q-6-2-7-10v-16z" fill="' + c + '"/>';
+    },
+    raccoon: function (c) {
+      return '<path d="M24 42l2-24l18 12z" fill="' + c + '"/><path d="M76 42l-2-24l-18 12z" fill="' + c + '"/>' +
+        '<path d="M28 36l1-12l9 6z" fill="' + INK + '" stroke="none"/><path d="M72 36l-1-12l-9 6z" fill="' + INK + '" stroke="none"/>' +
+        head(c) + '<path d="M22 52q14-12 28-2q14-10 28 2q-6 10-14 8q-8-2-14-2q-6 0-14 2q-8 2-14-8z" fill="#3E3A55"/>' +
+        '<circle cx="39" cy="53" r="3.6" fill="#FFFFFF" stroke="none"/><circle cx="61" cy="53" r="3.6" fill="#FFFFFF" stroke="none"/>' +
+        '<circle cx="39.5" cy="53" r="2" fill="' + INK + '" stroke="none"/><circle cx="61.5" cy="53" r="2" fill="' + INK + '" stroke="none"/>' +
+        '<ellipse cx="50" cy="69" rx="12" ry="8" fill="#FFFFFF"/><ellipse cx="50" cy="65" rx="4.5" ry="3.2" fill="' + INK + '"/><path d="M46 71q4 3 8 0" fill="none"/>';
+    },
+    sheep: function (c) {
+      let wool = '';
+      [[30, 32], [42, 24], [58, 24], [70, 32], [24, 46], [76, 46]].forEach(function (p) {
+        wool += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="11" fill="#FFFFFF"/>';
+      });
+      return '<ellipse cx="16" cy="58" rx="10" ry="6" transform="rotate(20 16 58)" fill="' + c + '"/><ellipse cx="84" cy="58" rx="10" ry="6" transform="rotate(-20 84 58)" fill="' + c + '"/>' +
+        wool + '<ellipse cx="50" cy="61" rx="22" ry="25" fill="' + c + '"/><circle cx="50" cy="36" r="12" fill="#FFFFFF"/>' +
+        eyes(57, 9) + '<ellipse cx="50" cy="71" rx="5" ry="3.5" fill="#FF7EB6"/><path d="M45 77q5 4 10 0" fill="none"/>' +
+        '<ellipse cx="35" cy="66" rx="4" ry="2.6" fill="#FF7EB6" opacity=".55" stroke="none"/><ellipse cx="65" cy="66" rx="4" ry="2.6" fill="#FF7EB6" opacity=".55" stroke="none"/>';
+    },
   };
 
   function face(animal, color) {
@@ -273,6 +398,21 @@
       '<rect x="12" y="58" width="76" height="14" rx="6" fill="#8B4A2B"/><path d="M14 76h72q0 16-14 16h-44q-14 0-14-16z" fill="#F6B04E"/>',
     moon: '<path d="M34 34q0-24 16-24t16 24" fill="none" stroke-width="8"/><path d="M18 32h64l6 60h-76z" fill="#C77DFF"/>' +
       sparkle(50, 62, 16, '#FFE14D').replace('stroke-width="2"', 'stroke-width="6"'),
+    crayon: '<g transform="rotate(35 50 50)"><rect x="37" y="30" width="26" height="62" rx="4" fill="#4CC9F0"/><path d="M37 30l13-24l13 24z" fill="#4CC9F0"/>' +
+      '<path d="M42 48h16M42 74h16" fill="none" stroke="#FFFFFF" stroke-width="7"/></g>',
+    sneaker: '<path d="M8 66V40q0-8 8-8h18l12 14q26 0 42 12q6 8 0 8z" fill="#FF5A5F"/><path d="M6 66h84q0 14-12 14h-60q-12 0-12-14z" fill="#FFFFFF"/>' +
+      '<path d="M30 40l10 8M38 36l10 8" fill="none" stroke="#FFFFFF" stroke-width="6"/>',
+    choco: '<rect x="20" y="12" width="60" height="78" rx="6" fill="#6B3A1E"/><path d="M50 16v34M24 32h52" fill="none" stroke="#8B4A2B" stroke-width="5"/>' +
+      '<path d="M20 52h60v32q0 6-6 6h-48q-6 0-6-6z" fill="#FFD23F"/>',
+    robot: '<path d="M50 18V8" fill="none"/><circle cx="50" cy="7" r="5" fill="#FF5A5F"/><rect x="22" y="18" width="56" height="42" rx="10" fill="#E4ECF7"/>' +
+      '<circle cx="38" cy="38" r="8" fill="#4CC9F0"/><circle cx="62" cy="38" r="8" fill="#4CC9F0"/><rect x="30" y="60" width="40" height="32" rx="6" fill="#5B8CFF"/>',
+    rainbow: '<path d="M14 72a36 36 0 0 1 72 0" fill="none" stroke-width="30" stroke-linecap="butt"/>' +
+      '<path d="M6 72a44 44 0 0 1 88 0" fill="none" stroke="#FF5A5F" stroke-width="8" stroke-linecap="butt"/>' +
+      '<path d="M14 72a36 36 0 0 1 72 0" fill="none" stroke="#FFE14D" stroke-width="8" stroke-linecap="butt"/>' +
+      '<path d="M22 72a28 28 0 0 1 56 0" fill="none" stroke="#4CC9F0" stroke-width="8" stroke-linecap="butt"/>' +
+      '<circle cx="14" cy="78" r="12" fill="#FFFFFF"/><circle cx="86" cy="78" r="12" fill="#FFFFFF"/>',
+    star: '<path d="' + star5(50, 54, 46, 21) + '" fill="#FFE14D"/>' +
+      '<circle cx="41" cy="52" r="4" fill="' + INK + '" stroke="none"/><circle cx="59" cy="52" r="4" fill="' + INK + '" stroke="none"/><path d="M43 63q7 6 14 0" fill="none" stroke-width="5"/>',
   };
 
   function product(id) {

@@ -1,6 +1,6 @@
 # Sprinkle Town Tycoon
 
-A bright, cartoony idle tycoon game that runs in any modern browser. Start with one lemonade stand, open ten shops, hire animal managers to run them for you, and grow Sprinkle Town into a coin empire.
+A bright, cartoony idle tycoon game that runs in any modern browser. Start with one lemonade stand, open ten shops and seven factories, hire animal managers to run them for you, and grow Sprinkle Town into a coin empire.
 
 ## Play
 
@@ -22,6 +22,7 @@ It also works as-is on GitHub Pages: enable Pages for this branch and open the s
 - **Tap a shop's street** to start a batch. When the bar fills, the customer at the front is served and you get paid.
 - **Buy more** of a shop to earn more per batch, and its line of customers grows. Owning 10, 25, 50, 100… of a shop makes it **twice as fast** each time and opens a new branch building behind it. Busy shops get delivery vans.
 - **Open new shops**: Lemonade Stand → Ice Cream Cart → Donut Shop → Pizza Parlor → Toy Store → Candy Factory → Bouncy Park → Cartoon Studio → Rocket Diner → Moon Mall.
+- **Build factories** once the Moon Mall is open: Crayon Factory → Sneaker Factory → Chocolate Factory → Robot Factory → Rainbow Factory → Star Factory. Factories have workers in hard hats along a conveyor belt that carries their goods out to a truck; every finished batch, the loaded truck drives off and the next one pulls in. The Candy Factory works the same way.
 - **Hire managers** (Managers tab). They stand outside their shop, wave, and keep it running without taps, even while the game is closed (up to 8 hours of pay).
 - **Buy upgrades** (Upgrades tab) to triple a shop's profit, or every shop's. Each one adds a gold star to the shop's rating.
 - **Pop lucky balloons** when they float by for a coin shower or a 30-second Sugar Rush (triple profit).

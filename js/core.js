@@ -7,9 +7,12 @@
   'use strict';
 
   // ---------------------------------------------------------------------------
-  // Shops
+  // Shops and factories, in the order they open.
   // cost: price of the first one, rate: price growth per purchase,
   // time: seconds per batch, rev: coins per batch for each one owned.
+  // kind 'factory' ships its goods by truck instead of serving customers;
+  // night puts the scene under a starry sky.
+  // New businesses go at the end: saves store owned counts by position.
   // ---------------------------------------------------------------------------
   const BUSINESSES = [
     { id: 'lemon',    name: 'Lemonade Stand', cost: 4,      rate: 1.07, time: 1,   rev: 1,      tile: '#FFF0A6', bar: '#FFD23F' },
@@ -17,11 +20,17 @@
     { id: 'donut',    name: 'Donut Shop',     cost: 600,    rate: 1.14, time: 6,   rev: 420,    tile: '#FFE3C7', bar: '#FF9F43' },
     { id: 'pizza',    name: 'Pizza Parlor',   cost: 7200,   rate: 1.13, time: 12,  rev: 3600,   tile: '#FFDAD3', bar: '#FF6B6B' },
     { id: 'toys',     name: 'Toy Store',      cost: 9e4,    rate: 1.12, time: 24,  rev: 4.2e4,  tile: '#E4DBFF', bar: '#8C6CFF' },
-    { id: 'candy',    name: 'Candy Factory',  cost: 1.1e6,  rate: 1.11, time: 48,  rev: 5.2e5,  tile: '#FFDDF1', bar: '#FF5FA2' },
+    { id: 'candy',    name: 'Candy Factory',  cost: 1.1e6,  rate: 1.11, time: 48,  rev: 5.2e5,  tile: '#FFDDF1', bar: '#FF5FA2', kind: 'factory' },
     { id: 'park',     name: 'Bouncy Park',    cost: 1.35e7, rate: 1.10, time: 96,  rev: 6.4e6,  tile: '#CFF3FF', bar: '#36B9F0' },
     { id: 'studio',   name: 'Cartoon Studio', cost: 1.65e8, rate: 1.09, time: 192, rev: 7.8e7,  tile: '#F6E0FF', bar: '#C77DFF' },
     { id: 'rocket',   name: 'Rocket Diner',   cost: 2e9,    rate: 1.08, time: 384, rev: 9.5e8,  tile: '#DCE8FF', bar: '#5B8CFF' },
-    { id: 'moon',     name: 'Moon Mall',      cost: 2.5e10, rate: 1.07, time: 768, rev: 1.2e10, tile: '#3B3570', bar: '#FFC93C' },
+    { id: 'moon',     name: 'Moon Mall',      cost: 2.5e10, rate: 1.07, time: 768, rev: 1.2e10, tile: '#3B3570', bar: '#FFC93C', night: true },
+    { id: 'crayon',   name: 'Crayon Factory',    cost: 3e11,   rate: 1.07, time: 1152, rev: 1.1e11, tile: '#FFF2CC', bar: '#FF8A3D', kind: 'factory' },
+    { id: 'sneaker',  name: 'Sneaker Factory',   cost: 3.6e12, rate: 1.07, time: 1728, rev: 1e12,   tile: '#DDF7E8', bar: '#2ED3A0', kind: 'factory' },
+    { id: 'choco',    name: 'Chocolate Factory', cost: 4.3e13, rate: 1.07, time: 2592, rev: 9e12,   tile: '#F5E3D5', bar: '#A0643C', kind: 'factory' },
+    { id: 'robot',    name: 'Robot Factory',     cost: 5.2e14, rate: 1.07, time: 3888, rev: 8.1e13, tile: '#DDE8F4', bar: '#5B8CFF', kind: 'factory' },
+    { id: 'rainbow',  name: 'Rainbow Factory',   cost: 6.2e15, rate: 1.07, time: 5832, rev: 7.3e14, tile: '#FFEAF4', bar: '#FF5FA2', kind: 'factory' },
+    { id: 'star',     name: 'Star Factory',      cost: 7.5e16, rate: 1.07, time: 8748, rev: 6.6e15, tile: '#2E2A5A', bar: '#FFC93C', kind: 'factory', night: true },
   ];
 
   // Owning this many of a shop makes it twice as fast, each time.
@@ -39,6 +48,12 @@
     { name: 'Paz the Panda',  animal: 'panda',   color: '#FFFFFF', cost: 5.5e8 },
     { name: 'Major Mouse',    animal: 'mouse',   color: '#BFC4D6', cost: 1e10 },
     { name: 'Cosmo Pup',      animal: 'dog',     color: '#E8B97A', cost: 1e11 },
+    { name: 'Ollie Owl',      animal: 'owl',      color: '#B07A4F', cost: 1.2e12 },
+    { name: 'Leo the Lion',   animal: 'lion',     color: '#FFC857', cost: 1.4e13 },
+    { name: 'Kiki Koala',     animal: 'koala',    color: '#A9B1C2', cost: 1.7e14 },
+    { name: 'Ellie Elephant', animal: 'elephant', color: '#9DB4D9', cost: 2.1e15 },
+    { name: 'Rocco Raccoon',  animal: 'raccoon',  color: '#A3A3B5', cost: 2.5e16 },
+    { name: 'Shelly Sheep',   animal: 'sheep',    color: '#F3DCC2', cost: 3e17 },
   ];
 
   // ---------------------------------------------------------------------------
@@ -55,6 +70,12 @@
     studio:   ['Squeaky Sound Effects', 'Talking Animals', 'Laugh Track', 'Blockbuster Sequel'],
     rocket:   ['Zero-G Milkshakes', 'Asteroid Fries', 'Booster Burgers', 'Warp Drive-Thru'],
     moon:     ['Moon Bounce Floors', 'Cheese Food Court', 'Crater Fountains', 'Galaxy Escalators'],
+    crayon:   ['Sharper Points', 'Glitter Crayons', 'Jumbo Boxes', 'Rainbow Swirl Wax'],
+    sneaker:  ['Light-Up Soles', 'Velcro Straps', 'Bouncy Springs', 'Rocket Boots'],
+    choco:    ['Caramel Centers', 'Extra Nutty', 'Golden Wrappers', 'Fudge Fountain'],
+    robot:    ['Shiny Bolts', 'Dancing Robots', 'Robot Helpers', 'Mega Mech Line'],
+    rainbow:  ['Brighter Colors', 'Double Rainbows', 'Pot of Gold', 'Rainbow Pipeline'],
+    star:     ['Twinkle Polish', 'Wishing Stars', 'Shooting Star Cannon', 'Galaxy Assembly'],
   };
   const UPGRADE_TIER_COST = [400, 4e5, 4e9, 4e14]; // times the shop's first price
 
@@ -65,6 +86,8 @@
     { name: 'Rainbow Bridge',       cost: 2.5e16 },
     { name: "Mayor's Golden Key",   cost: 2.5e19 },
     { name: 'Fireworks Every Night', cost: 2.5e22 },
+    { name: 'Robot Marching Band',  cost: 2.5e25 },
+    { name: 'Galaxy Carnival',      cost: 2.5e28 },
   ];
 
   const UPGRADES = [];
@@ -101,16 +124,19 @@
     { id: 'upgrades10',  name: 'Upgrade Fan',    desc: 'Buy 10 upgrades',                      test: function (s) { return Object.keys(s.upgrades).length >= 10; } },
     { id: 'billion',     name: 'Billionaire',    desc: 'Earn 1B coins in one run',             test: function (s) { return s.runEarned >= 1e9; } },
     { id: 'staff',       name: 'Full Staff',     desc: 'Hire every manager',                   test: function (s) { return s.managers.every(Boolean); } },
-    { id: 'shops10',     name: 'Town Complete',  desc: 'Open all 10 shops',                    test: function (s) { return openCount(s) >= BUSINESSES.length; } },
+    { id: 'shops10',     name: 'Town Complete',  desc: 'Open every shop and factory',          test: function (s) { return openCount(s) >= BUSINESSES.length; } },
     { id: 'reopen',      name: 'Fresh Start',    desc: 'Hold a Grand Reopening',               test: function (s) { return s.stats.reopenings >= 1; } },
     { id: 'balloon25',   name: 'Balloon Pro',    desc: 'Pop 25 lucky balloons',                test: function (s) { return s.stats.balloons >= 25; } },
     { id: 'mega',        name: 'Mega Chain',     desc: 'Own 500 of any shop',                  test: function (s) { return maxOwned(s) >= 500; } },
     { id: 'trillion',    name: 'Trillionaire',   desc: 'Earn 1T coins in one run',             test: function (s) { return s.runEarned >= 1e12; } },
     { id: 'sprinkles100', name: 'Sprinkle Hoard', desc: 'Collect 100 golden sprinkles',        test: function (s) { return s.sprinkles >= 100; } },
     { id: 'galaxy',      name: 'Coin Galaxy',    desc: 'Earn 1Qa coins in one run',            test: function (s) { return s.runEarned >= 1e15; } },
+    { id: 'factories4',  name: 'Smokestack City', desc: 'Open 4 factories',                    test: function (s) { return factoryCount(s) >= 4; } },
+    { id: 'starmaker',   name: 'Star Maker',     desc: 'Open the Star Factory',                test: function (s) { return s.biz[BUSINESSES.length - 1].owned > 0; } },
   ];
 
   function openCount(s) { return s.biz.filter(function (b) { return b.owned > 0; }).length; }
+  function factoryCount(s) { return s.biz.filter(function (b, i) { return b.owned > 0 && BUSINESSES[i].kind === 'factory'; }).length; }
   function maxOwned(s) { return s.biz.reduce(function (m, b) { return Math.max(m, b.owned); }, 0); }
 
   // ---------------------------------------------------------------------------

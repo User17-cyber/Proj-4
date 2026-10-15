@@ -7,6 +7,10 @@
  * shop at every speed milestone, and delivery vans start driving by once the
  * shop is busy. A hired manager stands out front and waves.
  *
+ * Factories (kind 'factory') work differently: hard-hat workers stand along a
+ * conveyor belt, products ride out of the door into a waiting truck, and each
+ * finished batch sends the loaded truck driving off while the next pulls in.
+ *
  * Drawn on a <canvas> in CSS pixels; knows nothing about the game rules. The
  * page feeds it { owned, managed, running, time, milestones } every frame.
  */
@@ -64,9 +68,10 @@
     ctx.fill();
   }
 
-  // opts: { key, shopSvg, productSvg, faceSvg, tile, bar, night, locked, build, onServe(x, y) }
+  // opts: { key, kind, shopSvg, productSvg, faceSvg, tile, bar, night, locked, build, onServe(x, y) }
   function createLane(canvas, opts) {
     const ctx = canvas.getContext('2d');
+    const factory = opts.kind === 'factory' && !opts.locked;
     const shopImg = image('shop:' + opts.key, opts.shopSvg);
     const productImg = opts.productSvg ? image('product:' + opts.key, opts.productSvg) : null;
     const faceImg = opts.faceSvg ? image('face:' + opts.key, opts.faceSvg) : null;
@@ -75,6 +80,7 @@
     let bg = null, bgKey = '';
     let t = rand(0, 10);
     let people = [], particles = [], vans = [];
+    let items = [], trucks = [], beltShift = 0, itemTimer = 0, loadTimer = 0;
     let pending = 0, cooldown = 0, spawnTimer = 0.2, vanTimer = rand(1, 4), puffTimer = 0, passTimer = rand(0.5, 2);
     let bump = 0, build = opts.build ? 0 : 1, wave = 0, bubble = null;
     let info = { owned: 1, managed: false, running: false, time: 1, milestones: 0 };
@@ -95,6 +101,14 @@
         walkTop: feet - 12, roadTop: feet + 5,
         maxLine: Math.max(1, Math.floor((w - front - 14) / GAP) + 1),
       };
+      if (factory) {
+        lay.truckX = w - 54;
+        lay.beltStart = info.managed ? managerX + 16 : bx + S - 6;
+        lay.beltEnd = lay.truckX + 16;
+        lay.beltTop = feet - 18;
+        lay.workers = Math.max(1, Math.floor((lay.beltEnd - lay.beltStart - 16) / 34));
+        trucks.forEach(function (tr) { if (tr.state === 'park') tr.x = lay.truckX; });
+      }
     }
 
     function resize() {
@@ -185,6 +199,7 @@
       if (bubble && (bubble.t -= dt) <= 0) bubble = null;
 
       if (opts.locked) updatePassersby(dt);
+      else if (factory) updateFactory(dt);
       else updateShop(dt);
 
       particles.forEach(function (p) {
@@ -198,7 +213,7 @@
       particles = particles.filter(function (p) { return p.life > 0; });
       if (particles.length > 70) particles.splice(0, particles.length - 70);
 
-      if (!opts.locked && info.owned >= 10) {
+      if (!opts.locked && !factory && info.owned >= 10) {
         vanTimer -= dt;
         if (vanTimer <= 0) {
           vans.push({ x: -54, speed: rand(70, 95) });
@@ -259,6 +274,72 @@
           particles.push({ kind: 'puff', x: lay.bx + lay.S * rand(0.35, 0.65), y: lay.feet - lay.S * 0.8, vx: rand(-6, 6), vy: rand(-26, -18), life: 1.1, max: 1.1, size: rand(3, 5) });
         }
       }
+    }
+
+    function updateFactory(dt) {
+      const speed = hurry();
+      const moving = info.running || info.managed;
+      if (!seeded) {
+        seeded = true;
+        trucks.push({ x: lay.truckX, state: 'park', cargo: 3, speed: 0 });
+        if (moving) for (let x = lay.beltStart + 12; x < lay.beltEnd - 8; x += 26) items.push({ x: x, y: 0, vy: 0, falling: false });
+      }
+
+      // The belt carries products out of the factory and drops them into the truck.
+      const v = 30 * speed;
+      if (moving) {
+        beltShift = (beltShift + v * dt) % 12;
+        itemTimer -= dt;
+        if (itemTimer <= 0) {
+          items.push({ x: lay.beltStart + 8, y: 0, vy: 0, falling: false });
+          itemTimer = 26 / v;
+        }
+        if (!reducedMotion) {
+          puffTimer -= dt;
+          if (puffTimer <= 0) {
+            puffTimer = rand(0.25, 0.45);
+            particles.push({ kind: 'puff', x: lay.bx + lay.S * rand(0.25, 0.75), y: lay.feet - lay.S * 0.82, vx: rand(-6, 6), vy: rand(-28, -18), life: 1.2, max: 1.2, size: rand(3, 5.5) });
+          }
+        }
+      }
+      const parked = trucks.find(function (tr) { return tr.state === 'park'; });
+      items.forEach(function (it) {
+        if (it.falling) {
+          it.vy += 600 * dt;
+          it.y += it.vy * dt;
+          if (it.y >= 14) { it.done = true; if (parked) parked.cargo++; }
+        } else if (moving) {
+          it.x += v * dt;
+          if (it.x >= lay.beltEnd - 6) it.falling = true;
+        }
+      });
+      items = items.filter(function (it) { return !it.done; });
+
+      // Each finished batch sends the loaded truck off; the next one pulls in.
+      loadTimer -= dt;
+      if (parked && pending > 0 && loadTimer <= 0) {
+        parked.state = 'leave';
+        parked.speed = 30;
+        pending--;
+        loadTimer = clamp(0.8 / speed, 0.3, 0.8);
+        wave = Math.max(wave, 0.5);
+        const cx = parked.x + 20, cy = lay.feet - 30;
+        if (!reducedMotion) {
+          for (let k = 0; k < 4; k++) particles.push({ kind: 'coin', x: cx, y: cy, vx: rand(-50, 50), vy: rand(-180, -120), life: 0.75, max: 0.75, size: 4.5 });
+        }
+        if (opts.onServe) opts.onServe(cx, cy);
+      }
+      if (!trucks.some(function (tr) { return tr.state !== 'leave'; })) trucks.push({ x: -60, state: 'arrive', cargo: 0, speed: 0 });
+      trucks.forEach(function (tr) {
+        if (tr.state === 'arrive') {
+          tr.x = Math.min(lay.truckX, tr.x + 260 * speed * dt);
+          if (tr.x >= lay.truckX) tr.state = 'park';
+        } else if (tr.state === 'leave') {
+          tr.speed += 300 * dt;
+          tr.x += tr.speed * dt;
+        }
+      });
+      trucks = trucks.filter(function (tr) { return tr.x < w + 60; });
     }
 
     // Empty lots still get the odd passer-by.
@@ -396,11 +477,16 @@
         particles.forEach(function (p) { if (p.kind === 'puff') drawParticle(p); });
         if (info.managed) drawManager();
       }
+      if (factory) drawFactoryFloor();
       people.forEach(function (c) { if (c.state !== 'leave') drawPerson(c); });
       people.forEach(function (c) { if (c.state === 'leave') drawPerson(c); });
       if (!opts.locked && !info.managed && !info.running) {
-        const front = people.find(function (c) { return c.state === 'line' && Math.abs(c.x - slotX(0)) < 1; });
-        if (front) drawWaiting(front.x + 12, lay.feet - 42);
+        if (factory) {
+          drawWaiting(lay.beltStart + 36, lay.feet - 46);
+        } else {
+          const front = people.find(function (c) { return c.state === 'line' && Math.abs(c.x - slotX(0)) < 1; });
+          if (front) drawWaiting(front.x + 12, lay.feet - 42);
+        }
       }
       particles.forEach(function (p) { if (p.kind !== 'puff') drawParticle(p); });
       vans.forEach(drawVan);
@@ -472,6 +558,107 @@
       ctx.lineTo(x + 7 + Math.cos(ang) * 10, feet - 20 + Math.sin(ang) * 10);
       ctx.stroke();
       if (ready(faceImg)) ctx.drawImage(faceImg, x - 16, feet - 52, 32, 32);
+    }
+
+    // ---- factory floor: workers behind the belt, products on it, trucks in front
+    function drawFactoryFloor() {
+      const n = clamp(1 + Math.floor(info.milestones / 2), 1, lay.workers);
+      for (let k = 0; k < n; k++) drawWorker(lay.beltStart + 24 + k * 34, k);
+      drawBelt();
+      if (ready(productImg)) {
+        items.forEach(function (it) { ctx.drawImage(productImg, it.x - 8, lay.beltTop - 15 + it.y, 16, 16); });
+      }
+      trucks.forEach(drawTruck);
+    }
+
+    function drawWorker(x, k) {
+      const base = lay.beltTop + 4;
+      const busy = (info.running || info.managed) && !reducedMotion;
+      const arm = busy ? Math.sin(t * 8 + k * 1.7) * 4 : 0;
+      strokeStyle(2);
+      ctx.fillStyle = '#FF9F43';
+      roundRect(ctx, x - 7, base - 16, 14, 16, 5);
+      ctx.fill();
+      ctx.stroke();
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.moveTo(x - 5, base - 8);
+      ctx.lineTo(x + 5, base - 8);
+      ctx.stroke();
+      strokeStyle(2);
+      ctx.beginPath();
+      ctx.moveTo(x - 5, base - 12); ctx.lineTo(x - 9, lay.beltTop + 1 - Math.max(0, arm));
+      ctx.moveTo(x + 5, base - 12); ctx.lineTo(x + 9, lay.beltTop + 1 - Math.max(0, -arm));
+      ctx.stroke();
+      ctx.fillStyle = SKIN[(k * 2 + opts.key.length) % SKIN.length];
+      ctx.beginPath();
+      ctx.arc(x, base - 24, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = INK;
+      dot(ctx, x - 2.6, base - 24, 1.2);
+      dot(ctx, x + 2.6, base - 24, 1.2);
+      ctx.fillStyle = '#FFD23F';
+      ctx.beginPath();
+      ctx.arc(x, base - 27, 8.5, Math.PI, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x - 11, base - 27);
+      ctx.lineTo(x + 11, base - 27);
+      ctx.stroke();
+    }
+
+    function drawBelt() {
+      const y = lay.beltTop, x0 = lay.beltStart, x1 = lay.beltEnd;
+      strokeStyle(2);
+      ctx.beginPath();
+      for (let x = x0 + 10; x < x1 - 4; x += 36) { ctx.moveTo(x, y + 8); ctx.lineTo(x, lay.feet); }
+      ctx.stroke();
+      ctx.fillStyle = '#6B6390';
+      roundRect(ctx, x0, y, x1 - x0, 9, 4.5);
+      ctx.fill();
+      ctx.save();
+      ctx.clip();
+      ctx.strokeStyle = 'rgba(255,255,255,.4)';
+      ctx.beginPath();
+      for (let x = x0 - 12 + beltShift; x < x1 + 12; x += 12) { ctx.moveTo(x, y + 1); ctx.lineTo(x - 4, y + 8); }
+      ctx.stroke();
+      ctx.restore();
+      strokeStyle(2);
+      roundRect(ctx, x0, y, x1 - x0, 9, 4.5);
+      ctx.stroke();
+      ctx.fillStyle = '#C9C3E6';
+      dot(ctx, x0 + 4.5, y + 4.5, 2.5);
+      dot(ctx, x1 - 4.5, y + 4.5, 2.5);
+    }
+
+    // An open-backed truck in the factory's color, with the load peeking out.
+    function drawTruck(tr) {
+      const y = h - 3, x = tr.x;
+      const shown = Math.min(3, Math.ceil(tr.cargo / 2));
+      if (ready(productImg)) {
+        for (let k = 0; k < shown; k++) ctx.drawImage(productImg, x + 3 + k * 10, y - 31 - (k % 2) * 3, 14, 14);
+      }
+      strokeStyle(2);
+      ctx.fillStyle = opts.bar;
+      roundRect(ctx, x, y - 20, 36, 15, 3);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#FFFFFF';
+      roundRect(ctx, x + 35, y - 23, 15, 18, 4);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#9BE7FF';
+      roundRect(ctx, x + 40, y - 20, 7, 6, 1.5);
+      ctx.fill();
+      ctx.fillStyle = INK;
+      dot(ctx, x + 9, y - 4, 4);
+      dot(ctx, x + 41, y - 4, 4);
+      ctx.fillStyle = '#FFFFFF';
+      dot(ctx, x + 9, y - 4, 1.3);
+      dot(ctx, x + 41, y - 4, 1.3);
     }
 
     function drawPerson(c) {

@@ -303,12 +303,13 @@
     const m = G.MANAGERS[i];
     r.lane = Scene.createLane($('canvas', r.scene), {
       key: b.id,
+      kind: b.kind,
       shopSvg: A.shop(b.id),
       productSvg: A.product(b.id),
       faceSvg: A.face(m.animal, m.color),
       tile: b.tile,
       bar: b.bar,
-      night: b.id === 'moon',
+      night: !!b.night,
       locked: locked,
       build: build,
       onServe: function (x, y) { onServe(r, x, y); },
@@ -415,19 +416,21 @@
 
   function lockedCard(i) {
     const b = G.BUSINESSES[i];
+    const factory = b.kind === 'factory';
     const card = el('article', 'card shop locked');
     card.style.setProperty('--tile', b.tile);
     card.innerHTML =
       '<div class="shop-head"><h2 class="shop-name">' + b.name + '</h2><span class="shop-speed">Empty lot</span></div>' +
       '<div class="shop-scene"><canvas aria-hidden="true"></canvas></div>' +
-      '<p class="shop-note">Earns ' + fmt(b.rev) + ' coins every ' + G.fmtTime(b.time) + ' per shop.</p>' +
-      '<button class="btn btn-pink open-btn" type="button"><span>Open shop</span><span class="buy-cost">' + coinCost(b.cost) + '</span></button>';
+      '<p class="shop-note">Earns ' + fmt(b.rev) + ' coins every ' + G.fmtTime(b.time) + ' per ' + (factory ? 'factory' : 'shop') + '.</p>' +
+      '<button class="btn btn-pink open-btn" type="button"><span>' + (factory ? 'Build factory' : 'Open shop') + '</span><span class="buy-cost">' + coinCost(b.cost) + '</span></button>';
     const btn = $('.open-btn', card);
     btn.addEventListener('click', function () {
       if (!G.buy(state, i, 1)) { Sound.play('nope'); return; }
       Sound.play('fanfare');
       confettiAt(btn, 36);
-      toast(A.shop(b.id), 'New shop: ' + b.name + '!', 'Tap it to start serving customers.');
+      toast(A.shop(b.id), (factory ? 'New factory: ' : 'New shop: ') + b.name + '!',
+        factory ? 'Tap it to start the conveyor belt.' : 'Tap it to start serving customers.');
       renderTown(i);
       afterChange();
     });
