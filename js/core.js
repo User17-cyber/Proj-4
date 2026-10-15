@@ -262,6 +262,85 @@
     { name: 'Snooze Sheep',     animal: 'sheep',    color: '#E9D5FF', acc: 'tiara' },
   ];
 
+  // Trainees: a third hire for every shop, unlocked by the Trainee Program perk
+  // once the shop has an assistant. Each doubles what its shop earns per batch.
+  const TRAINEES = [
+    { name: 'Pip Squeak',       animal: 'mouse',    color: '#E4DBFF', acc: 'cap' },
+    { name: 'Sprinkles Pup',    animal: 'dog',      color: '#FFE3C7', acc: 'party' },
+    { name: 'Dot the Duckling', animal: 'duck',     color: '#FFF07A', acc: 'bow' },
+    { name: 'Tony Tortoise',    animal: 'turtle',   color: '#9BE36D', acc: 'chef' },
+    { name: 'Teddy Jr.',        animal: 'bear',     color: '#E8B97A', acc: 'beanie' },
+    { name: 'Lolly Lamb',       animal: 'sheep',    color: '#FFE3F1', acc: 'bow' },
+    { name: 'Bounce Bunny',     animal: 'bunny',    color: '#FFF0D6', acc: 'cap' },
+    { name: 'Cue Card Cat',     animal: 'cat',      color: '#FFD27A', acc: 'headphones' },
+    { name: 'Cadet Crab',       animal: 'crab',     color: '#FF8A65', acc: 'cap' },
+    { name: 'Starry Seal',      animal: 'seal',     color: '#C9D3E6', acc: 'party' },
+    { name: 'Scribble Pig',     animal: 'pig',      color: '#FFC8DD', acc: 'beanie' },
+    { name: 'Sprint Fox',       animal: 'fox',      color: '#FFB36B', acc: 'headphones' },
+    { name: 'Cocoa Cub',        animal: 'bear',     color: '#8B5A3C', acc: 'chef' },
+    { name: 'Bolt Hamster',     animal: 'hamster',  color: '#F4C49A', acc: 'glasses' },
+    { name: 'Prism Penguin',    animal: 'penguin',  color: '#4C5FA8', acc: 'party' },
+    { name: 'Twinkle Owl',      animal: 'owl',      color: '#8A6BBE', acc: 'beanie' },
+    // Sprinkle Street
+    { name: 'Muffin Mouse',     animal: 'mouse',    color: '#FFE3F1', acc: 'chef' },
+    { name: 'Tapioca Turtle',   animal: 'turtle',   color: '#B8F2E6', acc: 'cap' },
+    { name: 'Fluff Kitten',     animal: 'cat',      color: '#FFD6EC', acc: 'bow' },
+    { name: 'Brr Bear',         animal: 'bear',     color: '#E4F1FF', acc: 'beanie' },
+    { name: 'Flapjack Frog',    animal: 'frog',     color: '#8BE08B', acc: 'chef' },
+    { name: 'Nacho Pup',        animal: 'dog',      color: '#E8B97A', acc: 'party' },
+    { name: 'Nori Octopus',     animal: 'octopus',  color: '#FF8FA3', acc: 'headphones' },
+    { name: 'Crumble Koala',    animal: 'koala',    color: '#B8BFD0', acc: 'crown' },
+    { name: 'Syrup Sheep',      animal: 'sheep',    color: '#FFF3D6', acc: 'cap' },
+    { name: 'Wiggle Hamster',   animal: 'hamster',  color: '#FFE0C0', acc: 'bow' },
+    { name: 'Tulip Bunny',      animal: 'bunny',    color: '#FFF0F6', acc: 'flower' },
+    { name: 'Panel Panda',      animal: 'panda',    color: '#FFFFFF', acc: 'glasses' },
+    { name: 'Pixel Pup',        animal: 'dog',      color: '#C9A27A', acc: 'headphones' },
+    { name: 'Melody Mouse',     animal: 'mouse',    color: '#D9DCE8', acc: 'bowtie' },
+    { name: 'Grind Giraffe',    animal: 'giraffe',  color: '#FFD27A', acc: 'beanie' },
+    { name: 'Presto Penguin',   animal: 'penguin',  color: '#3C4A78', acc: 'wizard' },
+    { name: 'Dig Duck',         animal: 'duck',     color: '#FFE14D', acc: 'cap' },
+    { name: 'Swabby Seal',      animal: 'seal',     color: '#A9B1C2', acc: 'pirate' },
+    { name: 'Spark Dragon',     animal: 'dragon',   color: '#9BE36D', acc: 'chef' },
+    { name: 'Little Unicorn',   animal: 'unicorn',  color: '#FFE3F1', acc: 'flower' },
+    // Boardwalk
+    { name: 'Snowcone Crab',    animal: 'crab',     color: '#FF9F9F', acc: 'beanie' },
+    { name: 'Bun Bunny',        animal: 'bunny',    color: '#F3D3B0', acc: 'chef' },
+    { name: 'Salty Sheep',      animal: 'sheep',    color: '#FFFFFF', acc: 'cap' },
+    { name: 'Tube Turtle',      animal: 'turtle',   color: '#5EE6C8', acc: 'shades' },
+    { name: 'Stretchy Monkey',  animal: 'monkey',   color: '#B07A4F', acc: 'bow' },
+    { name: 'Batter Bear',      animal: 'bear',     color: '#C68A5B', acc: 'chef' },
+    { name: 'Loopy Lion',       animal: 'lion',     color: '#FFE08A', acc: 'party' },
+    { name: 'Pony Pig',         animal: 'pig',      color: '#FFB3C8', acc: 'crown' },
+    { name: 'Bubbles Penguin',  animal: 'penguin',  color: '#4C5FA8', acc: 'glasses' },
+    { name: 'Beacon Owl',       animal: 'owl',      color: '#B07A4F', acc: 'sailor' },
+    { name: 'Flutter Fox',      animal: 'fox',      color: '#FF9F5A', acc: 'cap' },
+    { name: 'Shovel Hamster',   animal: 'hamster',  color: '#F4B07A', acc: 'party' },
+    { name: 'Quackers',         animal: 'duck',     color: '#FFE97A', acc: 'sailor' },
+    { name: 'Tumble Tiger',     animal: 'tiger',    color: '#FFB36B', acc: 'party' },
+    { name: 'Fizz Frog',        animal: 'frog',     color: '#6BD86B', acc: 'shades' },
+    { name: 'Peekaboo Panda',   animal: 'panda',    color: '#FFFFFF', acc: 'party' },
+    { name: 'Zoom Elephant',    animal: 'elephant', color: '#9DB4D9', acc: 'cap' },
+    { name: 'Shimmer Cat',      animal: 'cat',      color: '#E4ECF7', acc: 'tiara' },
+    { name: 'Gummy Mouse',      animal: 'mouse',    color: '#FFD6EC', acc: 'chef' },
+    { name: 'Orbit Octopus',    animal: 'octopus',  color: '#8C6CFF', acc: 'glasses' },
+    { name: 'Ripple Seal',      animal: 'seal',     color: '#9DE0D8', acc: 'flower' },
+    { name: 'Blip Bunny',       animal: 'bunny',    color: '#C9F7FF', acc: 'headphones' },
+    { name: 'Floaty Fox',       animal: 'fox',      color: '#FF8A3D', acc: 'tophat' },
+    { name: 'Dozy Dragon',      animal: 'dragon',   color: '#C9B6FF', acc: 'crown' },
+  ];
+
+  // Street Bosses: one for each street, met once enough shops there are open.
+  // Hire one, then promote them twice; every level makes every shop on their
+  // street earn half as much again (x1.5, x2.25, x3.375).
+  const BOSSES = [
+    { id: 'main',      name: 'Mayor Marmalade',   animal: 'cat',     color: '#FF9F43', acc: 'tophat', open: 5, cost: [1e15, 1e21, 1e27] },
+    { id: 'boardwalk', name: 'Captain Coral',     animal: 'seal',    color: '#9DB4D9', acc: 'sailor', open: 5, cost: [5e15, 5e21, 5e27] },
+    { id: 'sprinkle',  name: 'Duchess Sprinkles', animal: 'unicorn', color: '#FFF0F6', acc: 'crown',  open: 3, cost: [1e17, 1e23, 1e29] },
+  ];
+  const BOSS_LEVELS = 3;
+  const BOSS_BOOST = 1.5;
+  const STREET_NAMES = { main: 'Main Street', boardwalk: 'Boardwalk', sprinkle: 'Sprinkle Street' };
+
   // ---------------------------------------------------------------------------
   // Upgrades: each one triples a shop's profit (or every shop's, for town-wide).
   // ---------------------------------------------------------------------------
@@ -327,9 +406,40 @@
     balloonport: ['Patchwork Balloons', 'Sky Picnics', 'Balloon Races', 'Cloud Harbor'],
     dreampalace: ['Pillow Towers', 'Lullaby Bells', 'Dream Weavers', 'Sweet Dreams Forever'],
   };
-  const UPGRADE_TIER_COST = [400, 4e5, 4e9, 4e14, 1e17, 1e20]; // times the shop's first price
-  // The Golden and Rainbow tiers appear once their Sprinkle Perk is unlocked.
-  const UPGRADE_TIER_PERK = [null, null, null, null, 'goldUpgrades', 'rainbowUpgrades'];
+  const UPGRADE_TIER_COST = [400, 4e5, 4e9, 4e14, 1e17, 1e20, 1e23]; // times the shop's first price
+  // The Golden, Rainbow and Diamond tiers appear once their Sprinkle Perk is unlocked.
+  const UPGRADE_TIER_PERK = [null, null, null, null, 'goldUpgrades', 'rainbowUpgrades', 'diamondUpgrades'];
+  const UPGRADE_TIER_PREFIX = [null, null, null, null, 'Golden ', 'Rainbow ', 'Diamond '];
+
+  // Turbo upgrades: one per shop, making it twice as fast.
+  const TURBO_COST = 4e12; // times the shop's first price
+  const TURBO_NAMES = {
+    lemon: 'Speedy Squeezers', icecream: 'Scoop Cannon', donut: 'Donut Conveyor', pizza: 'Pizza Slingshot',
+    toys: 'Wind-Up Workers', candy: 'Sugar Rush Pipes', park: 'Springier Springs', studio: 'Fast-Forward Button',
+    rocket: 'Jet-Powered Grill', moon: 'Rocket Shopping Carts', crayon: 'Crayon Copier', sneaker: 'Sneaker Stamper',
+    choco: 'Melt-o-Matic', robot: 'Overclocked Robots', rainbow: 'Rainbow Express', star: 'Comet Conveyor',
+    cupcake: 'Frosting Blasters', bubbletea: 'Pearl Popper', cottoncandy: 'Turbo Spinner', popsicle: 'Flash Freezer',
+    pancake: 'Double Griddle', taco: 'Taco Catapult', sushi: 'Speedy Chopsticks', cookie: 'Hot Oven Express',
+    waffle: 'Waffle Turbine', pets: 'Zoomy Leashes', flowers: 'Grow Lights', comics: 'Speed Readers',
+    arcade: 'Turbo Buttons', music: 'Allegro Tempo', skate: 'Rocket Wheels', magic: 'Snap-Fingers Spell',
+    dino: 'Velociraptor Couriers', pirate: 'Full Sails', dragon: 'Dragon Breath Ovens', unicorn: 'Rainbow Gallop',
+    shaveice: 'Snow Blower', hotdog: 'Hot Dog Launcher', pretzel: 'Knot-o-Matic', surf: 'Wave Riders',
+    taffy: 'Taffy Turbo-Pull', fishchips: 'Quick Fryers', ferris: 'Spin Cycle', carousel: 'Merry-Go-Faster',
+    aquarium: 'Dolphin Ushers', lighthouse: 'Espresso Beacon', kites: 'Gust Generators', sandcastle: 'Sand Blasters',
+    duckboats: 'Outboard Motors', circus: 'Human Cannonball Delivery', fireworks: 'Quick Fuses', funhouse: 'Slide Exits',
+    bumper: 'Nitro Bumpers', pearl: 'Oyster Express', jellybean: 'Bean Blizzard', planetarium: 'Warp Projector',
+    mermaid: 'Seahorse Express', ufo: 'Tractor Beam Pickup', balloonport: 'Jet Stream', dreampalace: 'Power Naps',
+  };
+
+  // Helper upgrades: town-wide perks for one run, each doing something other than profit.
+  const HELPER_UPGRADES = [
+    { id: 'help-0', name: 'Red Carpet Rollout', cost: 5e5,  effect: 'vipTips',  text: 'VIP visitors tip twice as much' },
+    { id: 'help-1', name: 'Balloon Pump',       cost: 3e6,  effect: 'balloons', text: 'Lucky balloons float by twice as often' },
+    { id: 'help-2', name: 'Sugar Cube Silo',    cost: 5e8,  effect: 'rush',     text: 'Sugar Rushes last 50% longer' },
+    { id: 'help-3', name: 'Prize Board',        cost: 2e10, effect: 'goals',    text: 'Town Goal prizes are doubled' },
+    { id: 'help-4', name: 'Comfy Break Room',   cost: 5e13, effect: 'offline',  text: 'Managers get paid for 4 more hours away' },
+    { id: 'help-5', name: 'Manager Lounge',     cost: 2.5e23, effect: 'lounge',   text: 'Every shop with a manager earns ×2' },
+  ];
 
   const TOWN_UPGRADES = [
     { name: 'Town Parade',          cost: 2.5e7 },
@@ -348,12 +458,17 @@
 
   const UPGRADES = [];
   BUSINESSES.forEach(function (b, i) {
-    UPGRADE_NAMES[b.id].concat(['Golden ' + b.name, 'Rainbow ' + b.name]).forEach(function (name, t) {
-      UPGRADES.push({ id: b.id + '-' + t, name: name, target: i, mult: 3, cost: b.cost * UPGRADE_TIER_COST[t], perk: UPGRADE_TIER_PERK[t] });
+    UPGRADE_TIER_COST.forEach(function (c, t) {
+      const name = UPGRADE_TIER_PREFIX[t] ? UPGRADE_TIER_PREFIX[t] + b.name : UPGRADE_NAMES[b.id][t];
+      UPGRADES.push({ id: b.id + '-' + t, name: name, target: i, mult: 3, cost: b.cost * c, perk: UPGRADE_TIER_PERK[t] });
     });
+    UPGRADES.push({ id: b.id + '-turbo', name: TURBO_NAMES[b.id], target: i, mult: 1, speed: 2, cost: b.cost * TURBO_COST });
   });
   TOWN_UPGRADES.forEach(function (u, t) {
     UPGRADES.push({ id: 'town-' + t, name: u.name, target: -1, mult: 3, cost: u.cost });
+  });
+  HELPER_UPGRADES.forEach(function (h) {
+    UPGRADES.push({ id: h.id, name: h.name, target: -1, mult: 1, cost: h.cost, effect: h.effect, text: h.text });
   });
   UPGRADES.sort(function (a, b) { return a.cost - b.cost; });
   const UPGRADE_BY_ID = {};
@@ -380,12 +495,14 @@
     { id: 'goldUpgrades', name: 'Golden Upgrades', need: 25,  desc: 'Every shop gets a fifth upgrade that triples its profit.' },
     { id: 'loyalLou',   name: 'Loyal Lou',        need: 30,   desc: 'Lemony Lou is already hired when a run starts.' },
     { id: 'nightShift', name: 'Night Shift',      need: 60,   desc: 'Managers get paid for up to 16 hours away, not 8.' },
+    { id: 'trainees',   name: 'Trainee Program',  need: 75,   desc: 'Hire a trainee for every shop that has an assistant. Each one doubles what their shop earns.' },
     { id: 'sweetStart', name: 'Sweet Start',      need: 100,  desc: 'Start every run with 100K coins.' },
     { id: 'vipMagnet',  name: 'VIP Magnet',       need: 150,  desc: 'VIP visitors tip twice as much.' },
     { id: 'bulkDeal',   name: 'Bulk Discount',    need: 250,  desc: 'Shops and factories cost 10% less.' },
     { id: 'rainbowUpgrades', name: 'Rainbow Upgrades', need: 250, desc: 'Every shop gets a sixth upgrade that triples its profit.' },
     { id: 'hiringFair', name: 'Hiring Fair',      need: 500,  desc: 'Managers cost half as much.' },
     { id: 'goldGoals',  name: 'Golden Goals',     need: 1000, desc: 'Town Goal rewards are doubled.' },
+    { id: 'diamondUpgrades', name: 'Diamond Upgrades', need: 1200, desc: 'Every shop gets a seventh upgrade that triples its profit.' },
     { id: 'sugarStorm', name: 'Sugar Storm',      need: 2500, desc: 'Sugar Rushes last twice as long.' },
   ];
   const PERKS_BY_ID = {};
@@ -538,6 +655,13 @@
     { id: 'walk12',      name: 'Pier Pressure',  desc: 'Open 12 Boardwalk stores in one run',  test: function (s) { return walkOpen(s) >= 12; } },
     { id: 'walkAll',     name: 'Boardwalk Boss', desc: 'Open every Boardwalk store in one run', test: function (s) { return walkOpen(s) >= BOARDWALK.length; } },
     { id: 'looks15',     name: 'Trendsetter',    desc: 'Unlock 15 customizations',             test: function (s) { return stylesUnlocked(s) >= 15; } },
+    { id: 'trainee1',    name: 'Fresh Recruit',  desc: 'Hire a trainee',                       test: function (s) { return s.trainees.some(Boolean); } },
+    { id: 'trainee10',   name: 'Training Day',   desc: 'Hire 10 trainees in one run',          test: function (s) { return s.trainees.filter(Boolean).length >= 10; } },
+    { id: 'boss1',       name: 'Big Boss',       desc: 'Hire a Street Boss',                   test: function (s) { return BOSSES.some(function (b) { return s.bosses[b.id] > 0; }); } },
+    { id: 'bossMax',     name: 'Top of the Town', desc: 'Promote a Street Boss to the top',    test: function (s) { return BOSSES.some(function (b) { return s.bosses[b.id] >= BOSS_LEVELS; }); } },
+    { id: 'turbo10',     name: 'Need for Speed', desc: 'Buy 10 Turbo upgrades in one run',     test: function (s) { return Object.keys(s.upgrades).filter(function (k) { return /-turbo$/.test(k); }).length >= 10; } },
+    { id: 'diamond',     name: 'Shine Bright',   desc: 'Buy a Diamond upgrade',                test: function (s) { return Object.keys(s.upgrades).some(function (k) { return UPGRADE_BY_ID[k] && UPGRADE_BY_ID[k].perk === 'diamondUpgrades'; }); } },
+    { id: 'helpers',     name: 'Helping Hands',  desc: 'Buy all 6 helper upgrades in one run', test: function (s) { return HELPER_UPGRADES.every(function (h) { return s.upgrades[h.id]; }); } },
   ];
 
   function openCount(s) { return s.biz.filter(function (b) { return b.owned > 0; }).length; }
@@ -562,6 +686,8 @@
       biz: BUSINESSES.map(function (b, i) { return { owned: i === 0 ? 1 : 0, progress: 0, running: false }; }),
       managers: BUSINESSES.map(function () { return false; }),
       assistants: BUSINESSES.map(function () { return false; }),
+      trainees: BUSINESSES.map(function () { return false; }),
+      bosses: { main: 0, boardwalk: 0, sprinkle: 0 },
       upgrades: {},
       trophies: {},
       hints: {},
@@ -651,6 +777,37 @@
     return true;
   }
 
+  function traineeCost(s, i) { return managerCost(s, i) * 2000; }
+
+  function hireTrainee(s, i) {
+    const cost = traineeCost(s, i);
+    if (!hasPerk(s, 'trainees') || !s.assistants[i] || s.trainees[i] || s.coins < cost) return false;
+    s.coins -= cost;
+    s.trainees[i] = true;
+    return true;
+  }
+
+  // Street Bosses, by index into BOSSES.
+  function bossLevel(s, k) { return s.bosses[BOSSES[k].id] || 0; }
+  function bossOpen(s, k) { return openOn(s, BOSSES[k].id) >= BOSSES[k].open; }
+  function bossCost(s, k) {
+    const lv = bossLevel(s, k);
+    return lv >= BOSS_LEVELS ? Infinity : BOSSES[k].cost[lv] * (hasPerk(s, 'hiringFair') ? 0.5 : 1);
+  }
+  function hireBoss(s, k) {
+    const cost = bossCost(s, k);
+    if (!bossOpen(s, k) || bossLevel(s, k) >= BOSS_LEVELS || s.coins < cost) return false;
+    s.coins -= cost;
+    s.bosses[BOSSES[k].id]++;
+    return true;
+  }
+
+  // Is this helper upgrade's effect bought?
+  function helping(s, effect) {
+    for (let k = 0; k < HELPER_UPGRADES.length; k++) if (HELPER_UPGRADES[k].effect === effect && s.upgrades[HELPER_UPGRADES[k].id]) return true;
+    return false;
+  }
+
   function upgradeAvailable(s, u) {
     return !s.upgrades[u.id] && (u.target < 0 || s.biz[u.target].owned > 0) && (!u.perk || hasPerk(s, u.perk));
   }
@@ -684,7 +841,8 @@
   }
 
   function cycleTime(s, i) {
-    return BUSINESSES[i].time / Math.pow(2, milestonesReached(s.biz[i].owned)) / (s.assistants[i] ? 2 : 1);
+    return BUSINESSES[i].time / Math.pow(2, milestonesReached(s.biz[i].owned)) / (s.assistants[i] ? 2 : 1) /
+      (s.upgrades[BUSINESSES[i].id + '-turbo'] ? 2 : 1);
   }
 
   function trophyCount(s) { return Object.keys(s.trophies).length; }
@@ -707,8 +865,13 @@
     return m;
   }
 
+  // The Street Boss, the trainee and the Manager Lounge.
+  function staffMult(s, i) {
+    return Math.pow(BOSS_BOOST, s.bosses[BUSINESSES[i].street] || 0) * (s.trainees[i] ? 2 : 1) * (s.managers[i] && helping(s, 'lounge') ? 2 : 1);
+  }
+
   function revenue(s, i, now) {
-    return BUSINESSES[i].rev * s.biz[i].owned * shopMult(s, i) * globalMult(s, now);
+    return BUSINESSES[i].rev * s.biz[i].owned * shopMult(s, i) * staffMult(s, i) * globalMult(s, now);
   }
 
   // Coins per second. By default only counts shops that run on their own.
@@ -763,7 +926,7 @@
     return payouts;
   }
 
-  function offlineCap(s) { return hasPerk(s, 'nightShift') ? 2 * OFFLINE_CAP : OFFLINE_CAP; }
+  function offlineCap(s) { return (hasPerk(s, 'nightShift') ? 2 * OFFLINE_CAP : OFFLINE_CAP) + (helping(s, 'offline') ? 4 * 3600 : 0); }
 
   // Coins managers earned while the game was closed (boosts don't count).
   function offlineEarnings(s, seconds) {
@@ -771,7 +934,7 @@
     return incomePerSec(s, 0, false) * t;
   }
 
-  function rushSeconds(s) { return hasPerk(s, 'sugarStorm') ? 2 * RUSH_SECONDS : RUSH_SECONDS; }
+  function rushSeconds(s) { return RUSH_SECONDS * (hasPerk(s, 'sugarStorm') ? 2 : 1) * (helping(s, 'rush') ? 1.5 : 1); }
 
   // Triple profit for a while; stacks onto a rush that's already going.
   function startRush(s, now, seconds) {
@@ -781,7 +944,7 @@
   // A VIP visitor's tip: about two minutes of that shop's earnings.
   function vipTip(s, i) {
     const shop = s.biz[i].owned > 0 ? revenue(s, i, 0) / cycleTime(s, i) : 0;
-    const amount = Math.max(25, shop * 120, incomePerSec(s, 0, true) * 20) * (hasPerk(s, 'vipMagnet') ? 2 : 1);
+    const amount = Math.max(25, shop * 120, incomePerSec(s, 0, true) * 20) * (hasPerk(s, 'vipMagnet') ? 2 : 1) * (helping(s, 'vipTips') ? 2 : 1);
     earn(s, amount);
     s.stats.vips++;
     return amount;
@@ -823,6 +986,8 @@
     s.biz = fresh.biz;
     s.managers = fresh.managers;
     s.assistants = fresh.assistants;
+    s.trainees = fresh.trainees;
+    s.bosses = fresh.bosses;
     s.upgrades = {};
     s.boost = fresh.boost;
     s.stats.reopenings++;
@@ -839,8 +1004,8 @@
   // Town Goals: three small objectives at a time, each paying a prize.
   // ---------------------------------------------------------------------------
   const GOAL_SLOTS = 3;
-  const GOAL_TYPES = ['own', 'own', 'own', 'earn', 'earn', 'balloon', 'upgrade', 'manager', 'assistant', 'open', 'vip'];
-  const GOAL_SECONDS = { own: 120, earn: 90, balloon: 120, upgrade: 90, manager: 150, assistant: 150, open: 180, vip: 120 };
+  const GOAL_TYPES = ['own', 'own', 'own', 'earn', 'earn', 'balloon', 'upgrade', 'manager', 'assistant', 'trainee', 'open', 'vip'];
+  const GOAL_SECONDS = { own: 120, earn: 90, balloon: 120, upgrade: 90, manager: 150, assistant: 150, trainee: 150, open: 180, vip: 120 };
   const GOAL_REWARDS = ['coins', 'rush', 'sprinkles'];
 
   function pick(list) { return list[Math.floor(Math.random() * list.length)]; }
@@ -884,6 +1049,12 @@
       open.forEach(function (k) { if (s.managers[k] && !s.assistants[k] && (i < 0 || assistantCost(s, k) < assistantCost(s, i))) i = k; });
       return i >= 0 && reachable(s, assistantCost(s, i)) ? { type: 'assistant', i: i } : null;
     }
+    if (type === 'trainee') {
+      if (!hasPerk(s, 'trainees')) return null;
+      let i = -1;
+      open.forEach(function (k) { if (s.assistants[k] && !s.trainees[k] && (i < 0 || traineeCost(s, k) < traineeCost(s, i))) i = k; });
+      return i >= 0 && reachable(s, traineeCost(s, i)) ? { type: 'trainee', i: i } : null;
+    }
     if (type === 'manager') {
       const i = open.filter(function (k) { return !s.managers[k]; })[0];
       return i !== undefined && reachable(s, managerCost(s, i)) ? { type: 'manager', i: i } : null;
@@ -925,6 +1096,7 @@
       case 'upgrade': return { have: Object.keys(s.upgrades).length - g.base, need: g.target };
       case 'manager': return { have: s.managers[g.i] ? 1 : 0, need: 1 };
       case 'assistant': return { have: s.assistants[g.i] ? 1 : 0, need: 1 };
+      case 'trainee': return { have: s.trainees[g.i] ? 1 : 0, need: 1 };
       case 'open': return { have: s.biz[g.i].owned > 0 ? 1 : 0, need: 1 };
       case 'vip': return { have: s.stats.vips - g.base, need: g.target };
     }
@@ -945,6 +1117,7 @@
       case 'upgrade': return 'Buy an upgrade';
       case 'manager': return 'Hire ' + MANAGERS[g.i].name;
       case 'assistant': return 'Hire ' + ASSISTANTS[g.i].name + ' as an assistant';
+      case 'trainee': return 'Hire ' + TRAINEES[g.i].name + ' as a trainee';
       case 'open': return (b.kind === 'factory' ? 'Build the ' : 'Open the ') + b.name;
       case 'vip': return 'Collect a tip from a VIP visitor';
     }
@@ -953,7 +1126,7 @@
 
   // Coins, Sugar Rush seconds, or sprinkles, depending on the goal's prize.
   function goalRewardValue(s, g) {
-    const mult = hasPerk(s, 'goldGoals') ? 2 : 1;
+    const mult = (hasPerk(s, 'goldGoals') ? 2 : 1) * (helping(s, 'goals') ? 2 : 1);
     if (g.reward === 'sprinkles') return Math.max(1, Math.round(s.sprinkles * 0.03)) * mult;
     if (g.reward === 'rush') return rushSeconds(s) * mult;
     return Math.max(25, incomePerSec(s, 0, true) * GOAL_SECONDS[g.type]) * mult;
@@ -1017,6 +1190,10 @@
     }
     if (Array.isArray(data.managers)) s.managers = s.managers.map(function (_, i) { return data.managers[i] === true; });
     if (Array.isArray(data.assistants)) s.assistants = s.assistants.map(function (_, i) { return data.assistants[i] === true && s.managers[i]; });
+    if (Array.isArray(data.trainees)) s.trainees = s.trainees.map(function (_, i) { return data.trainees[i] === true && s.assistants[i]; });
+    if (data.bosses && typeof data.bosses === 'object') {
+      BOSSES.forEach(function (b) { s.bosses[b.id] = Math.min(BOSS_LEVELS, Math.floor(num(data.bosses[b.id], 0))); });
+    }
     if (data.style && typeof data.style === 'object') {
       Object.keys(STYLES).forEach(function (g) { if (styleItem(g, data.style[g])) s.style[g] = data.style[g]; });
     }
@@ -1037,7 +1214,7 @@
     if (Array.isArray(data.goals)) {
       data.goals.forEach(function (g) {
         if (!g || !GOAL_SECONDS[g.type] || GOAL_REWARDS.indexOf(g.reward) < 0 || s.goals.length >= GOAL_SLOTS) return;
-        const needsShop = g.type === 'own' || g.type === 'manager' || g.type === 'assistant' || g.type === 'open';
+        const needsShop = g.type === 'own' || g.type === 'manager' || g.type === 'assistant' || g.type === 'trainee' || g.type === 'open';
         if (needsShop && !(Number.isInteger(g.i) && g.i >= 0 && g.i < BUSINESSES.length)) return;
         const clean = { type: g.type, reward: g.reward };
         if (needsShop) clean.i = g.i;
@@ -1088,6 +1265,10 @@
     UPGRADE_BY_ID: UPGRADE_BY_ID, TROPHIES: TROPHIES, SPRINKLE_BONUS: SPRINKLE_BONUS,
     TROPHY_BONUS: TROPHY_BONUS, OFFLINE_CAP: OFFLINE_CAP, PERKS: PERKS, GOAL_SLOTS: GOAL_SLOTS, MAIN_COUNT: MAIN_COUNT,
     WALK_START: WALK_START,
+    TRAINEES: TRAINEES, traineeCost: traineeCost, hireTrainee: hireTrainee,
+    BOSSES: BOSSES, BOSS_LEVELS: BOSS_LEVELS, BOSS_BOOST: BOSS_BOOST, STREET_NAMES: STREET_NAMES, bossLevel: bossLevel, bossOpen: bossOpen,
+    bossCost: bossCost, hireBoss: hireBoss, openOn: openOn, staffMult: staffMult,
+    HELPER_UPGRADES: HELPER_UPGRADES, helping: helping,
     isUnlocked: isUnlocked, canOpen: canOpen,
     newState: newState, restore: restore, earn: earn,
     costFor: costFor, maxAffordable: maxAffordable, buyAmount: buyAmount, buy: buy,

@@ -49,11 +49,22 @@ function options() {
     if (s.managers[i] && !s.assistants[i] && G.hasPerk(s, 'assistants')) {
       opts.push({ cost: G.assistantCost(s, i), gain: shopIncome(i, owned), act: () => G.hireAssistant(s, i) });
     }
+    if (s.assistants[i] && !s.trainees[i] && G.hasPerk(s, 'trainees')) {
+      opts.push({ cost: G.traineeCost(s, i), gain: shopIncome(i, owned), act: () => G.hireTrainee(s, i) });
+    }
+  });
+  G.BOSSES.forEach((boss, k) => {
+    if (!G.bossOpen(s, k) || G.bossLevel(s, k) >= G.BOSS_LEVELS) return;
+    let street = 0;
+    G.BUSINESSES.forEach((b, i) => { if (b.street === boss.id) street += shopIncome(i, s.biz[i].owned); });
+    opts.push({ cost: G.bossCost(s, k), gain: street, act: () => G.hireBoss(s, k) });
   });
   G.UPGRADES.forEach((u) => {
     if (!G.upgradeAvailable(s, u)) return;
-    const base = u.target < 0 ? G.incomePerSec(s, now(), true) : shopIncome(u.target, s.biz[u.target].owned);
-    opts.push({ cost: u.cost, gain: base * (u.mult - 1), act: () => G.buyUpgrade(s, u.id) });
+    // Helper upgrades only count if they add income (the Manager Lounge).
+    const base = u.effect === 'lounge' ? G.incomePerSec(s, now(), false) : u.target < 0 ? G.incomePerSec(s, now(), true) : shopIncome(u.target, s.biz[u.target].owned);
+    const boost = u.effect === 'lounge' ? 1 : u.mult * (u.speed || 1) - 1;
+    opts.push({ cost: u.cost, gain: base * boost, act: () => G.buyUpgrade(s, u.id) });
   });
   return opts;
 }

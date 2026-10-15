@@ -553,7 +553,13 @@ svg { display: block; width: 100%; height: 100%; }
 .shop-stars .gold.on { color: #FF9F43; }
 .shop-stars .rainbow { color: #F3D6EA; }
 .shop-stars .rainbow.on { color: #FF5FA2; }
+.shop-stars .diamond { color: #D6F1FA; }
+.shop-stars .diamond.on { color: #4CC9F0; }
+.shop-stars .turbo { display: inline-block; width: 1.05em; height: 1.05em; margin-left: 2px; align-self: center; }
 .shop-head .shop-speed { margin-left: auto; }
+/* Long names keep their full width; the stars and speed drop to a second line instead. */
+.shop-head { flex-wrap: wrap; row-gap: 2px; }
+.shop-head .shop-name { flex: 0 1 auto; min-width: min-content; max-width: 100%; }
 
 .shop-scene {
   position: relative;
@@ -778,6 +784,7 @@ button.shop-scene:active { transform: translateY(1px); }
   padding: 10px 12px;
 }
 .upg-icon {
+  position: relative;
   width: 56px;
   height: 56px;
   padding: 3px;
@@ -950,7 +957,27 @@ button.shop-scene:active { transform: translateY(1px); }
 .assist-info span { font-size: .8rem; font-weight: 700; color: var(--ink-soft); }
 .assist .stamp { font-size: .8rem; }
 
-/* Golden and Rainbow upgrades */
+/* Trainees and Street Bosses */
+.assist.trainee .assist-face { width: 34px; height: 34px; justify-self: center; }
+.boss .mgr-face { box-shadow: 0 0 0 4px #FFD23F; }
+.boss-pips { display: inline-flex; gap: 2px; font-size: 1.1rem; line-height: 1; color: #DCD6EA; -webkit-text-stroke: 1px var(--ink); }
+.boss-pips .on { color: #FF9F43; }
+.boss-banner {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  background: var(--accent-soft);
+}
+.boss-banner p { margin: 0; font-weight: 700; }
+.boss-face { flex: none; width: 48px; height: 48px; border: var(--line) solid var(--ink); border-radius: 50%; background: #FFFFFF; overflow: hidden; }
+
+/* Upgrade flavors: Turbo, helper, Golden, Rainbow and Diamond */
+.upg-bolt { position: absolute; right: -8px; bottom: -8px; width: 26px; height: 26px; }
+.upg-turbo { background: linear-gradient(135deg, #FFFBE0, #E6F8FF); }
+.upg-helper { background: linear-gradient(135deg, #EFFFF6, #E8F4FF); }
+.upg-diamond { background: linear-gradient(135deg, #E8FAFF, #F4F0FF 50%, #DDF6FF); }
 .upg-gold { background: linear-gradient(135deg, #FFF6D0, #FFE7A8); }
 .upg-rainbow { background: linear-gradient(135deg, #FFE0EC, #FFF6C8 35%, #DDF8E8 65%, #DDEBFF); }
 
@@ -1213,7 +1240,8 @@ button.shop-scene:active { transform: translateY(1px); }
   animation: toast-in .25s ease-out;
 }
 .toast.out { animation: toast-out .3s ease-in forwards; }
-.toast-art { width: 34px; height: 34px; }
+.toast-art { position: relative; width: 34px; height: 34px; }
+.toast-art .upg-bolt { width: 18px; height: 18px; right: -6px; bottom: -6px; }
 .toast strong { display: block; font-family: var(--font-display); font-weight: 400; font-size: 1rem; line-height: 1.1; }
 
 .modal-root {

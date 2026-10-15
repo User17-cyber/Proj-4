@@ -79,8 +79,8 @@
     ctx.fill();
   }
 
-  // opts: { key, kind, shopSvg, productSvg, faceSvg, assistantSvg, tile, bar, night, locked, signText, build, onServe(x, y) }
-  // info (each frame): { owned, managed, assistant, running, time, milestones }
+  // opts: { key, kind, shopSvg, productSvg, faceSvg, assistantSvg, traineeSvg, tile, bar, night, locked, signText, build, onServe(x, y) }
+  // info (each frame): { owned, managed, assistant, trainee, running, time, milestones }
   function createLane(canvas, opts) {
     const ctx = canvas.getContext('2d');
     const factory = opts.kind === 'factory' && !opts.locked;
@@ -88,6 +88,7 @@
     const productImg = opts.productSvg ? image(opts.productSvg) : null;
     const faceImg = opts.faceSvg ? image(opts.faceSvg) : null;
     const helperImg = opts.assistantSvg ? image(opts.assistantSvg) : null;
+    const traineeImg = opts.traineeSvg ? image(opts.traineeSvg) : null;
 
     let w = 0, h = 0, dpr = 1, lay = null;
     let bg = null, bgKey = '';
@@ -99,7 +100,7 @@
     let pending = 0, cooldown = 0, spawnTimer = 0.2, vanTimer = rand(1, 4), puffTimer = 0, passTimer = rand(0.5, 2);
     let bump = 0, build = opts.build ? 0 : 1, wave = 0, bubble = null;
     let info = { owned: 1, managed: false, running: false, time: 1, milestones: 0 };
-    let seeded = false, lastManaged = null, lastAssistant = null, lastMilestones = null;
+    let seeded = false, lastManaged = null, lastAssistant = null, lastTrainee = null, lastMilestones = null;
     const clouds = [{ x: rand(0, 1), y: rand(0.1, 0.22), s: rand(0.8, 1) }, { x: rand(0, 1), y: rand(0.16, 0.34), s: rand(0.55, 0.75) }];
 
     if (opts.build) dust();
@@ -111,10 +112,11 @@
       const bx = 4;
       const managerX = bx + S + 10;
       const helperX = managerX + 24; // an assistant stands beside the manager
-      const staffEnd = info.managed ? (info.assistant ? helperX : managerX) : 0;
+      const traineeX = helperX + 21; // and a trainee beside the assistant
+      const staffEnd = info.managed ? (info.assistant ? (info.trainee ? traineeX : helperX) : managerX) : 0;
       const front = info.managed ? staffEnd + 28 : bx + S + 14;
       lay = {
-        feet: feet, S: S, bx: bx, managerX: managerX, helperX: helperX, front: front,
+        feet: feet, S: S, bx: bx, managerX: managerX, helperX: helperX, traineeX: traineeX, front: front,
         walkTop: feet - 12, roadTop: feet + 5,
         maxLine: Math.max(1, Math.floor((w - front - 14) / GAP) + 1),
       };
@@ -204,8 +206,14 @@
         if (lastAssistant === false && info.assistant) say('Happy to help!');
         lastAssistant = info.assistant;
       }
+      if (lastTrainee !== info.trainee && lastManaged === info.managed) {
+        layout();
+        if (lastTrainee === false && info.trainee) say('First day! Yay!');
+        lastTrainee = info.trainee;
+      }
       if (lastManaged !== info.managed) {
         lastAssistant = info.assistant;
+        lastTrainee = info.trainee;
         layout();
         if (lastManaged === false && info.managed) say('Hi boss!');
         lastManaged = info.managed;
@@ -556,6 +564,7 @@
         particles.forEach(function (p) { if (p.kind === 'puff') drawParticle(p); });
         if (info.managed) drawManager();
         if (info.managed && info.assistant) drawHelper();
+        if (info.managed && info.assistant && info.trainee) drawTrainee();
       }
       if (factory) drawFactoryFloor();
       people.forEach(function (c) { if (c.state !== 'leave') drawPerson(c); });
@@ -671,6 +680,33 @@
       ctx.lineTo(x - 6 + Math.cos(ang) * 9, feet - 18 + Math.sin(ang) * 9);
       ctx.stroke();
       if (ready(helperImg)) ctx.drawImage(helperImg, x - 14, feet - 46, 28, 28);
+    }
+
+    // The trainee: smallest of the three, in a pale uniform with a name badge, waving last.
+    function drawTrainee() {
+      const x = lay.traineeX, feet = lay.feet;
+      strokeStyle(2);
+      ctx.fillStyle = 'rgba(43,33,71,.15)';
+      ctx.beginPath();
+      ctx.ellipse(x, feet + 1, 7, 2, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(x - 2.5, feet - 7); ctx.lineTo(x - 2.5, feet);
+      ctx.moveTo(x + 2.5, feet - 7); ctx.lineTo(x + 2.5, feet);
+      ctx.stroke();
+      ctx.fillStyle = mix(opts.bar, 0.7);
+      roundRect(ctx, x - 6, feet - 19, 12, 13, 4);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(x - 3.5, feet - 16, 5, 3);
+      const waving = ((t + 1.2) % 5 < 0.8 || wave > 0) && !reducedMotion;
+      const ang = waving ? -1.2 + Math.sin(t * 16) * 0.5 : 1.3;
+      ctx.beginPath();
+      ctx.moveTo(x + 5, feet - 15);
+      ctx.lineTo(x + 5 + Math.cos(ang) * 8, feet - 15 + Math.sin(ang) * 8);
+      ctx.stroke();
+      if (ready(traineeImg)) ctx.drawImage(traineeImg, x - 12, feet - 40, 24, 24);
     }
 
     // ---- factory floor: workers behind the belt, products on it, trucks in front

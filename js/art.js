@@ -1044,7 +1044,12 @@
     return '<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">' + paths[name] + '</g></svg>';
   }
 
+  // The Turbo lightning bolt.
+  function bolt() {
+    return svg('<path d="M60 4L16 58h30l-8 38l46-56h-30z" fill="#FFD23F" stroke-width="7"/>', 'turbo');
+  }
+
   root.Art = { shop: shop, product: product, mystery: mystery, face: face, coin: coin, setCoinStyle: setCoinStyle,
-    setFrontStyle: setFrontStyle, van: van,
+    setFrontStyle: setFrontStyle, van: van, bolt: bolt,
     customer: customer, confettiSample: confettiSample, sprinkle: sprinkle, sprinkleJar: sprinkleJar, trophy: trophy, crown: crown, balloon: balloon, icon: icon };
 })(this);

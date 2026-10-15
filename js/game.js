@@ -53,6 +53,22 @@
     return A.face(a.animal, a.color, a.acc, hatOn());
   }
 
+  function trnFace(i) {
+    const a = G.TRAINEES[i];
+    return A.face(a.animal, a.color, a.acc, hatOn());
+  }
+
+  function bossFace(k) {
+    const b = G.BOSSES[k];
+    return A.face(b.animal, b.color, b.acc, hatOn());
+  }
+
+  // A street's name inside a sentence: "runs the Boardwalk", "runs Main Street".
+  function streetIn(id) { return (id === 'boardwalk' ? 'the ' : '') + G.STREET_NAMES[id]; }
+
+  // A Street Boss multiplier, like x2.25.
+  function multText(v) { return '×' + String(Math.round(v * 100) / 100); }
+
   function el(tag, cls, html) {
     const e = document.createElement(tag);
     if (cls) e.className = cls;
@@ -363,6 +379,7 @@
       productSvg: A.product(b.id),
       faceSvg: mgrFace(i),
       assistantSvg: astFace(i),
+      traineeSvg: trnFace(i),
       tile: b.tile,
       bar: b.bar,
       night: !!b.night,
@@ -382,6 +399,8 @@
     if (sceneWatch.visible) sceneWatch.visible.disconnect();
     if (sceneWatch.size) sceneWatch.size.disconnect();
     syncDistrict();
+    const bk = G.BOSSES.findIndex(function (b) { return b.id === district; });
+    if (bk >= 0 && G.bossLevel(state, bk) > 0) list.appendChild(bossBanner(bk));
     const street = G.BUSINESSES.map(function (b, i) { return i; }).filter(function (i) { return streetOf(i) === district; });
     if (district !== 'sprinkle') {
       // Main Street and the Boardwalk open in order: show the next empty lot and tease the rest.
@@ -414,6 +433,14 @@
       watchScene(r, r.scene);
     });
     updateTown(true);
+  }
+
+  // The street's boss, once hired, greets you at the top of the street.
+  function bossBanner(k) {
+    const b = G.BOSSES[k];
+    return el('div', 'card boss-banner', '<span class="boss-face">' + bossFace(k) + '</span>' +
+      '<p><strong>' + b.name + '</strong> is the boss here. Every shop on ' + streetIn(b.id) + ' earns ' +
+      multText(Math.pow(G.BOSS_BOOST, G.bossLevel(state, k))) + '.</p>');
   }
 
   function shopCard(i) {
@@ -561,7 +588,7 @@
   function upgradesOwned(i) {
     const id = G.BUSINESSES[i].id;
     let n = 0;
-    for (let t = 0; t < 6; t++) if (state.upgrades[id + '-' + t]) n++;
+    for (let t = 0; t < 7; t++) if (state.upgrades[id + '-' + t]) n++;
     return n;
   }
 
@@ -591,21 +618,26 @@
       r.scene.setAttribute('aria-label', r.lane && r.lane.hasVip() ? 'Collect the VIP tip at your ' + G.BUSINESSES[i].name
         : managed ? G.BUSINESSES[i].name + ', run by ' + G.MANAGERS[i].name : 'Run ' + G.BUSINESSES[i].name);
 
-      // One star per upgrade tier: gold for the first four, then Golden and Rainbow once unlocked.
-      const slots = 4 + (G.hasPerk(state, 'goldUpgrades') ? 1 : 0) + (G.hasPerk(state, 'rainbowUpgrades') ? 1 : 0);
+      // One star per upgrade tier: gold for the first four, then Golden, Rainbow and
+      // Diamond once unlocked, and a lightning bolt once its Turbo upgrade is bought.
+      const slots = 4 + (G.hasPerk(state, 'goldUpgrades') ? 1 : 0) + (G.hasPerk(state, 'rainbowUpgrades') ? 1 : 0) +
+        (G.hasPerk(state, 'diamondUpgrades') ? 1 : 0);
       const stars = upgradesOwned(i);
-      const starKey = stars + '/' + slots;
+      const id = G.BUSINESSES[i].id;
+      const turbo = !!state.upgrades[id + '-turbo'];
+      const starKey = stars + '/' + slots + (turbo ? 't' : '');
       if (starKey !== r.starCount) {
         r.starCount = starKey;
-        const id = G.BUSINESSES[i].id;
         let html = '';
         for (let k = 0; k < slots; k++) {
-          const cls = (state.upgrades[id + '-' + k] ? 'on' : '') + (k === 4 ? ' gold' : k === 5 ? ' rainbow' : '');
+          const cls = (state.upgrades[id + '-' + k] ? 'on' : '') + (k === 4 ? ' gold' : k === 5 ? ' rainbow' : k === 6 ? ' diamond' : '');
           html += '<span class="' + cls.trim() + '">★</span>';
         }
+        if (turbo) html += '<span class="turbo">' + A.bolt() + '</span>';
         r.stars.innerHTML = html;
-        r.stars.setAttribute('aria-label', stars + ' of ' + slots + ' upgrades');
-        r.stars.title = stars + ' of ' + slots + ' upgrades bought';
+        const label = stars + ' of ' + slots + ' upgrades' + (turbo ? ', Turbo' : '');
+        r.stars.setAttribute('aria-label', label);
+        r.stars.title = label;
       }
 
       const n = G.buyAmount(state, i);
@@ -635,6 +667,7 @@
         owned: b.owned,
         managed: state.managers[r.i],
         assistant: state.assistants[r.i],
+        trainee: state.trainees[r.i],
         running: b.running,
         time: G.cycleTime(state, r.i),
         milestones: G.milestonesReached(b.owned),
@@ -664,6 +697,7 @@
       case 'own': case 'open': return A.shop(G.BUSINESSES[g.i].id);
       case 'manager': return mgrFace(g.i);
       case 'assistant': return astFace(g.i);
+      case 'trainee': return trnFace(g.i);
       case 'balloon': return A.balloon('#FF5FA2');
       case 'upgrade': return A.icon('upgrades');
       case 'vip': return A.crown();
@@ -777,10 +811,14 @@
     const list = $('#managerList');
     list.textContent = '';
     refs.managers = [];
-    if (!G.hasPerk(state, 'assistants')) {
-      list.appendChild(el('div', 'card mgr-note', '<span class="chip-icon">' + A.sprinkle() + '</span>' +
-        '<p><strong>Assistant managers</strong> unlock at 10 golden sprinkles. Each one doubles their shop\'s speed.</p>'));
-    }
+    const notes = [];
+    if (!G.hasPerk(state, 'assistants')) notes.push('<strong>Assistant managers</strong> unlock at 10 golden sprinkles. Each one doubles their shop\'s speed.');
+    if (!G.hasPerk(state, 'trainees')) notes.push('<strong>Trainees</strong> unlock at 75 golden sprinkles. Each one doubles what their shop earns.');
+    notes.forEach(function (n) {
+      list.appendChild(el('div', 'card mgr-note', '<span class="chip-icon">' + A.sprinkle() + '</span><p>' + n + '</p>'));
+    });
+    list.appendChild(el('h2', 'section-title grid-title', 'Street Bosses'));
+    G.BOSSES.forEach(function (b, k) { list.appendChild(bossCard(k)); });
     const groups = [
       ['Main Street', function (i) { return streetOf(i) === 'main'; }],
       ['Boardwalk', function (i) { return streetOf(i) === 'boardwalk' && G.isUnlocked(state, i); }],
@@ -792,6 +830,51 @@
       list.appendChild(el('h2', 'section-title grid-title', gr[0]));
       ids.forEach(function (i) { list.appendChild(managerCard(i)); });
     });
+  }
+
+  const BOSS_TILES = { main: '#FFF0A6', boardwalk: '#DDF6FF', sprinkle: '#FFE3F1' };
+
+  // A Street Boss: hire, then promote twice. Each level boosts their whole street.
+  function bossCard(k) {
+    const b = G.BOSSES[k];
+    const street = G.STREET_NAMES[b.id];
+    const lv = G.bossLevel(state, k);
+    const open = G.bossOpen(state, k);
+    const top = lv >= G.BOSS_LEVELS;
+    const next = multText(Math.pow(G.BOSS_BOOST, lv + 1));
+    const card = el('article', 'card mgr boss' + (open || lv ? '' : ' unavailable'));
+    card.style.setProperty('--tile', BOSS_TILES[b.id]);
+    let pips = '';
+    for (let n = 0; n < G.BOSS_LEVELS; n++) pips += '<span class="' + (n < lv ? 'on' : '') + '">★</span>';
+    const job = lv ? 'Boss of ' + streetIn(b.id) + '. Every shop there earns ' + multText(Math.pow(G.BOSS_BOOST, lv)) +
+        (top ? '.' : ', or ' + next + ' after a promotion.')
+      : open ? 'Wants to run ' + streetIn(b.id) + '. Every shop there would earn ' + next + '.'
+        : 'Open ' + b.open + ' ' + street + (b.id === 'boardwalk' ? ' stores' : ' shops') + ' to meet them.';
+    card.innerHTML =
+      '<div class="mgr-face">' + bossFace(k) + '</div>' +
+      '<div class="mgr-info">' +
+        '<h2 class="mgr-name">' + b.name + '</h2>' +
+        '<span class="boss-pips" role="img" aria-label="Level ' + lv + ' of ' + G.BOSS_LEVELS + '">' + pips + '</span>' +
+        '<p class="mgr-job">' + job + '</p>' +
+        (top ? '<span class="stamp">TOP BOSS!</span>'
+          : open ? '<button class="btn btn-small boss-btn" type="button"><span>' + (lv ? 'Promote' : 'Hire') + '</span>' +
+              '<span class="buy-cost">' + coinCost(G.bossCost(state, k)) + '</span></button>'
+            : '<button class="btn btn-small boss-btn" type="button" disabled>' + G.openOn(state, b.id) + ' of ' + b.open + ' open</button>') +
+      '</div>';
+    const btn = $('.boss-btn', card);
+    if (btn && open && !top) {
+      btn.addEventListener('click', function () {
+        if (!G.hireBoss(state, k)) { Sound.play('nope'); return; }
+        Sound.play('fanfare');
+        confettiAt(btn, 36);
+        toast(bossFace(k), lv ? b.name + ' was promoted!' : b.name + ' is hired!',
+          'Every ' + street + ' shop now earns ' + multText(Math.pow(G.BOSS_BOOST, lv + 1)) + '.');
+        renderManagers();
+        afterChange();
+      });
+      refs.managers.push({ btn: btn, cost: function () { return G.bossCost(state, k); } });
+    }
+    return card;
   }
 
   function managerCard(i) {
@@ -810,9 +893,22 @@
           : open ? '<button class="btn btn-mint btn-small mgr-btn" type="button"><span>Hire</span><span class="buy-cost">' + coinCost(G.managerCost(state, i)) + '</span></button>'
             : '<button class="btn btn-small mgr-btn" type="button" disabled>Open the shop first</button>') +
       '</div>' +
-      (open && G.hasPerk(state, 'assistants') ? assistantRow(i) : '');
+      (open && G.hasPerk(state, 'assistants') ? assistantRow(i) : '') +
+      (open && G.hasPerk(state, 'trainees') ? traineeRow(i) : '');
     const btn = $('.mgr-btn', card);
     const helpBtn = $('.assist-btn', card);
+    const trainBtn = $('.trainee-btn', card);
+    if (trainBtn && state.assistants[i] && !state.trainees[i]) {
+      trainBtn.addEventListener('click', function () {
+        if (!G.hireTrainee(state, i)) { Sound.play('nope'); return; }
+        Sound.play('fanfare');
+        confettiAt(trainBtn, 30);
+        toast(trnFace(i), G.TRAINEES[i].name + ' is hired!', 'Your ' + b.name + ' now earns twice as much.');
+        renderManagers();
+        afterChange();
+      });
+      refs.managers.push({ btn: trainBtn, cost: function () { return G.traineeCost(state, i); } });
+    }
     if (helpBtn && hired && !state.assistants[i]) {
       helpBtn.addEventListener('click', function () {
         if (!G.hireAssistant(state, i)) { Sound.play('nope'); return; }
@@ -822,7 +918,7 @@
         renderManagers();
         afterChange();
       });
-      refs.managers.push({ i: i, btn: helpBtn, assistant: true });
+      refs.managers.push({ btn: helpBtn, cost: function () { return G.assistantCost(state, i); } });
     }
     if (btn && open && !hired) {
       btn.addEventListener('click', function () {
@@ -833,7 +929,7 @@
         renderManagers();
         afterChange();
       });
-      refs.managers.push({ i: i, btn: btn });
+      refs.managers.push({ btn: btn, cost: function () { return G.managerCost(state, i); } });
     }
     return card;
   }
@@ -850,10 +946,20 @@
     '</div>';
   }
 
+  function traineeRow(i) {
+    const a = G.TRAINEES[i];
+    const hired = state.trainees[i];
+    return '<div class="assist trainee">' +
+      '<div class="assist-face">' + trnFace(i) + '</div>' +
+      '<div class="assist-info"><strong>' + a.name + '</strong><span>Trainee · 2× profit</span></div>' +
+      (hired ? '<span class="stamp">LEARNING!</span>'
+        : state.assistants[i] ? '<button class="btn btn-small trainee-btn" type="button"><span>Hire</span><span class="buy-cost">' + coinCost(G.traineeCost(state, i)) + '</span></button>'
+          : '<button class="btn btn-small trainee-btn" type="button" disabled>Assistant first</button>') +
+    '</div>';
+  }
+
   function updateManagers() {
-    refs.managers.forEach(function (r) {
-      r.btn.disabled = state.coins < (r.assistant ? G.assistantCost(state, r.i) : G.managerCost(state, r.i));
-    });
+    refs.managers.forEach(function (r) { r.btn.disabled = state.coins < r.cost(); });
   }
 
   // ---------------------------------------------------------------------------
@@ -861,12 +967,30 @@
   // ---------------------------------------------------------------------------
   const UPGRADES_SHOWN = 12;
 
+  const HELPER_ART = {
+    vipTips: function () { return A.crown(); },
+    balloons: function () { return A.balloon('#4CC9F0'); },
+    rush: function () { return A.product('candy'); },
+    goals: function () { return A.trophy(true); },
+    offline: function () { return A.product('dreampalace'); },
+    lounge: function () { return mgrFace(0); },
+  };
+
   function upgradeArt(u) {
-    return u.target < 0 ? A.sprinkleJar() : A.shop(G.BUSINESSES[u.target].id);
+    if (u.effect) return HELPER_ART[u.effect]();
+    if (u.target < 0) return A.sprinkleJar();
+    return A.shop(G.BUSINESSES[u.target].id) + (u.speed ? '<span class="upg-bolt">' + A.bolt() + '</span>' : '');
   }
 
   function upgradeEffect(u) {
-    return u.target < 0 ? 'Every shop earns ×' + u.mult : G.BUSINESSES[u.target].name + ' earns ×' + u.mult;
+    if (u.effect) return u.text;
+    if (u.target < 0) return 'Every shop earns ×' + u.mult;
+    return G.BUSINESSES[u.target].name + (u.speed ? ' works twice as fast' : ' earns ×' + u.mult);
+  }
+
+  function upgradeClass(u) {
+    return u.effect ? ' upg-helper' : u.speed ? ' upg-turbo' : u.perk === 'goldUpgrades' ? ' upg-gold'
+      : u.perk === 'rainbowUpgrades' ? ' upg-rainbow' : u.perk === 'diamondUpgrades' ? ' upg-diamond' : '';
   }
 
   function renderUpgrades() {
@@ -877,9 +1001,10 @@
     const locked = [];
     if (!G.hasPerk(state, 'goldUpgrades')) locked.push('Golden upgrades unlock at 25 golden sprinkles');
     if (!G.hasPerk(state, 'rainbowUpgrades')) locked.push((locked.length ? 'Rainbow' : 'Rainbow upgrades') + ' at 250');
+    if (!G.hasPerk(state, 'diamondUpgrades')) locked.push((locked.length ? 'Diamond' : 'Diamond upgrades') + ' at 1,200');
     if (locked.length) list.appendChild(el('p', 'panel-sub', locked.join(', ') + '. Each adds another ×3 for every shop.'));
     available.slice(0, UPGRADES_SHOWN).forEach(function (u) {
-      const row = el('article', 'card upg' + (u.perk === 'goldUpgrades' ? ' upg-gold' : u.perk === 'rainbowUpgrades' ? ' upg-rainbow' : ''));
+      const row = el('article', 'card upg' + upgradeClass(u));
       row.style.setProperty('--tile', u.target < 0 ? '#E8FAFF' : G.BUSINESSES[u.target].tile);
       row.innerHTML =
         '<div class="upg-icon">' + upgradeArt(u) + '</div>' +
@@ -1282,10 +1407,13 @@
   }
 
   function updateBadges() {
-    const helpers = G.hasPerk(state, 'assistants');
+    const helpers = G.hasPerk(state, 'assistants'), trainees = G.hasPerk(state, 'trainees');
     const hireable = G.MANAGERS.filter(function (m, i) {
       return (!state.managers[i] && state.biz[i].owned > 0 && state.coins >= G.managerCost(state, i)) ||
-        (helpers && state.managers[i] && !state.assistants[i] && state.coins >= G.assistantCost(state, i));
+        (helpers && state.managers[i] && !state.assistants[i] && state.coins >= G.assistantCost(state, i)) ||
+        (trainees && state.assistants[i] && !state.trainees[i] && state.coins >= G.traineeCost(state, i));
+    }).length + G.BOSSES.filter(function (b, k) {
+      return G.bossOpen(state, k) && G.bossLevel(state, k) < G.BOSS_LEVELS && state.coins >= G.bossCost(state, k);
     }).length;
     const goalsReady = state.goals.filter(function (g) { return G.goalDone(state, g); }).length;
     const buyable = G.UPGRADES.filter(function (u) { return G.upgradeAvailable(state, u) && state.coins >= u.cost; }).length;
@@ -1359,7 +1487,7 @@
   function removeBalloon(nextInSeconds) {
     if (balloonEl) balloonEl.remove();
     balloonEl = null;
-    nextBalloonAt = performance.now() + nextInSeconds * 1000 * (G.hasPerk(state, 'luckySkies') ? 0.5 : 1);
+    nextBalloonAt = performance.now() + nextInSeconds * 1000 * (G.hasPerk(state, 'luckySkies') ? 0.5 : 1) * (G.helping(state, 'balloons') ? 0.5 : 1);
   }
 
   function popBalloon(b) {
