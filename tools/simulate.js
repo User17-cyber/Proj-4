@@ -46,6 +46,9 @@ function options() {
     if (owned > 0 && !s.managers[i]) {
       opts.push({ cost: G.managerCost(s, i), gain: shopIncome(i, owned) * 0.6, act: () => G.hireManager(s, i) });
     }
+    if (s.managers[i] && !s.assistants[i] && G.hasPerk(s, 'assistants')) {
+      opts.push({ cost: G.assistantCost(s, i), gain: shopIncome(i, owned), act: () => G.hireAssistant(s, i) });
+    }
   });
   G.UPGRADES.forEach((u) => {
     if (!G.upgradeAvailable(s, u)) return;

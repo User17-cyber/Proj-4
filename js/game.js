@@ -40,6 +40,11 @@
     return A.face(m.animal, m.color, m.acc);
   }
 
+  function astFace(i) {
+    const a = G.ASSISTANTS[i];
+    return A.face(a.animal, a.color, a.acc);
+  }
+
   function el(tag, cls, html) {
     const e = document.createElement(tag);
     if (cls) e.className = cls;
@@ -204,7 +209,8 @@
     const fx = $('#fx');
     const colors = ['#FF5FA2', '#FFD23F', '#4CC9F0', '#3DDC97', '#8C6CFF', '#FF9F43'];
     for (let k = 0; k < count; k++) {
-      const c = el('span', 'confetti');
+      const shape = G.activeStyle(state, 'confetti');
+      const c = el('span', 'confetti' + (shape === 'classic' ? '' : ' ' + shape));
       const angle = rand(0, Math.PI * 2);
       const dist = rand(60, 170);
       c.style.left = x + 'px';
@@ -348,6 +354,7 @@
       shopSvg: A.shop(b.id),
       productSvg: A.product(b.id),
       faceSvg: mgrFace(i),
+      assistantSvg: astFace(i),
       tile: b.tile,
       bar: b.bar,
       night: !!b.night,
@@ -540,7 +547,7 @@
   function upgradesOwned(i) {
     const id = G.BUSINESSES[i].id;
     let n = 0;
-    for (let t = 0; t < 4; t++) if (state.upgrades[id + '-' + t]) n++;
+    for (let t = 0; t < 6; t++) if (state.upgrades[id + '-' + t]) n++;
     return n;
   }
 
@@ -570,13 +577,21 @@
       r.scene.setAttribute('aria-label', r.lane && r.lane.hasVip() ? 'Collect the VIP tip at your ' + G.BUSINESSES[i].name
         : managed ? G.BUSINESSES[i].name + ', run by ' + G.MANAGERS[i].name : 'Run ' + G.BUSINESSES[i].name);
 
-      // One gold star per upgrade bought for this shop.
+      // One star per upgrade tier: gold for the first four, then Golden and Rainbow once unlocked.
+      const slots = 4 + (G.hasPerk(state, 'goldUpgrades') ? 1 : 0) + (G.hasPerk(state, 'rainbowUpgrades') ? 1 : 0);
       const stars = upgradesOwned(i);
-      if (stars !== r.starCount) {
-        r.starCount = stars;
-        r.stars.innerHTML = [0, 1, 2, 3].map(function (k) { return '<span' + (k < stars ? ' class="on"' : '') + '>★</span>'; }).join('');
-        r.stars.setAttribute('aria-label', stars + ' of 4 upgrades');
-        r.stars.title = stars + ' of 4 upgrades bought';
+      const starKey = stars + '/' + slots;
+      if (starKey !== r.starCount) {
+        r.starCount = starKey;
+        const id = G.BUSINESSES[i].id;
+        let html = '';
+        for (let k = 0; k < slots; k++) {
+          const cls = (state.upgrades[id + '-' + k] ? 'on' : '') + (k === 4 ? ' gold' : k === 5 ? ' rainbow' : '');
+          html += '<span class="' + cls.trim() + '">★</span>';
+        }
+        r.stars.innerHTML = html;
+        r.stars.setAttribute('aria-label', stars + ' of ' + slots + ' upgrades');
+        r.stars.title = stars + ' of ' + slots + ' upgrades bought';
       }
 
       const n = G.buyAmount(state, i);
@@ -605,6 +620,7 @@
       r.lane.update(dt, {
         owned: b.owned,
         managed: state.managers[r.i],
+        assistant: state.assistants[r.i],
         running: b.running,
         time: G.cycleTime(state, r.i),
         milestones: G.milestonesReached(b.owned),
@@ -633,6 +649,7 @@
     switch (g.type) {
       case 'own': case 'open': return A.shop(G.BUSINESSES[g.i].id);
       case 'manager': return mgrFace(g.i);
+      case 'assistant': return astFace(g.i);
       case 'balloon': return A.balloon('#FF5FA2');
       case 'upgrade': return A.icon('upgrades');
       case 'vip': return A.crown();
@@ -746,6 +763,10 @@
     const list = $('#managerList');
     list.textContent = '';
     refs.managers = [];
+    if (!G.hasPerk(state, 'assistants')) {
+      list.appendChild(el('div', 'card mgr-note', '<span class="chip-icon">' + A.sprinkle() + '</span>' +
+        '<p><strong>Assistant managers</strong> unlock at 10 golden sprinkles. Each one doubles their shop\'s speed.</p>'));
+    }
     const groups = [
       ['Main Street', function (i) { return !isStreet(i); }],
       ['Sprinkle Street', function (i) { return isStreet(i) && (G.isUnlocked(state, i) || state.biz[i].owned > 0); }],
@@ -771,10 +792,23 @@
         '<h2 class="mgr-name">' + m.name + '</h2>' +
         '<p class="mgr-job">' + (open ? 'Runs your ' + b.name + ' for you.' : 'Wants to run a ' + b.name + '.') + '</p>' +
         (hired ? '<span class="stamp">ON THE JOB!</span>'
-          : open ? '<button class="btn btn-mint btn-small" type="button"><span>Hire</span><span class="buy-cost">' + coinCost(G.managerCost(state, i)) + '</span></button>'
-            : '<button class="btn btn-small" type="button" disabled>Open the shop first</button>') +
-      '</div>';
-    const btn = $('.btn', card);
+          : open ? '<button class="btn btn-mint btn-small mgr-btn" type="button"><span>Hire</span><span class="buy-cost">' + coinCost(G.managerCost(state, i)) + '</span></button>'
+            : '<button class="btn btn-small mgr-btn" type="button" disabled>Open the shop first</button>') +
+      '</div>' +
+      (open && G.hasPerk(state, 'assistants') ? assistantRow(i) : '');
+    const btn = $('.mgr-btn', card);
+    const helpBtn = $('.assist-btn', card);
+    if (helpBtn && hired && !state.assistants[i]) {
+      helpBtn.addEventListener('click', function () {
+        if (!G.hireAssistant(state, i)) { Sound.play('nope'); return; }
+        Sound.play('fanfare');
+        confettiAt(helpBtn, 30);
+        toast(astFace(i), G.ASSISTANTS[i].name + ' is hired!', 'Your ' + b.name + ' now works twice as fast.');
+        renderManagers();
+        afterChange();
+      });
+      refs.managers.push({ i: i, btn: helpBtn, assistant: true });
+    }
     if (btn && open && !hired) {
       btn.addEventListener('click', function () {
         if (!G.hireManager(state, i)) { Sound.play('nope'); return; }
@@ -789,8 +823,22 @@
     return card;
   }
 
+  function assistantRow(i) {
+    const a = G.ASSISTANTS[i];
+    const hired = state.assistants[i];
+    return '<div class="assist">' +
+      '<div class="assist-face">' + astFace(i) + '</div>' +
+      '<div class="assist-info"><strong>' + a.name + '</strong><span>Assistant · 2× speed</span></div>' +
+      (hired ? '<span class="stamp">HELPING!</span>'
+        : state.managers[i] ? '<button class="btn btn-small assist-btn" type="button"><span>Hire</span><span class="buy-cost">' + coinCost(G.assistantCost(state, i)) + '</span></button>'
+          : '<button class="btn btn-small assist-btn" type="button" disabled>Manager first</button>') +
+    '</div>';
+  }
+
   function updateManagers() {
-    refs.managers.forEach(function (r) { r.btn.disabled = state.coins < G.managerCost(state, r.i); });
+    refs.managers.forEach(function (r) {
+      r.btn.disabled = state.coins < (r.assistant ? G.assistantCost(state, r.i) : G.managerCost(state, r.i));
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -811,8 +859,12 @@
     list.textContent = '';
     refs.upgrades = [];
     const available = G.UPGRADES.filter(function (u) { return G.upgradeAvailable(state, u); });
+    const locked = [];
+    if (!G.hasPerk(state, 'goldUpgrades')) locked.push('Golden upgrades unlock at 25 golden sprinkles');
+    if (!G.hasPerk(state, 'rainbowUpgrades')) locked.push((locked.length ? 'Rainbow' : 'Rainbow upgrades') + ' at 250');
+    if (locked.length) list.appendChild(el('p', 'panel-sub', locked.join(', ') + '. Each adds another ×3 for every shop.'));
     available.slice(0, UPGRADES_SHOWN).forEach(function (u) {
-      const row = el('article', 'card upg');
+      const row = el('article', 'card upg' + (u.perk === 'goldUpgrades' ? ' upg-gold' : u.perk === 'rainbowUpgrades' ? ' upg-rainbow' : ''));
       row.style.setProperty('--tile', u.target < 0 ? '#E8FAFF' : G.BUSINESSES[u.target].tile);
       row.innerHTML =
         '<div class="upg-icon">' + upgradeArt(u) + '</div>' +
@@ -857,10 +909,16 @@
   // ---------------------------------------------------------------------------
   // Sprinkles tab
   // ---------------------------------------------------------------------------
+  const STYLE_GROUPS = [['sky', 'Sky'], ['coin', 'Coins'], ['hats', 'Customer hats'], ['confetti', 'Confetti']];
+
   function renderSprinkles() {
     const view = $('#sprinkleView');
+    const jumps = [['sp-reopen', 'Reopening'], ['sp-perks', 'Perks'], ['sp-style', 'Customize'], ['sp-street', 'Sprinkle Street']];
     view.innerHTML =
       '<div class="panel" style="gap:16px">' +
+        '<nav class="jump-chips" aria-label="Sections">' + jumps.map(function (j) {
+          return '<button type="button" class="jump" data-jump="' + j[0] + '">' + j[1] + '</button>';
+        }).join('') + '</nav>' +
         '<section class="card sprinkle-hero">' +
           '<div class="sprinkle-jar">' + A.sprinkleJar() + '</div>' +
           '<div>' +
@@ -869,7 +927,7 @@
             '<p>Each one adds +' + Math.round(G.SPRINKLE_BONUS * 100) + '% profit to every shop, forever. Right now that\'s <strong data-r="bonus"></strong>.</p>' +
           '</div>' +
         '</section>' +
-        '<section class="card reopen">' +
+        '<section class="card reopen jump-target" id="sp-reopen">' +
           '<h2>Grand Reopening</h2>' +
           '<p>Start your town over from one lemonade stand and collect golden sprinkles for the coins you\'ve earned this run. Sprinkles add up with every reopening.</p>' +
           '<div class="gain-line"><span class="chip-icon">' + A.sprinkle() + '</span><span data-r="gain"></span></div>' +
@@ -880,10 +938,13 @@
           '</div>' +
           '<button class="btn btn-pink" type="button" data-r="btn">Hold a Grand Reopening</button>' +
         '</section>' +
-        '<h2 class="section-title">Sprinkle Perks</h2>' +
+        '<h2 class="section-title jump-target" id="sp-perks">Sprinkle Perks</h2>' +
         '<p class="panel-sub">Perks unlock for good once you hold enough golden sprinkles. You never spend sprinkles on them.</p>' +
         '<div class="perk-grid">' + G.PERKS.map(perkCard).join('') + '</div>' +
-        '<h2 class="section-title">Sprinkle Street</h2>' +
+        '<h2 class="section-title jump-target" id="sp-style">Customize</h2>' +
+        '<p class="panel-sub">New looks unlock at sprinkle counts. Tap one to use it.</p>' +
+        '<div class="card customize" id="customize"></div>' +
+        '<h2 class="section-title jump-target" id="sp-street">Sprinkle Street</h2>' +
         '<p class="panel-sub">Special shops that unlock for good when you hold enough golden sprinkles. Open them with coins from the Town tab.</p>' +
         '<div class="street-grid">' + G.BUSINESSES.map(function (b, i) { return isStreet(i) ? streetCard(i) : ''; }).join('') + '</div>' +
       '</div>';
@@ -891,7 +952,67 @@
     view.querySelectorAll('[data-r]').forEach(function (n) { r[n.getAttribute('data-r')] = n; });
     r.btn.addEventListener('click', confirmReopen);
     refs.sprinkles = r;
+    view.querySelectorAll('.jump').forEach(function (b) {
+      b.addEventListener('click', function () {
+        const target = document.getElementById(b.getAttribute('data-jump'));
+        if (target) target.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
+      });
+    });
+    renderCustomize();
     updateSprinkles();
+  }
+
+  function styleTile(group, item) {
+    const got = state.sprinkles >= item.need;
+    const on = G.activeStyle(state, group) === item.id;
+    const art = group === 'sky' ? '<span class="sky-swatch" data-sky="' + item.id + '"></span>'
+      : group === 'coin' ? A.coin(item.id)
+        : group === 'hats' ? A.customer(item.id)
+          : A.confettiSample(item.id);
+    return '<button type="button" class="style-tile' + (on ? ' on' : '') + '" data-group="' + group + '" data-style="' + item.id + '"' +
+        (got ? '' : ' disabled') + ' aria-pressed="' + on + '">' +
+      '<span class="style-art">' + art + '</span><span class="style-name">' + item.name + '</span>' +
+      (got ? '<span class="style-tag">' + (on ? 'Using' : 'Unlocked') + '</span>'
+        : '<span class="style-need"><span class="chip-icon">' + A.sprinkle() + '</span>' + item.need.toLocaleString('en-US') + '</span>') +
+    '</button>';
+  }
+
+  function renderCustomize() {
+    const box = $('#customize');
+    if (!box) return;
+    box.innerHTML =
+      '<label class="style-group-title" for="townName">Town name</label>' +
+      '<input id="townName" class="name-input" type="text" maxlength="24" placeholder="Sprinkle Town" autocomplete="off" spellcheck="false">' +
+      STYLE_GROUPS.map(function (g) {
+        return '<h3 class="style-group-title">' + g[1] + '</h3>' +
+          '<div class="style-row">' + G.STYLES[g[0]].map(function (it) { return styleTile(g[0], it); }).join('') + '</div>';
+      }).join('');
+    const name = $('#townName', box);
+    name.value = state.townName;
+    name.addEventListener('input', function () {
+      state.townName = name.value.trim().slice(0, 24);
+      applyStyle();
+    });
+    name.addEventListener('change', save);
+    box.querySelectorAll('.style-tile').forEach(function (b) {
+      b.addEventListener('click', function () {
+        if (!G.setStyle(state, b.getAttribute('data-group'), b.getAttribute('data-style'))) return;
+        Sound.play('tap');
+        applyStyle();
+        renderCustomize();
+        afterChange();
+        save();
+      });
+    });
+  }
+
+  // Put the chosen customizations on screen.
+  function applyStyle() {
+    document.documentElement.setAttribute('data-sky', G.activeStyle(state, 'sky'));
+    A.setCoinStyle(G.activeStyle(state, 'coin'));
+    Scene.setHats(G.activeStyle(state, 'hats'));
+    $('#purseCoin').innerHTML = A.coin();
+    setText($('.brand'), state.townName || 'Sprinkle Town');
   }
 
   function perkCard(p) {
@@ -976,7 +1097,7 @@
           stat('Coins this run', 'run') + stat('Coins all time', 'life') + stat('Best run', 'best') +
           stat('Time played', 'time') + stat('Shop taps', 'taps') + stat('Balloons popped', 'balloons') +
           stat('Grand Reopenings', 'reopens') + stat('Town Goals done', 'goals') + stat('VIP tips', 'vips') +
-          stat('Sprinkle Perks', 'perks') + stat('Profit bonus', 'bonus') +
+          stat('Sprinkle Perks', 'perks') + stat('Customizations', 'styles') + stat('Profit bonus', 'bonus') +
         '</dl>' +
         '<h2 class="section-title">Settings</h2>' +
         '<div class="card settings">' +
@@ -1091,6 +1212,7 @@
     setText(r.goals, fmt(state.stats.goalsDone));
     setText(r.vips, fmt(state.stats.vips));
     setText(r.perks, G.perkCount(state) + ' of ' + G.PERKS.length);
+    setText(r.styles, G.stylesUnlocked(state) + ' of ' + G.stylesTotal());
     setText(r.bonus, '+' + fmt(bonus) + '%');
   }
 
@@ -1126,7 +1248,11 @@
   }
 
   function updateBadges() {
-    const hireable = G.MANAGERS.filter(function (m, i) { return !state.managers[i] && state.biz[i].owned > 0 && state.coins >= G.managerCost(state, i); }).length;
+    const helpers = G.hasPerk(state, 'assistants');
+    const hireable = G.MANAGERS.filter(function (m, i) {
+      return (!state.managers[i] && state.biz[i].owned > 0 && state.coins >= G.managerCost(state, i)) ||
+        (helpers && state.managers[i] && !state.assistants[i] && state.coins >= G.assistantCost(state, i));
+    }).length;
     const goalsReady = state.goals.filter(function (g) { return G.goalDone(state, g); }).length;
     const buyable = G.UPGRADES.filter(function (u) { return G.upgradeAvailable(state, u) && state.coins >= u.cost; }).length;
     const gain = G.sprinkleGain(state);
@@ -1273,6 +1399,20 @@
         (unlocked.length === 1 ? '' : unlocked.map(function (b) { return b.name; }).join(', ') + '. ') + 'Open them from the Town tab on Sprinkle Street.', true);
       if (tab === 'town' && district === 'sprinkle') renderTown();
     }
+    const looks = [];
+    Object.keys(G.STYLES).forEach(function (g) {
+      G.STYLES[g].forEach(function (it) {
+        if (it.need > 0 && state.sprinkles >= it.need && !state.hints['style-' + g + '-' + it.id]) {
+          state.hints['style-' + g + '-' + it.id] = true;
+          looks.push(it.name);
+        }
+      });
+    });
+    if (looks.length) {
+      toast(A.sprinkle(), looks.length === 1 ? 'New look: ' + looks[0] : looks.length + ' new looks unlocked!',
+        (looks.length === 1 ? '' : looks.join(', ') + '. ') + 'Try them in Sprinkles → Customize.', true);
+      if (tab === 'sprinkles') renderCustomize();
+    }
     const perks = G.PERKS.filter(function (p) { return state.sprinkles >= p.need && !state.hints['perk-' + p.id]; });
     if (perks.length) {
       perks.forEach(function (p) { state.hints['perk-' + p.id] = true; });
@@ -1340,6 +1480,7 @@
   // Start up
   // ---------------------------------------------------------------------------
   function afterLoad() {
+    applyStyle();
     closeModal();
     removeBalloon(rand(35, 70));
     unseenTrophies = 0;

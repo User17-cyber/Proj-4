@@ -124,6 +124,48 @@
     if (m.cost === undefined) m.cost = sig2(BUSINESSES[i].cost * (i - MAIN_COUNT < 5 ? 10 : 5));
   });
 
+  // Assistant managers: a second hire for every shop, unlocked by the Assistant
+  // Managers perk. Each doubles their shop's speed and costs 25x its manager.
+  const ASSISTANTS = [
+    { name: 'Lulu Lamb',        animal: 'sheep',    color: '#FFFFFF', acc: 'bow' },
+    { name: 'Buddy Bear',       animal: 'bear',     color: '#E8B97A', acc: 'cap' },
+    { name: 'Dotty Duck',       animal: 'duck',     color: '#FFF07A', acc: 'flower' },
+    { name: 'Mozzarella Mouse', animal: 'mouse',    color: '#D9DCE8', acc: 'chef' },
+    { name: 'Tilly Tiger',      animal: 'tiger',    color: '#FFB36B', acc: 'bow' },
+    { name: 'Gummy Giraffe',    animal: 'giraffe',  color: '#FFE09A', acc: 'party' },
+    { name: 'Boing Bunny',      animal: 'bunny',    color: '#E8F4FF', acc: 'headphones' },
+    { name: 'Director Dog',     animal: 'dog',      color: '#C9A27A', acc: 'shades' },
+    { name: 'Astro Hamster',    animal: 'hamster',  color: '#F4C49A', acc: 'cap' },
+    { name: 'Luna Lion',        animal: 'lion',     color: '#FFE08A', acc: 'crown' },
+    { name: 'Doodle Duck',      animal: 'duck',     color: '#FFD27A', acc: 'beanie' },
+    { name: 'Sporty Fox',       animal: 'fox',      color: '#FF9F5A', acc: 'cap' },
+    { name: 'Cocoa Bear',       animal: 'bear',     color: '#8B5A3C', acc: 'chef' },
+    { name: 'Gizmo Mouse',      animal: 'mouse',    color: '#BFC4D6', acc: 'glasses' },
+    { name: 'Prism Panda',      animal: 'panda',    color: '#FFFFFF', acc: 'party' },
+    { name: 'Nova Owl',         animal: 'owl',      color: '#6C5CA8', acc: 'crown' },
+    // Sprinkle Street
+    { name: 'Frosty Frog',      animal: 'frog',     color: '#8BE08B', acc: 'chef' },
+    { name: 'Boba Bunny',       animal: 'bunny',    color: '#FFF0D6', acc: 'bow' },
+    { name: 'Fluffy Sheep',     animal: 'sheep',    color: '#FFE3F1', acc: 'flower' },
+    { name: 'Chilly Penguin',   animal: 'penguin',  color: '#3C4A78', acc: 'beanie' },
+    { name: 'Flip Fox',         animal: 'fox',      color: '#E8823D', acc: 'chef' },
+    { name: 'Salsa Monkey',     animal: 'monkey',   color: '#B07A4F', acc: 'party' },
+    { name: 'Wasabi Cat',       animal: 'cat',      color: '#9BE36D', acc: 'headphones' },
+    { name: 'Crumbs Hamster',   animal: 'hamster',  color: '#E8B97A', acc: 'crown' },
+    { name: 'Breezy Elephant',  animal: 'elephant', color: '#B8C9E8', acc: 'cap' },
+    { name: 'Pawsome Pup',      animal: 'dog',      color: '#FFFFFF', acc: 'bowtie' },
+    { name: 'Petal Pig',        animal: 'pig',      color: '#FFC8DD', acc: 'flower' },
+    { name: 'Inky Owl',         animal: 'owl',      color: '#4C5FA8', acc: 'glasses' },
+    { name: 'Joystick Giraffe', animal: 'giraffe',  color: '#FFD27A', acc: 'headphones' },
+    { name: 'Rocky Raccoon',    animal: 'raccoon',  color: '#A3A3B5', acc: 'shades' },
+    { name: 'Kickflip Koala',   animal: 'koala',    color: '#B8BFD0', acc: 'cap' },
+    { name: 'Abby Cadabra',     animal: 'cat',      color: '#B9A4FF', acc: 'wizard' },
+    { name: 'Rex the Dragon',   animal: 'dragon',   color: '#7BD88F', acc: 'glasses' },
+    { name: 'Captain Moo',      animal: 'cow',      color: '#FFFFFF', acc: 'pirate' },
+    { name: 'Blaze Tiger',      animal: 'tiger',    color: '#FF7A5A', acc: 'chef' },
+    { name: 'Glimmer Unicorn',  animal: 'unicorn',  color: '#FFF0F6', acc: 'tiara' },
+  ];
+
   // ---------------------------------------------------------------------------
   // Upgrades: each one triples a shop's profit (or every shop's, for town-wide).
   // ---------------------------------------------------------------------------
@@ -165,7 +207,9 @@
     dragon:      ['Fire-Baked Bread', 'Dragon Scale Tarts', 'Baby Dragons', 'Dragon Mountain'],
     unicorn:     ['Glitter Horns', 'Rainbow Bridges', 'Flying Unicorns', 'Magic Kingdom'],
   };
-  const UPGRADE_TIER_COST = [400, 4e5, 4e9, 4e14]; // times the shop's first price
+  const UPGRADE_TIER_COST = [400, 4e5, 4e9, 4e14, 1e17, 1e20]; // times the shop's first price
+  // The Golden and Rainbow tiers appear once their Sprinkle Perk is unlocked.
+  const UPGRADE_TIER_PERK = [null, null, null, null, 'goldUpgrades', 'rainbowUpgrades'];
 
   const TOWN_UPGRADES = [
     { name: 'Town Parade',          cost: 2.5e7 },
@@ -176,12 +220,16 @@
     { name: 'Fireworks Every Night', cost: 2.5e22 },
     { name: 'Robot Marching Band',  cost: 2.5e25 },
     { name: 'Galaxy Carnival',      cost: 2.5e28 },
+    { name: 'Sprinkle Street Parade', cost: 2.5e31 },
+    { name: 'Golden Fountain',      cost: 2.5e34 },
+    { name: 'Rainbow Fireworks',    cost: 2.5e37 },
+    { name: 'Town on the Moon',     cost: 2.5e40 },
   ];
 
   const UPGRADES = [];
   BUSINESSES.forEach(function (b, i) {
-    UPGRADE_NAMES[b.id].forEach(function (name, t) {
-      UPGRADES.push({ id: b.id + '-' + t, name: name, target: i, mult: 3, cost: b.cost * UPGRADE_TIER_COST[t] });
+    UPGRADE_NAMES[b.id].concat(['Golden ' + b.name, 'Rainbow ' + b.name]).forEach(function (name, t) {
+      UPGRADES.push({ id: b.id + '-' + t, name: name, target: i, mult: 3, cost: b.cost * UPGRADE_TIER_COST[t], perk: UPGRADE_TIER_PERK[t] });
     });
   });
   TOWN_UPGRADES.forEach(function (u, t) {
@@ -207,12 +255,15 @@
   // Sprinkle Perks unlock for good once you hold enough golden sprinkles. They're never spent.
   const PERKS = [
     { id: 'headStart',  name: 'Lemon Head Start', need: 5,    desc: 'Start every run with 10 Lemonade Stands.' },
+    { id: 'assistants', name: 'Assistant Managers', need: 10, desc: 'Hire a second manager for every shop. Each one doubles their shop\'s speed.' },
     { id: 'luckySkies', name: 'Lucky Skies',      need: 15,   desc: 'Lucky balloons float by twice as often.' },
+    { id: 'goldUpgrades', name: 'Golden Upgrades', need: 25,  desc: 'Every shop gets a fifth upgrade that triples its profit.' },
     { id: 'loyalLou',   name: 'Loyal Lou',        need: 30,   desc: 'Lemony Lou is already hired when a run starts.' },
     { id: 'nightShift', name: 'Night Shift',      need: 60,   desc: 'Managers get paid for up to 16 hours away, not 8.' },
     { id: 'sweetStart', name: 'Sweet Start',      need: 100,  desc: 'Start every run with 100K coins.' },
     { id: 'vipMagnet',  name: 'VIP Magnet',       need: 150,  desc: 'VIP visitors tip twice as much.' },
     { id: 'bulkDeal',   name: 'Bulk Discount',    need: 250,  desc: 'Shops and factories cost 10% less.' },
+    { id: 'rainbowUpgrades', name: 'Rainbow Upgrades', need: 250, desc: 'Every shop gets a sixth upgrade that triples its profit.' },
     { id: 'hiringFair', name: 'Hiring Fair',      need: 500,  desc: 'Managers cost half as much.' },
     { id: 'goldGoals',  name: 'Golden Goals',     need: 1000, desc: 'Town Goal rewards are doubled.' },
     { id: 'sugarStorm', name: 'Sugar Storm',      need: 2500, desc: 'Sugar Rushes last twice as long.' },
@@ -221,6 +272,56 @@
   PERKS.forEach(function (p) { PERKS_BY_ID[p.id] = p; });
 
   function hasPerk(s, id) { return s.sprinkles >= PERKS_BY_ID[id].need; }
+
+  // Customizations: looks that unlock for good at sprinkle counts. The first in
+  // each group is the default and is always available.
+  const STYLES = {
+    sky: [
+      { id: 'day',     name: 'Sunny Day',     need: 0 },
+      { id: 'candy',   name: 'Cotton Candy',  need: 10 },
+      { id: 'sunset',  name: 'Sunset',        need: 40 },
+      { id: 'ocean',   name: 'Ocean Breeze',  need: 120 },
+      { id: 'night',   name: 'Starry Night',  need: 400 },
+      { id: 'rainbow', name: 'Rainbow Sky',   need: 1500 },
+    ],
+    coin: [
+      { id: 'classic', name: 'Gold Coin',     need: 0 },
+      { id: 'heart',   name: 'Heart Coin',    need: 5 },
+      { id: 'star',    name: 'Star Coin',     need: 20 },
+      { id: 'donut',   name: 'Donut Coin',    need: 80 },
+      { id: 'gem',     name: 'Gem Coin',      need: 300 },
+      { id: 'rainbow', name: 'Rainbow Coin',  need: 1200 },
+    ],
+    hats: [
+      { id: 'mixed',   name: 'Everyday',      need: 0 },
+      { id: 'party',   name: 'Party Hats',    need: 15 },
+      { id: 'ears',    name: 'Bunny Ears',    need: 60 },
+      { id: 'tophat',  name: 'Top Hats',      need: 200 },
+      { id: 'halo',    name: 'Halos',         need: 800 },
+    ],
+    confetti: [
+      { id: 'classic',   name: 'Confetti',    need: 0 },
+      { id: 'hearts',    name: 'Hearts',      need: 8 },
+      { id: 'stars',     name: 'Stars',       need: 50 },
+      { id: 'sprinkles', name: 'Sprinkles',   need: 150 },
+    ],
+  };
+
+  function styleItem(group, id) { return (STYLES[group] || []).find(function (x) { return x.id === id; }); }
+  function styleUnlocked(s, group, id) { const item = styleItem(group, id); return !!item && s.sprinkles >= item.need; }
+  // The style in use: the chosen one, or the default if it isn't unlocked (yet).
+  function activeStyle(s, group) { return styleUnlocked(s, group, s.style[group]) ? s.style[group] : STYLES[group][0].id; }
+  function setStyle(s, group, id) {
+    if (!styleUnlocked(s, group, id)) return false;
+    s.style[group] = id;
+    return true;
+  }
+  function stylesUnlocked(s) {
+    return Object.keys(STYLES).reduce(function (n, g) { return n + STYLES[g].filter(function (x) { return x.need > 0 && s.sprinkles >= x.need; }).length; }, 0);
+  }
+  function stylesTotal() {
+    return Object.keys(STYLES).reduce(function (n, g) { return n + STYLES[g].length - 1; }, 0);
+  }
   function perkCount(s) { return PERKS.filter(function (p) { return s.sprinkles >= p.need; }).length; }
 
   const TROPHIES = [
@@ -255,6 +356,11 @@
     { id: 'street1',     name: 'Sprinkle Street', desc: 'Open a Sprinkle Street shop',         test: function (s) { return streetOpen(s) >= 1; } },
     { id: 'street10',    name: 'Sweet Street',   desc: 'Open 10 Sprinkle Street shops in one run', test: function (s) { return streetOpen(s) >= 10; } },
     { id: 'unicorn',     name: 'Unicorn Royalty', desc: 'Open the Unicorn Castle',             test: function (s) { return s.biz[indexOf('unicorn')].owned > 0; } },
+    { id: 'assist1',     name: 'Right-Hand Help', desc: 'Hire an assistant manager',           test: function (s) { return s.assistants.some(Boolean); } },
+    { id: 'makeover',    name: 'Makeover',       desc: 'Change how your town looks',           test: function (s) { return Object.keys(STYLES).some(function (g) { return activeStyle(s, g) !== STYLES[g][0].id; }); } },
+    { id: 'assist10',    name: 'Dream Team',     desc: 'Hire 10 assistant managers in one run', test: function (s) { return s.assistants.filter(Boolean).length >= 10; } },
+    { id: 'rainbowUp',   name: 'Over the Rainbow', desc: 'Buy a Rainbow upgrade',              test: function (s) { return Object.keys(s.upgrades).some(function (k) { return UPGRADE_BY_ID[k] && UPGRADE_BY_ID[k].perk === 'rainbowUpgrades'; }); } },
+    { id: 'styleAll',    name: 'Style Icon',     desc: 'Unlock every customization',           test: function (s) { return stylesUnlocked(s) >= stylesTotal(); } },
   ];
 
   function openCount(s) { return s.biz.filter(function (b) { return b.owned > 0; }).length; }
@@ -276,6 +382,7 @@
       bonusSprinkles: 0, // sprinkles won from goals; they don't count against Grand Reopening gains
       biz: BUSINESSES.map(function (b, i) { return { owned: i === 0 ? 1 : 0, progress: 0, running: false }; }),
       managers: BUSINESSES.map(function () { return false; }),
+      assistants: BUSINESSES.map(function () { return false; }),
       upgrades: {},
       trophies: {},
       hints: {},
@@ -284,6 +391,8 @@
       // made: coins earned by shops and factories themselves (not prizes or tips)
       stats: { taps: 0, balloons: 0, reopenings: 0, playTime: 0, bestRun: 0, goalsDone: 0, vips: 0, made: 0 },
       settings: { sound: true, floaters: true, goalsOpen: true },
+      style: { sky: 'day', coin: 'classic', hats: 'mixed', confetti: 'classic' },
+      townName: '',
       buyMode: '1',
       lastSeen: now || Date.now(),
     };
@@ -353,8 +462,18 @@
     return true;
   }
 
+  function assistantCost(s, i) { return managerCost(s, i) * 25; }
+
+  function hireAssistant(s, i) {
+    const cost = assistantCost(s, i);
+    if (!hasPerk(s, 'assistants') || !s.managers[i] || s.assistants[i] || s.coins < cost) return false;
+    s.coins -= cost;
+    s.assistants[i] = true;
+    return true;
+  }
+
   function upgradeAvailable(s, u) {
-    return !s.upgrades[u.id] && (u.target < 0 || s.biz[u.target].owned > 0);
+    return !s.upgrades[u.id] && (u.target < 0 || s.biz[u.target].owned > 0) && (!u.perk || hasPerk(s, u.perk));
   }
 
   function buyUpgrade(s, id) {
@@ -386,7 +505,7 @@
   }
 
   function cycleTime(s, i) {
-    return BUSINESSES[i].time / Math.pow(2, milestonesReached(s.biz[i].owned));
+    return BUSINESSES[i].time / Math.pow(2, milestonesReached(s.biz[i].owned)) / (s.assistants[i] ? 2 : 1);
   }
 
   function trophyCount(s) { return Object.keys(s.trophies).length; }
@@ -524,6 +643,7 @@
     s.runEarned = 0;
     s.biz = fresh.biz;
     s.managers = fresh.managers;
+    s.assistants = fresh.assistants;
     s.upgrades = {};
     s.boost = fresh.boost;
     s.stats.reopenings++;
@@ -540,8 +660,8 @@
   // Town Goals: three small objectives at a time, each paying a prize.
   // ---------------------------------------------------------------------------
   const GOAL_SLOTS = 3;
-  const GOAL_TYPES = ['own', 'own', 'own', 'earn', 'earn', 'balloon', 'upgrade', 'manager', 'open', 'vip'];
-  const GOAL_SECONDS = { own: 120, earn: 90, balloon: 120, upgrade: 90, manager: 150, open: 180, vip: 120 };
+  const GOAL_TYPES = ['own', 'own', 'own', 'earn', 'earn', 'balloon', 'upgrade', 'manager', 'assistant', 'open', 'vip'];
+  const GOAL_SECONDS = { own: 120, earn: 90, balloon: 120, upgrade: 90, manager: 150, assistant: 150, open: 180, vip: 120 };
   const GOAL_REWARDS = ['coins', 'rush', 'sprinkles'];
 
   function pick(list) { return list[Math.floor(Math.random() * list.length)]; }
@@ -578,6 +698,12 @@
     if (type === 'upgrade') {
       const cheapest = UPGRADES.filter(function (u) { return upgradeAvailable(s, u); })[0];
       return cheapest && reachable(s, cheapest.cost) ? { type: 'upgrade', base: Object.keys(s.upgrades).length, target: 1 } : null;
+    }
+    if (type === 'assistant') {
+      if (!hasPerk(s, 'assistants')) return null;
+      let i = -1;
+      open.forEach(function (k) { if (s.managers[k] && !s.assistants[k] && (i < 0 || assistantCost(s, k) < assistantCost(s, i))) i = k; });
+      return i >= 0 && reachable(s, assistantCost(s, i)) ? { type: 'assistant', i: i } : null;
     }
     if (type === 'manager') {
       const i = open.filter(function (k) { return !s.managers[k]; })[0];
@@ -619,6 +745,7 @@
       case 'balloon': return { have: s.stats.balloons - g.base, need: g.target };
       case 'upgrade': return { have: Object.keys(s.upgrades).length - g.base, need: g.target };
       case 'manager': return { have: s.managers[g.i] ? 1 : 0, need: 1 };
+      case 'assistant': return { have: s.assistants[g.i] ? 1 : 0, need: 1 };
       case 'open': return { have: s.biz[g.i].owned > 0 ? 1 : 0, need: 1 };
       case 'vip': return { have: s.stats.vips - g.base, need: g.target };
     }
@@ -638,6 +765,7 @@
       case 'balloon': return g.target === 1 ? 'Pop a lucky balloon' : 'Pop ' + g.target + ' lucky balloons';
       case 'upgrade': return 'Buy an upgrade';
       case 'manager': return 'Hire ' + MANAGERS[g.i].name;
+      case 'assistant': return 'Hire ' + ASSISTANTS[g.i].name + ' as an assistant';
       case 'open': return (b.kind === 'factory' ? 'Build the ' : 'Open the ') + b.name;
       case 'vip': return 'Collect a tip from a VIP visitor';
     }
@@ -709,6 +837,11 @@
       });
     }
     if (Array.isArray(data.managers)) s.managers = s.managers.map(function (_, i) { return data.managers[i] === true; });
+    if (Array.isArray(data.assistants)) s.assistants = s.assistants.map(function (_, i) { return data.assistants[i] === true && s.managers[i]; });
+    if (data.style && typeof data.style === 'object') {
+      Object.keys(STYLES).forEach(function (g) { if (styleItem(g, data.style[g])) s.style[g] = data.style[g]; });
+    }
+    if (typeof data.townName === 'string') s.townName = data.townName.trim().slice(0, 24);
     s.upgrades = flags(data.upgrades, function (k) { return !!UPGRADE_BY_ID[k]; });
     s.trophies = flags(data.trophies, function (k) { return TROPHIES.some(function (t) { return t.id === k; }); });
     s.hints = flags(data.hints, function () { return true; });
@@ -725,7 +858,7 @@
     if (Array.isArray(data.goals)) {
       data.goals.forEach(function (g) {
         if (!g || !GOAL_SECONDS[g.type] || GOAL_REWARDS.indexOf(g.reward) < 0 || s.goals.length >= GOAL_SLOTS) return;
-        const needsShop = g.type === 'own' || g.type === 'manager' || g.type === 'open';
+        const needsShop = g.type === 'own' || g.type === 'manager' || g.type === 'assistant' || g.type === 'open';
         if (needsShop && !(Number.isInteger(g.i) && g.i >= 0 && g.i < BUSINESSES.length)) return;
         const clean = { type: g.type, reward: g.reward };
         if (needsShop) clean.i = g.i;
@@ -779,6 +912,9 @@
     newState: newState, restore: restore, earn: earn,
     costFor: costFor, maxAffordable: maxAffordable, buyAmount: buyAmount, buy: buy,
     hireManager: hireManager, managerCost: managerCost, upgradeAvailable: upgradeAvailable, buyUpgrade: buyUpgrade,
+    ASSISTANTS: ASSISTANTS, assistantCost: assistantCost, hireAssistant: hireAssistant,
+    STYLES: STYLES, styleUnlocked: styleUnlocked, activeStyle: activeStyle, setStyle: setStyle,
+    stylesUnlocked: stylesUnlocked, stylesTotal: stylesTotal,
     hasPerk: hasPerk, perkCount: perkCount, offlineCap: offlineCap, rushSeconds: rushSeconds, startRush: startRush, vipTip: vipTip,
     ensureGoals: ensureGoals, goalProgress: goalProgress, goalDone: goalDone, goalText: goalText,
     goalRewardValue: goalRewardValue, claimGoal: claimGoal,

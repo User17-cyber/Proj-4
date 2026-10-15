@@ -24,6 +24,9 @@
   const SKIN = ['#FFE0C7', '#F6C9A0', '#E0A877', '#B87A4B', '#8A5634'];
   const SHIRTS = ['#FF5FA2', '#4CC9F0', '#3DDC97', '#FF9F43', '#8C6CFF', '#FFD23F', '#FF6B6B', '#5B8CFF'];
   const HATS = ['none', 'none', 'cap', 'bow', 'beanie', 'cap', 'none'];
+  // The Customer Hats customization: 'mixed' picks from HATS, anything else dresses everyone alike.
+  let hatStyle = 'mixed';
+  function setHats(style) { hatStyle = style || 'mixed'; }
   const GAP = 25;          // space between people in line
   const BRANCH = 40;       // spacing of the branch buildings behind the shop
   const reducedMotion = !!(root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -71,13 +74,15 @@
     ctx.fill();
   }
 
-  // opts: { key, kind, shopSvg, productSvg, faceSvg, tile, bar, night, locked, signText, build, onServe(x, y) }
+  // opts: { key, kind, shopSvg, productSvg, faceSvg, assistantSvg, tile, bar, night, locked, signText, build, onServe(x, y) }
+  // info (each frame): { owned, managed, assistant, running, time, milestones }
   function createLane(canvas, opts) {
     const ctx = canvas.getContext('2d');
     const factory = opts.kind === 'factory' && !opts.locked;
     const shopImg = image('shop:' + opts.key, opts.shopSvg);
     const productImg = opts.productSvg ? image('product:' + opts.key, opts.productSvg) : null;
     const faceImg = opts.faceSvg ? image('face:' + opts.key, opts.faceSvg) : null;
+    const helperImg = opts.assistantSvg ? image('helper:' + opts.key, opts.assistantSvg) : null;
 
     let w = 0, h = 0, dpr = 1, lay = null;
     let bg = null, bgKey = '';
@@ -89,7 +94,7 @@
     let pending = 0, cooldown = 0, spawnTimer = 0.2, vanTimer = rand(1, 4), puffTimer = 0, passTimer = rand(0.5, 2);
     let bump = 0, build = opts.build ? 0 : 1, wave = 0, bubble = null;
     let info = { owned: 1, managed: false, running: false, time: 1, milestones: 0 };
-    let seeded = false, lastManaged = null, lastMilestones = null;
+    let seeded = false, lastManaged = null, lastAssistant = null, lastMilestones = null;
     const clouds = [{ x: rand(0, 1), y: rand(0.1, 0.22), s: rand(0.8, 1) }, { x: rand(0, 1), y: rand(0.16, 0.34), s: rand(0.55, 0.75) }];
 
     if (opts.build) dust();
@@ -100,15 +105,17 @@
       const S = Math.min(h - 10, 104);            // main building size
       const bx = 4;
       const managerX = bx + S + 10;
-      const front = info.managed ? managerX + 28 : bx + S + 14;
+      const helperX = managerX + 24; // an assistant stands beside the manager
+      const staffEnd = info.managed ? (info.assistant ? helperX : managerX) : 0;
+      const front = info.managed ? staffEnd + 28 : bx + S + 14;
       lay = {
-        feet: feet, S: S, bx: bx, managerX: managerX, front: front,
+        feet: feet, S: S, bx: bx, managerX: managerX, helperX: helperX, front: front,
         walkTop: feet - 12, roadTop: feet + 5,
         maxLine: Math.max(1, Math.floor((w - front - 14) / GAP) + 1),
       };
       if (factory) {
         lay.truckX = w - 54;
-        lay.beltStart = info.managed ? managerX + 16 : bx + S - 6;
+        lay.beltStart = info.managed ? staffEnd + 16 : bx + S - 6;
         lay.beltEnd = lay.truckX + 16;
         lay.beltTop = feet - 18;
         lay.workers = Math.max(1, Math.floor((lay.beltEnd - lay.beltStart - 16) / 34));
@@ -137,7 +144,7 @@
     function person(x, dir) {
       return {
         x: x, dir: dir, state: 'line', slot: 0, walking: false, carry: false, timer: 0,
-        skin: pick(SKIN), shirt: pick(SHIRTS), hat: pick(HATS), hatColor: pick(SHIRTS),
+        skin: pick(SKIN), shirt: pick(SHIRTS), hat: hatStyle === 'mixed' ? pick(HATS) : hatStyle, hatColor: pick(SHIRTS),
         phase: rand(0, 6), speed: rand(36, 50),
       };
     }
@@ -187,7 +194,13 @@
       info = next;
       t += dt;
       if (!w) return;
+      if (lastAssistant !== info.assistant && lastManaged === info.managed) {
+        layout();
+        if (lastAssistant === false && info.assistant) say('Happy to help!');
+        lastAssistant = info.assistant;
+      }
       if (lastManaged !== info.managed) {
+        lastAssistant = info.assistant;
         layout();
         if (lastManaged === false && info.managed) say('Hi boss!');
         lastManaged = info.managed;
@@ -537,6 +550,7 @@
         drawShop();
         particles.forEach(function (p) { if (p.kind === 'puff') drawParticle(p); });
         if (info.managed) drawManager();
+        if (info.managed && info.assistant) drawHelper();
       }
       if (factory) drawFactoryFloor();
       people.forEach(function (c) { if (c.state !== 'leave') drawPerson(c); });
@@ -627,6 +641,31 @@
       ctx.lineTo(x + 7 + Math.cos(ang) * 10, feet - 20 + Math.sin(ang) * 10);
       ctx.stroke();
       if (ready(faceImg)) ctx.drawImage(faceImg, x - 16, feet - 52, 32, 32);
+    }
+
+    // The assistant: a little smaller, in a lighter uniform, waving in turn with the manager.
+    function drawHelper() {
+      const x = lay.helperX, feet = lay.feet;
+      strokeStyle(2);
+      ctx.fillStyle = 'rgba(43,33,71,.15)';
+      ctx.beginPath();
+      ctx.ellipse(x, feet + 1, 8, 2.2, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(x - 3, feet - 8); ctx.lineTo(x - 3, feet);
+      ctx.moveTo(x + 3, feet - 8); ctx.lineTo(x + 3, feet);
+      ctx.stroke();
+      ctx.fillStyle = mix(opts.bar, 0.45);
+      roundRect(ctx, x - 7, feet - 22, 14, 15, 5);
+      ctx.fill();
+      ctx.stroke();
+      const waving = ((t + 2.5) % 5 < 0.8 || wave > 0) && !reducedMotion;
+      const ang = waving ? -2.0 - Math.sin(t * 14) * 0.5 : 1.9;
+      ctx.beginPath();
+      ctx.moveTo(x - 6, feet - 18);
+      ctx.lineTo(x - 6 + Math.cos(ang) * 9, feet - 18 + Math.sin(ang) * 9);
+      ctx.stroke();
+      if (ready(helperImg)) ctx.drawImage(helperImg, x - 14, feet - 46, 28, 28);
     }
 
     // ---- factory floor: workers behind the belt, products on it, trucks in front
@@ -840,6 +879,43 @@
         ctx.stroke();
         dot(ctx, x, hy - 10, 3);
         ctx.stroke();
+      } else if (c.hat === 'party') {
+        ctx.beginPath();
+        ctx.moveTo(x - 6, hy - 6);
+        ctx.lineTo(x, hy - 21);
+        ctx.lineTo(x + 6, hy - 6);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#FFE14D';
+        dot(ctx, x, hy - 21, 2.4);
+      } else if (c.hat === 'ears') {
+        ctx.fillStyle = '#FFFFFF';
+        [-4, 4].forEach(function (dx) {
+          ctx.beginPath();
+          ctx.ellipse(x + dx, hy - 15, 2.8, 8, dx * 0.04, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        });
+      } else if (c.hat === 'tophat') {
+        ctx.fillStyle = '#3E3A55';
+        ctx.fillRect(x - 6, hy - 20, 12, 13);
+        ctx.strokeRect(x - 6, hy - 20, 12, 13);
+        ctx.strokeStyle = c.hatColor;
+        ctx.beginPath();
+        ctx.moveTo(x - 5, hy - 10); ctx.lineTo(x + 5, hy - 10);
+        ctx.stroke();
+        strokeStyle(2);
+        ctx.beginPath();
+        ctx.moveTo(x - 10, hy - 7); ctx.lineTo(x + 10, hy - 7);
+        ctx.stroke();
+      } else if (c.hat === 'halo') {
+        ctx.strokeStyle = '#FFD23F';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.ellipse(x, hy - 13, 7, 2.4, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        strokeStyle(2);
       } else if (c.hat === 'crown') {
         ctx.fillStyle = '#FFD23F';
         ctx.beginPath();
@@ -978,5 +1054,5 @@
     };
   }
 
-  root.Scene = { createLane: createLane };
+  root.Scene = { createLane: createLane, setHats: setHats };
 })(this);

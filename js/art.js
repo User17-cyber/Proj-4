@@ -561,6 +561,10 @@
     headphones: '<path d="M20 58a30 30 0 0 1 60 0" fill="none" stroke-width="6"/><rect x="12" y="50" width="12" height="18" rx="5" fill="#FF5FA2"/><rect x="76" y="50" width="12" height="18" rx="5" fill="#FF5FA2"/>',
     wizard: '<path d="M28 32L50 0L72 32z" fill="#5B4BB7"/><path d="M22 34q28-10 56 0q-28 6-56 0z" fill="#5B4BB7"/>' + sparkle(52, 18, 5, '#FFE14D'),
     pirate: '<path d="M20 34q30-32 60 0q-30-6-60 0z" fill="#2B2147"/><circle cx="50" cy="22" r="4" fill="#FFFFFF" stroke="none"/>',
+    cap: '<path d="M24 38a26 22 0 0 1 52 0z" fill="#4CC9F0"/><path d="M18 38h64" fill="none" stroke-width="5"/><circle cx="50" cy="16" r="3" fill="#FFFFFF"/>',
+    beanie: '<path d="M24 40a26 26 0 0 1 52 0z" fill="#FF5FA2"/><rect x="22" y="35" width="56" height="9" rx="4" fill="#FF8FC7"/><circle cx="50" cy="12" r="6" fill="#FFFFFF"/>',
+    crown: '<path d="M30 34l-2-20l11 10l11-14l11 14l11-10l-2 20z" fill="#FFD23F"/><circle cx="50" cy="26" r="3" fill="#FF5FA2"/>',
+    party: '<path d="M38 34L50 2L62 34z" fill="#8C6CFF"/><path d="M45 17h10M41 27h18" fill="none" stroke="#FFE14D" stroke-width="3"/><circle cx="50" cy="3" r="4" fill="#FF5FA2"/>',
   };
 
   function face(animal, color, acc) {
@@ -666,10 +670,58 @@
   // ---------------------------------------------------------------------------
   // Small icons
   // ---------------------------------------------------------------------------
-  function coin() {
-    return svg('<circle cx="50" cy="50" r="40" fill="#FFC93C" stroke-width="7"/><circle cx="50" cy="50" r="27" fill="none" stroke="#E09A00" stroke-width="5"/>' +
-      sparkle(50, 50, 15, '#FFF3B0').replace('stroke-width="2"', 'stroke="none"') +
-      '<path d="M30 30a28 28 0 0 1 14-8" fill="none" stroke="#FFFFFF" stroke-width="5"/>', 'coins');
+  // Coin designs (a Customization). coin() draws the one in use.
+  const SHINE = '<path d="M30 30a28 28 0 0 1 14-8" fill="none" stroke="#FFFFFF" stroke-width="5"/>';
+  const COINS = {
+    classic: '<circle cx="50" cy="50" r="40" fill="#FFC93C" stroke-width="7"/><circle cx="50" cy="50" r="27" fill="none" stroke="#E09A00" stroke-width="5"/>' +
+      sparkle(50, 50, 15, '#FFF3B0').replace('stroke-width="2"', 'stroke="none"') + SHINE,
+    heart: '<path d="M50 88C20 68 8 50 8 33C8 19 19 9 32 9c8 0 14 4 18 10c4-6 10-10 18-10c13 0 24 10 24 24c0 17-12 35-42 55z" fill="#FF5FA2" stroke-width="7"/>' +
+      '<path d="M50 72C30 58 22 46 22 36c0-8 6-13 12-13c6 0 10 4 16 12c6-8 10-12 16-12c6 0 12 5 12 13c0 10-8 22-28 36z" fill="#FF8FC7" stroke="none"/>' +
+      '<path d="M22 30q2-10 12-12" fill="none" stroke="#FFFFFF" stroke-width="5"/>',
+    star: '<path d="' + star5(50, 53, 46, 22) + '" fill="#FFD23F" stroke-width="7"/><path d="' + star5(50, 53, 24, 11) + '" fill="#FFF3B0" stroke="none"/>',
+    donut: '<path d="' + ring(50, 50, 42, 13) + '" fill="#E8A25B" fill-rule="evenodd" stroke-width="7"/>' +
+      '<path d="' + ring(50, 48, 34, 13) + '" fill="#FF7EB6" fill-rule="evenodd" stroke="none"/>' +
+      '<path d="M30 34l6 4M66 28l-4 6M70 56l6 2M28 58l6-2M48 22h6" fill="none" stroke="#FFFFFF" stroke-width="5"/>',
+    gem: '<path d="M28 12h44l22 26l-44 52l-44-52z" fill="#4CC9F0" stroke-width="7"/><path d="M6 38h88M28 12l22 78l22-78M38 38l12-26l12 26" fill="none" stroke="#B5ECFF" stroke-width="3"/>' +
+      '<path d="M28 12h44l22 26l-44 52l-44-52z" fill="none" stroke-width="7"/>',
+    rainbow: '<circle cx="50" cy="50" r="40" fill="#FF5A5F" stroke-width="7"/><circle cx="50" cy="50" r="31" fill="#FF9F43" stroke="none"/>' +
+      '<circle cx="50" cy="50" r="23" fill="#FFE14D" stroke="none"/><circle cx="50" cy="50" r="15" fill="#3DDC97" stroke="none"/><circle cx="50" cy="50" r="7" fill="#4CC9F0" stroke="none"/>' + SHINE,
+  };
+  let coinStyle = 'classic';
+  function setCoinStyle(style) { coinStyle = COINS[style] ? style : 'classic'; }
+
+  function coin(style) {
+    return svg(COINS[style] || COINS[coinStyle], 'coins');
+  }
+
+  // A customer's head and shoulders, for previewing hat styles.
+  function customer(hat) {
+    const hats = {
+      mixed: '<path d="M30 40a20 18 0 0 1 40 0z" fill="#4CC9F0"/><path d="M50 40h28" fill="none" stroke-width="5"/>',
+      party: '<path d="M38 38L50 6L62 38z" fill="#FF5FA2"/><path d="M44 24h12" fill="none" stroke="#FFE14D" stroke-width="3"/><circle cx="50" cy="6" r="5" fill="#FFE14D"/>',
+      ears: '<ellipse cx="40" cy="20" rx="7" ry="18" fill="#FFFFFF"/><ellipse cx="60" cy="20" rx="7" ry="18" fill="#FFFFFF"/>' +
+        '<ellipse cx="40" cy="22" rx="3" ry="12" fill="#FFB3C8" stroke="none"/><ellipse cx="60" cy="22" rx="3" ry="12" fill="#FFB3C8" stroke="none"/>',
+      tophat: '<rect x="36" y="8" width="28" height="28" rx="2" fill="#3E3A55"/><path d="M36 28h28" fill="none" stroke="#FF5FA2" stroke-width="5"/><path d="M26 38h48" fill="none" stroke-width="5"/>',
+      halo: '<ellipse cx="50" cy="16" rx="18" ry="6" fill="none" stroke="#FFD23F" stroke-width="6"/>',
+    };
+    return svg('<rect x="28" y="72" width="44" height="30" rx="14" fill="#8C6CFF"/>' +
+      '<circle cx="50" cy="52" r="22" fill="#F6C9A0"/><circle cx="43" cy="52" r="3" fill="' + INK + '" stroke="none"/><circle cx="57" cy="52" r="3" fill="' + INK + '" stroke="none"/>' +
+      '<path d="M44 61q6 5 12 0" fill="none"/>' + (hats[hat] || ''), '');
+  }
+
+  // A few pieces of a confetti style, for previews.
+  function confettiSample(style) {
+    const colors = ['#FF5FA2', '#FFD23F', '#4CC9F0', '#3DDC97', '#8C6CFF'];
+    const spots = [[24, 26, -20], [66, 20, 25], [44, 52, 10], [76, 62, -30], [26, 74, 35]];
+    let out = '';
+    spots.forEach(function (p, k) {
+      const c = colors[k], t = 'transform="rotate(' + p[2] + ' ' + p[0] + ' ' + p[1] + ')"';
+      if (style === 'hearts') out += '<path d="M' + p[0] + ' ' + (p[1] + 9) + 'c-10-7-12-12-12-16c0-4 3-7 6-7c3 0 5 2 6 4c1-2 3-4 6-4c3 0 6 3 6 7c0 4-2 9-12 16z" fill="' + c + '" stroke-width="2.5" ' + t + '/>';
+      else if (style === 'stars') out += '<path d="' + star5(p[0], p[1], 12, 5) + '" fill="' + c + '" stroke-width="2.5"/>';
+      else if (style === 'sprinkles') out += '<rect x="' + (p[0] - 11) + '" y="' + (p[1] - 3.5) + '" width="22" height="7" rx="3.5" fill="' + c + '" stroke-width="2.5" ' + t + '/>';
+      else out += '<rect x="' + (p[0] - 7) + '" y="' + (p[1] - 9) + '" width="14" height="18" rx="3" fill="' + c + '" stroke-width="2.5" ' + t + '/>';
+    });
+    return svg(out, '');
   }
 
   function sprinkle() {
@@ -731,5 +783,6 @@
     return '<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">' + paths[name] + '</g></svg>';
   }
 
-  root.Art = { shop: shop, product: product, mystery: mystery, face: face, coin: coin, sprinkle: sprinkle, sprinkleJar: sprinkleJar, trophy: trophy, crown: crown, balloon: balloon, icon: icon };
+  root.Art = { shop: shop, product: product, mystery: mystery, face: face, coin: coin, setCoinStyle: setCoinStyle,
+    customer: customer, confettiSample: confettiSample, sprinkle: sprinkle, sprinkleJar: sprinkleJar, trophy: trophy, crown: crown, balloon: balloon, icon: icon };
 })(this);
