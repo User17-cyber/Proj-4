@@ -31,6 +31,16 @@
   let vehicleStyle = 'classic';
   function setVehicles(style) { vehicleStyle = style || 'classic'; }
   const RAINBOW = ['#FF5A5F', '#FFB627', '#FFE14D', '#3DDC97', '#4CC9F0', '#8C6CFF'];
+  // The Sky customization tints every street too: its sky and hills, blended
+  // with each shop's own color. Starry Night turns every street to night.
+  let mood = 'day';
+  function setMood(sky) { mood = sky || 'day'; }
+  const MOODS = {
+    candy:   { stops: ['#FFB3DE', '#F3E6FF'], hill: '#9EE8BE' },
+    sunset:  { stops: ['#FF9F6B', '#FFD9A0'], hill: '#B77FE0' },
+    ocean:   { stops: ['#5FD3D8', '#C8F4EC'], hill: '#F0D59A' },
+    rainbow: { stops: ['#FFB3C8', '#FFE6A8', '#C9F5D0', '#BFE6FF'], hill: '#8FE3A4' },
+  };
   const GAP = 25;          // space between people in line
   const BRANCH = 40;       // spacing of the branch buildings behind the shop
   const reducedMotion = !!(root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -39,6 +49,13 @@
   function pick(list) { return list[Math.floor(Math.random() * list.length)]; }
   function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
   function easeOutBack(x) { const c = 1.7; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); }
+
+  // Blend two #RRGGBB colors: t = 0 gives a, 1 gives b.
+  function blend(a, b, t) {
+    const x = parseInt(a.slice(1), 16), y = parseInt(b.slice(1), 16);
+    const ca = [x >> 16, (x >> 8) & 255, x & 255], cb = [y >> 16, (y >> 8) & 255, y & 255];
+    return 'rgb(' + ca.map(function (v, k) { return Math.round(v + (cb[k] - v) * t); }).join(',') + ')';
+  }
 
   // Mix a #RRGGBB color toward white (amount > 0) or toward ink (amount < 0).
   function mix(hex, amount) {
@@ -79,11 +96,17 @@
     ctx.fill();
   }
 
-  // opts: { key, kind, shopSvg, productSvg, faceSvg, assistantSvg, traineeSvg, tile, bar, night, locked, signText, build, onServe(x, y) }
+  // opts: { key, kind, shopSvg, productSvg, faceSvg, assistantSvg, traineeSvg, tile, bar, night, ground, locked, signText, build, onServe(x, y) }
+  // ground: '' (paving), 'planks' (the Boardwalk) or 'snow' (Frosty Peaks).
   // info (each frame): { owned, managed, assistant, trainee, running, time, milestones }
   function createLane(canvas, opts) {
     const ctx = canvas.getContext('2d');
     const factory = opts.kind === 'factory' && !opts.locked;
+    const night = !!opts.night || mood === 'night';
+    const sky = night ? null : MOODS[mood];
+    const snow = opts.ground === 'snow';
+    // Falling snowflakes on Frosty Peaks, as fractions of the scene.
+    const flakes = snow && !reducedMotion ? Array.from({ length: 14 }, function () { return { x: rand(0, 1), y: rand(0, 1), v: rand(0.06, 0.14), r: rand(1.2, 2.4), p: rand(0, 6) }; }) : [];
     const shopImg = image(opts.shopSvg);
     const productImg = opts.productSvg ? image(opts.productSvg) : null;
     const faceImg = opts.faceSvg ? image(opts.faceSvg) : null;
@@ -258,6 +281,11 @@
       clouds.forEach(function (c) {
         c.x += dt * 0.006 * c.s;
         if (c.x > 1.25) c.x = -0.25;
+      });
+      flakes.forEach(function (f) {
+        f.y += f.v * dt;
+        f.p += dt * 2;
+        if (f.y > 1.02) { f.y = -0.04; f.x = rand(0, 1); }
       });
     }
 
@@ -458,29 +486,54 @@
       const b = bg.getContext('2d');
       b.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      const sky = b.createLinearGradient(0, 0, 0, lay.walkTop);
-      if (opts.night) { sky.addColorStop(0, '#1F1B4A'); sky.addColorStop(1, '#4A3F8F'); }
-      else { sky.addColorStop(0, mix(opts.tile, 0.7)); sky.addColorStop(1, opts.tile); }
-      b.fillStyle = sky;
+      const grad = b.createLinearGradient(0, 0, 0, lay.walkTop);
+      if (night) { grad.addColorStop(0, '#1F1B4A'); grad.addColorStop(1, '#4A3F8F'); }
+      else if (sky) sky.stops.forEach(function (c, k) { grad.addColorStop(k / (sky.stops.length - 1), blend(c, opts.tile, 0.3)); });
+      else { grad.addColorStop(0, mix(opts.tile, 0.7)); grad.addColorStop(1, opts.tile); }
+      b.fillStyle = grad;
       b.fillRect(0, 0, w, lay.walkTop);
 
-      if (opts.night) {
+      if (night) {
         b.fillStyle = '#FFF7C2';
         for (let k = 0; k < 18; k++) dot(b, (k * 97 % 100) / 100 * w, 6 + (k * 53 % 100) / 100 * (lay.walkTop - 30), k % 3 ? 1 : 1.6);
       }
 
-      // Rolling hills on the horizon.
+      // Rolling hills on the horizon, or snowy mountains up in Frosty Peaks.
       b.beginPath();
       b.moveTo(0, lay.walkTop);
-      b.lineTo(0, lay.walkTop - 16);
-      for (let x = 0; x <= w; x += 80) b.quadraticCurveTo(x + 40, lay.walkTop - 34, x + 80, lay.walkTop - 16);
+      if (snow) {
+        for (let x = 0, k = 0; x <= w + 70; x += 70, k++) {
+          b.lineTo(x, lay.walkTop - 14);
+          b.lineTo(x + 35, lay.walkTop - (k % 2 ? 46 : 38));
+        }
+      } else {
+        b.lineTo(0, lay.walkTop - 16);
+        for (let x = 0; x <= w; x += 80) b.quadraticCurveTo(x + 40, lay.walkTop - 34, x + 80, lay.walkTop - 16);
+      }
       b.lineTo(w, lay.walkTop);
       b.closePath();
-      b.fillStyle = opts.night ? '#3A3274' : mix(opts.tile, -0.12);
+      b.fillStyle = night ? '#3A3274' : snow ? '#C9DAF2' : sky ? blend(sky.hill, opts.tile, 0.25) : mix(opts.tile, -0.12);
       b.fill();
       b.strokeStyle = INK;
       b.lineWidth = 2;
       b.stroke();
+      if (snow) {
+        // Snowcaps on every peak.
+        b.fillStyle = '#FFFFFF';
+        b.beginPath();
+        for (let x = 35, k = 0; x <= w + 70; x += 70, k++) {
+          const top = lay.walkTop - (k % 2 ? 46 : 38);
+          b.moveTo(x - 10, top + 9);
+          b.lineTo(x, top);
+          b.lineTo(x + 10, top + 9);
+          b.lineTo(x + 4, top + 6);
+          b.lineTo(x - 3, top + 10);
+          b.closePath();
+        }
+        b.fill();
+        b.lineWidth = 1.5;
+        b.stroke();
+      }
 
       // One branch building per speed milestone, lined up behind the main shop.
       const n = branchCount();
@@ -491,20 +544,29 @@
         }
       }
       // A little haze pushes the back row into the distance.
-      b.fillStyle = opts.night ? 'rgba(31,27,74,.22)' : 'rgba(255,255,255,.2)';
+      b.fillStyle = night ? 'rgba(31,27,74,.22)' : 'rgba(255,255,255,.2)';
       b.fillRect(0, 0, w, lay.walkTop);
 
-      // Sidewalk (or a grassy lot), curb, road.
-      b.fillStyle = opts.locked ? '#9BE36D' : '#FFF3D6';
+      // Sidewalk (wooden planks on the Boardwalk, snow up in the Peaks, grass on an empty lot), curb, road.
+      b.fillStyle = snow ? '#F7FCFF' : opts.locked ? '#9BE36D' : opts.ground === 'planks' ? '#E8C99A' : '#FFF3D6';
       b.fillRect(0, lay.walkTop, w, lay.roadTop - lay.walkTop);
-      if (!opts.locked) {
+      if (snow) {
+        b.fillStyle = '#DDEEFF';
+        for (let x = 10; x < w; x += 22) dot(b, x, lay.walkTop + 6 + (x % 3) * 2, 2.5);
+      } else if (opts.ground === 'planks' && !opts.locked) {
+        b.strokeStyle = 'rgba(139,74,43,.35)';
+        b.lineWidth = 1.5;
+        b.beginPath();
+        for (let x = 12; x < w; x += 14) { b.moveTo(x, lay.walkTop + 1); b.lineTo(x, lay.roadTop - 1); }
+        b.stroke();
+      } else if (!opts.locked) {
         b.strokeStyle = 'rgba(43,33,71,.16)';
         b.lineWidth = 1.5;
         b.beginPath();
         for (let x = 14; x < w; x += 24) { b.moveTo(x, lay.walkTop + 2); b.lineTo(x - 4, lay.roadTop - 2); }
         b.stroke();
       }
-      b.fillStyle = opts.night ? '#5B5394' : '#A79FCF';
+      b.fillStyle = night ? '#5B5394' : snow ? '#B9C6E6' : '#A79FCF';
       b.fillRect(0, lay.roadTop, w, h - lay.roadTop);
       b.strokeStyle = INK;
       b.lineWidth = 2.5;
@@ -553,11 +615,22 @@
     function draw() {
       if (!w || !lay) return;
       const fontsReady = !document.fonts || document.fonts.status === 'loaded';
-      const key = [w, h, branchCount(), ready(shopImg), fontsReady].join(':');
+      const key = [w, h, branchCount(), ready(shopImg), fontsReady, mood].join(':');
       if (key !== bgKey) { paintBackground(); bgKey = key; }
       ctx.clearRect(0, 0, w, h);
       ctx.drawImage(bg, 0, 0, w, h);
       drawClouds();
+      if (flakes.length) {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.strokeStyle = 'rgba(91,140,255,.55)';
+        ctx.lineWidth = 1;
+        flakes.forEach(function (f) {
+          ctx.beginPath();
+          ctx.arc(f.x * w + Math.sin(f.p) * 4, f.y * h, f.r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        });
+      }
 
       if (!opts.locked) {
         drawShop();
@@ -591,7 +664,7 @@
     }
 
     function drawClouds() {
-      if (opts.night) return;
+      if (night) return;
       ctx.fillStyle = 'rgba(255,255,255,.9)';
       clouds.forEach(function (c) {
         const x = c.x * w, y = c.y * h, s = c.s;
@@ -1126,5 +1199,5 @@
     };
   }
 
-  root.Scene = { createLane: createLane, setHats: setHats, setVehicles: setVehicles };
+  root.Scene = { createLane: createLane, setHats: setHats, setVehicles: setVehicles, setMood: setMood };
 })(this);

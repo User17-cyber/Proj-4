@@ -375,6 +375,32 @@
         '<rect x="62" y="62" width="30" height="24" rx="2" fill="' + c.body + '"/>' + awning(60, 58, 34, 8, 4, c.a1, '#FFFFFF') + sign(id, 68, 66, 18) +
         '<rect x="8" y="70" width="22" height="16" rx="2" fill="' + c.body + '"/><rect x="13" y="74" width="12" height="8" rx="2" fill="#9BE7FF"/>';
     },
+    // Frosty Peaks styles
+    chalet: function (c, id) {
+      return shadow + '<rect x="16" y="48" width="68" height="38" fill="' + c.body + '"/>' +
+        '<path d="M26 48v38M38 48v38M62 48v38M74 48v38" fill="none" stroke="' + c.trim + '" stroke-width="2" opacity=".5"/>' +
+        '<rect x="16" y="48" width="68" height="38" fill="none"/>' +
+        '<path d="M6 54L50 12L94 54z" fill="' + c.roof + '"/><path d="M6 54L50 12L94 54" fill="none" stroke="' + c.trim + '" stroke-width="9"/>' +
+        '<path d="M6 54L50 12L94 54" fill="none" stroke-width="2"/>' +
+        '<rect x="24" y="60" width="14" height="12" rx="2" fill="#FFF07A"/><rect x="62" y="60" width="14" height="12" rx="2" fill="#FFF07A"/>' +
+        '<rect x="43" y="66" width="14" height="20" rx="2" fill="' + c.trim + '"/>' + sign(id, 39, 26, 22);
+    },
+    igloo: function (c, id) {
+      return shadow + '<path d="M10 86a40 40 0 0 1 80 0z" fill="' + c.body + '"/>' +
+        '<path d="M13 74h74M20 62h60M32 50h36M30 86v-12M70 86v-12M40 74v-12M60 74v-12M50 62v-12M42 50v-6M58 50v-6" fill="none" stroke="#9BD8FF" stroke-width="2.5"/>' +
+        '<path d="M10 86a40 40 0 0 1 80 0z" fill="none"/>' +
+        '<path d="M34 86V74a16 16 0 0 1 32 0v12z" fill="' + c.body + '"/><path d="M41 86V76a9 9 0 0 1 18 0v10z" fill="' + c.door + '"/>' +
+        sign(id, 40, 20, 20);
+    },
+    cablecar: function (c, id) {
+      return shadow + '<path d="M0 22L100 6" fill="none" stroke-width="3"/>' +
+        '<rect x="8" y="46" width="42" height="40" fill="' + c.station + '"/><path d="M4 48L29 30L54 48z" fill="#FFFFFF"/>' +
+        '<rect x="15" y="54" width="12" height="10" rx="2" fill="#9BE7FF"/><rect x="31" y="66" width="12" height="20" rx="2" fill="#8B4A2B"/>' +
+        '<path d="M70 13V30" fill="none"/><rect x="55" y="30" width="30" height="28" rx="6" fill="' + c.cabin + '"/>' +
+        '<rect x="60" y="35" width="9" height="9" rx="2" fill="#9BE7FF"/><rect x="71" y="35" width="9" height="9" rx="2" fill="#9BE7FF"/>' +
+        '<path d="M55 50h30" fill="none" stroke="#FFFFFF" stroke-width="3"/>' + sign(id, 60, 64, 20) +
+        '<path d="M88 86L84 40M84 40h8" fill="none" stroke-width="3"/>';
+    },
     factory: function (c, id) {
       return shadow +
         '<rect x="68" y="12" width="12" height="36" fill="' + c.chimney + '"/><path d="M68 22h12M68 32h12" fill="none" stroke="' + c.stripe + '" stroke-width="4"/>' +
@@ -434,6 +460,27 @@
     ufo:         ['dome',       { body: '#6B5BAE', dome: '#C9F7FF', door: '#FF5FA2', ring: '#C9C3E6' }],
     balloonport: ['museum',     { body: '#FFF3D6', roof: '#FF9F43' }],
     dreampalace: ['castle',     { wall: '#E9D5FF', tower: '#C9B6FF', roof: '#FFC93C', flag: '#FF8FC7' }],
+    // Frosty Peaks
+    mittens:     ['storefront', { body: '#FFE3E3', a1: '#FF5A5F', a2: '#FFFFFF', door: '#4C5FA8' }],
+    sled:        ['stall',      { body: '#E8A25B', a1: '#4CC9F0', a2: '#FFFFFF', roof: '#FF5A5F' }],
+    snowman:     ['tent',       { a1: '#4CC9F0', a2: '#FFFFFF', flag: '#FF9F43' }],
+    gingerbread: ['cottage',    { body: '#C98B4F', roof: '#FFFFFF', door: '#FF5A5F' }],
+    candycane:   ['factory',    { body: '#FFFFFF', roof: '#FF5A5F', chimney: '#FFFFFF', stripe: '#FF5A5F', door: '#3DDC97' }],
+    skilodge:    ['chalet',     { body: '#C98B4F', roof: '#FFFFFF', trim: '#8B4A2B' }],
+    snowglobe:   ['storefront', { body: '#EEF6FF', a1: '#4CC9F0', a2: '#FFFFFF', door: '#FF5FA2' }],
+    igloo:       ['igloo',      { body: '#F4FBFF', door: '#36B9F0' }],
+    icerink:     ['dome',       { body: '#8C6CFF', dome: '#DDF4FF', door: '#FFD23F' }],
+    maple:       ['cottage',    { body: '#E8A25B', roof: '#8B4A2B', door: '#FFD23F' }],
+    penguins:    ['tent',       { a1: '#3C4A78', a2: '#FFFFFF', flag: '#FFD23F' }],
+    fondue:      ['chalet',     { body: '#FFE3A3', roof: '#FFFFFF', trim: '#FF5A5F' }],
+    sweater:     ['factory',    { body: '#FFE9F3', roof: '#8C6CFF', chimney: '#FF5FA2', stripe: '#FFFFFF', door: '#4CC9F0' }],
+    cablecar:    ['cablecar',   { station: '#FF6B6B', cabin: '#FFD23F' }],
+    yeti:        ['chalet',     { body: '#BDEBFF', roof: '#FFFFFF', trim: '#4C5FA8' }],
+    aurora:      ['dome',       { body: '#3C4A78', dome: '#9BF0D0', door: '#FFD23F', antenna: true }],
+    toyshop:     ['factory',    { body: '#FFEDE0', roof: '#3DDC97', chimney: '#FF5A5F', stripe: '#FFFFFF', door: '#FFD23F' }],
+    reindeer:    ['cottage',    { body: '#C68A5B', roof: '#FF5A5F', door: '#FFE14D' }],
+    icehotel:    ['castle',     { wall: '#DDF4FF', tower: '#BDEBFF', roof: '#4CC9F0', flag: '#FFFFFF' }],
+    snowqueen:   ['castle',     { wall: '#E4F1FF', tower: '#C9E6FF', roof: '#8C6CFF', flag: '#C9B6FF' }],
   };
 
   // ---------------------------------------------------------------------------
@@ -724,6 +771,32 @@
       '<ellipse cx="50" cy="60" rx="32" ry="26" fill="' + c + '"/>' + eyes(54, 11) + cheeks + '<path d="M42 68q8 7 16 0" fill="none"/>';
   };
 
+  // Frosty Peaks animals.
+  ANIMALS.yeti = function (c) {
+    let fur = '';
+    for (let k = 0; k < 12; k++) {
+      const a = k * Math.PI / 6;
+      fur += '<circle cx="' + (50 + Math.cos(a) * 28).toFixed(1) + '" cy="' + (56 + Math.sin(a) * 28).toFixed(1) + '" r="8" fill="' + c + '"/>';
+    }
+    return '<path d="M24 32l-6-14l14 8z" fill="#9BD8FF"/><path d="M76 32l6-14l-14 8z" fill="#9BD8FF"/>' + fur + head(c) +
+      '<ellipse cx="50" cy="60" rx="20" ry="17" fill="#9BD8FF"/>' + eyes(56, 9) + cheeks +
+      '<path d="M43 66q7 6 14 0" fill="none"/><path d="M46 67l2 4l2-3l2 3l2-4" fill="#FFFFFF" stroke-width="1.5"/>';
+  };
+  ANIMALS.reindeer = function (c) {
+    const antler = '<path d="M34 30L26 8M30 18l-10-2M28 12l8-6" fill="none" stroke="#8B4A2B" stroke-width="6"/>';
+    return antler + antler.replace(/M34 30L26 8M30 18l-10-2M28 12l8-6/, 'M66 30L74 8M70 18l10-2M72 12l-8-6') +
+      '<ellipse cx="22" cy="40" rx="10" ry="6" fill="' + c + '" transform="rotate(-25 22 40)"/><ellipse cx="78" cy="40" rx="10" ry="6" fill="' + c + '" transform="rotate(25 78 40)"/>' +
+      head(c) + '<ellipse cx="50" cy="68" rx="14" ry="10" fill="#F3D3B0"/>' + eyes(52) + cheeks +
+      '<circle cx="50" cy="63" r="6" fill="#FF3B4B"/><circle cx="48" cy="61" r="1.8" fill="#FFFFFF" stroke="none"/><path d="M45 72q5 4 10 0" fill="none"/>';
+  };
+  ANIMALS.walrus = function (c) {
+    return head(c) + eyes(48, 11) + cheeks +
+      '<path d="M40 70l-3 20l7-2zM60 70l3 20l-7-2z" fill="#FFFFFF"/>' +
+      '<ellipse cx="42" cy="66" rx="10" ry="8" fill="#E8C9A0"/><ellipse cx="58" cy="66" rx="10" ry="8" fill="#E8C9A0"/>' +
+      '<ellipse cx="50" cy="58" rx="5" ry="3.5" fill="' + INK + '"/>' +
+      '<path d="M32 64l-12-2M32 68l-12 2M68 64l12-2M68 68l12 2" fill="none" stroke-width="2"/>';
+  };
+
   // Accessories drawn over a face, sized for the standard round head.
   const ACCESSORIES = {
     bowtie: '<path d="M50 88l-14-8v16zM50 88l14-8v16z" fill="#FF5A5F"/><circle cx="50" cy="88" r="4" fill="#FF5A5F"/>',
@@ -920,6 +993,60 @@
       '<path d="M50 4c24 0 36 16 36 32c0 18-20 30-26 42h-20c-6-12-26-24-26-42c0-16 12-32 36-32z" fill="#FF9F43"/>' +
       '<path d="M50 6c-12 10-14 50-6 70M50 6c12 10 14 50 6 70" fill="none" stroke="#FFE14D" stroke-width="7"/>' +
       '<path d="M50 4c24 0 36 16 36 32c0 18-20 30-26 42h-20c-6-12-26-24-26-42c0-16 12-32 36-32z" fill="none"/>',
+    // Frosty Peaks
+    mittens: '<ellipse cx="74" cy="54" rx="10" ry="15" transform="rotate(35 74 54)" fill="#FF5A5F"/>' +
+      '<path d="M26 80V42q0-28 24-28t24 28v38z" fill="#FF5A5F"/><path d="M38 44l6 6l6-6l6 6l6-6" fill="none" stroke="#FFFFFF" stroke-width="5"/>' +
+      '<rect x="22" y="74" width="56" height="20" rx="6" fill="#FFFFFF"/>',
+    sled: '<path d="M8 74h72q12 0 12-12" fill="none" stroke-width="7"/><path d="M24 58v16M68 58v16" fill="none"/>' +
+      '<rect x="12" y="40" width="70" height="18" rx="5" fill="#FF5A5F"/><path d="M26 44v10M40 44v10M54 44v10M68 44v10" fill="none" stroke="#FFFFFF" stroke-width="4"/>',
+    snowman: '<circle cx="50" cy="70" r="24" fill="#FFFFFF"/><circle cx="50" cy="36" r="17" fill="#FFFFFF"/>' +
+      '<rect x="36" y="6" width="28" height="16" rx="2" fill="' + INK + '"/><path d="M28 22h44" fill="none" stroke-width="6"/>' +
+      '<path d="M50 38l16 4l-16 4z" fill="#FF9F43" stroke-width="3"/><circle cx="44" cy="32" r="3" fill="' + INK + '" stroke="none"/><circle cx="56" cy="32" r="3" fill="' + INK + '" stroke="none"/>' +
+      '<path d="M32 52q18 8 36 0" fill="none" stroke="#FF5A5F" stroke-width="7"/>',
+    gingerbread: '<path d="M36 34h28l18 14l-8 9l-10-6v16l10 22h-13l-11-17l-11 17h-13l10-22v-16l-10 6l-8-9z" fill="#C98B4F"/>' +
+      '<circle cx="50" cy="22" r="15" fill="#C98B4F"/><circle cx="45" cy="20" r="2.6" fill="' + INK + '" stroke="none"/><circle cx="55" cy="20" r="2.6" fill="' + INK + '" stroke="none"/>' +
+      '<path d="M45 27q5 4 10 0" fill="none" stroke="#FFFFFF" stroke-width="3"/><circle cx="50" cy="46" r="3.5" fill="#FF5A5F" stroke="none"/><circle cx="50" cy="58" r="3.5" fill="#3DDC97" stroke="none"/>' +
+      '<path d="M22 48l6 6M78 48l-6 6" fill="none" stroke="#FFFFFF" stroke-width="3"/>',
+    candycane: '<path d="M62 94V36a16 16 0 0 0-32 0" fill="none" stroke-width="24"/><path d="M62 94V36a16 16 0 0 0-32 0" fill="none" stroke="#FFFFFF" stroke-width="12"/>' +
+      '<path d="M62 94V36a16 16 0 0 0-32 0" fill="none" stroke="#FF5A5F" stroke-width="12" stroke-dasharray="9 9" stroke-linecap="butt"/>',
+    skilodge: '<rect x="30" y="4" width="13" height="92" rx="6.5" fill="#4CC9F0" transform="rotate(-18 36 50)"/>' +
+      '<rect x="57" y="4" width="13" height="92" rx="6.5" fill="#FF5A5F" transform="rotate(18 64 50)"/>' +
+      '<path d="M24 40h20M56 40h20" fill="none" stroke="#FFFFFF" stroke-width="4" transform="rotate(0)"/>',
+    snowglobe: '<path d="M24 78h52l6 16h-64z" fill="#C98B4F"/><path d="M28 84h44" fill="none" stroke="#FFD23F" stroke-width="4"/>' +
+      '<circle cx="50" cy="44" r="34" fill="#DDF4FF"/><path d="M50 26l14 30h-28z" fill="#3DDC97"/><rect x="46" y="56" width="8" height="10" fill="#A0643C" stroke-width="2"/>' +
+      '<circle cx="32" cy="34" r="3" fill="#FFFFFF" stroke="none"/><circle cx="68" cy="30" r="3" fill="#FFFFFF" stroke="none"/><circle cx="64" cy="58" r="3" fill="#FFFFFF" stroke="none"/>' +
+      '<path d="M28 26q6-10 16-12" fill="none" stroke="#FFFFFF" stroke-width="5"/>',
+    igloo: '<path d="M44 44L86 86" fill="none" stroke-width="16"/><path d="M44 44L86 86M72 72l-9 9M82 82l-9 9" fill="none" stroke="#FFD23F" stroke-width="8"/>' +
+      '<circle cx="32" cy="32" r="22" fill="#FFD23F"/><circle cx="32" cy="32" r="8" fill="#FFFFFF"/>',
+    icerink: '<path d="M20 12h28v38q26 0 32 16v10h-60z" fill="#FFFFFF"/><path d="M30 24h14M30 34h14M30 44h14" fill="none" stroke="#FF5FA2" stroke-width="4"/>' +
+      '<path d="M26 76v10M70 76v10" fill="none"/><path d="M12 88h76" fill="none" stroke-width="9"/><path d="M12 88h76" fill="none" stroke="#C9D3E6" stroke-width="3"/>',
+    maple: '<rect x="40" y="4" width="20" height="12" rx="3" fill="#FF5A5F"/>' +
+      '<path d="M42 16h16v10q18 10 18 30v30q0 8-8 8h-36q-8 0-8-8v-30q0-20 18-30z" fill="#E8823D"/>' +
+      '<rect x="30" y="48" width="40" height="30" rx="4" fill="#FFF7D6"/><path d="M50 52l5 8l8-2l-4 8l6 4h-15l-15 0l6-4l-4-8l8 2z" fill="#FF5A5F" stroke-width="2"/>',
+    penguins: '<ellipse cx="50" cy="56" rx="30" ry="38" fill="#3C4A78"/><ellipse cx="50" cy="64" rx="19" ry="27" fill="#FFFFFF"/>' +
+      '<circle cx="42" cy="34" r="4" fill="#FFFFFF" stroke="none"/><circle cx="58" cy="34" r="4" fill="#FFFFFF" stroke="none"/><circle cx="42" cy="34" r="2" fill="' + INK + '" stroke="none"/><circle cx="58" cy="34" r="2" fill="' + INK + '" stroke="none"/>' +
+      '<path d="M43 42l7 7l7-7z" fill="#FF9F43" stroke-width="3"/><path d="M34 92h12M54 92h12" fill="none" stroke="#FF9F43" stroke-width="7"/>',
+    fondue: '<path d="M64 6L50 44" fill="none" stroke-width="4"/><rect x="58" y="2" width="12" height="10" rx="2" fill="#F6C177" stroke-width="3"/>' +
+      '<path d="M14 46h72q0 36-36 36t-36-36z" fill="#FF5A5F"/><ellipse cx="50" cy="46" rx="36" ry="8" fill="#FFD23F"/>' +
+      '<path d="M30 82l-6 12M70 82l6 12" fill="none" stroke-width="5"/><path d="M24 60q26 10 52 0" fill="none" stroke="#FFFFFF" stroke-width="4"/>',
+    sweater: '<path d="M30 14l-26 20l12 16l10-6v42h48v-42l10 6l12-16l-26-20q-6 10-20 10t-20-10z" fill="#FF5FA2"/>' +
+      '<path d="M28 54l8-6l8 6l8-6l8 6l8-6l8 6" fill="none" stroke="#FFFFFF" stroke-width="5"/><path d="M28 78h44" fill="none" stroke="#FFFFFF" stroke-width="5"/>',
+    cablecar: '<path d="M4 16L96 4" fill="none" stroke-width="5"/><path d="M50 10V30" fill="none" stroke-width="5"/>' +
+      '<rect x="16" y="30" width="68" height="58" rx="12" fill="#FFD23F"/><rect x="24" y="40" width="22" height="20" rx="4" fill="#9BE7FF"/><rect x="54" y="40" width="22" height="20" rx="4" fill="#9BE7FF"/>' +
+      '<path d="M18 72h64" fill="none" stroke="#FF6B6B" stroke-width="7"/>',
+    yeti: '<g stroke-width="3.5">' + ANIMALS.yeti('#F4FAFF') + '</g>',
+    aurora: '<path d="M44 58L30 94M56 58L70 94M50 58v36" fill="none" stroke-width="5"/>' +
+      '<rect x="18" y="30" width="62" height="20" rx="8" fill="#5B8CFF" transform="rotate(-28 50 40)"/>' +
+      '<rect x="66" y="10" width="16" height="26" rx="4" fill="#3C4A78" transform="rotate(-28 50 40)"/>' + sparkle(22, 18, 10, '#FFE14D').replace('stroke-width="2"', 'stroke-width="4"'),
+    toyshop: '<rect x="14" y="40" width="72" height="54" rx="4" fill="#FF5A5F"/><rect x="8" y="30" width="84" height="16" rx="4" fill="#FF5A5F"/>' +
+      '<path d="M50 30v64" fill="none" stroke="#FFD23F" stroke-width="12"/><path d="M50 30q-26-30-30-8q4 10 30 8q26 2 30-8q-4-22-30 8z" fill="#FFD23F"/>',
+    reindeer: '<path d="M50 4v10" fill="none" stroke-width="5"/><path d="M38 14q12-10 24 0" fill="#FF5A5F"/>' +
+      '<path d="M18 74q0-50 32-56q32 6 32 56z" fill="#FFD23F"/><rect x="12" y="72" width="76" height="12" rx="6" fill="#F5B700"/>' +
+      '<path d="M40 50h20" fill="none" stroke-width="5"/><circle cx="50" cy="92" r="7" fill="#F5B700"/><path d="M30 34q6-8 14-10" fill="none" stroke="#FFF6C9" stroke-width="5"/>',
+    icehotel: '<path d="M50 6V94M12 28L88 72M12 72L88 28" fill="none" stroke-width="16"/><path d="M50 6V94M12 28L88 72M12 72L88 28" fill="none" stroke="#9BD8FF" stroke-width="7"/>' +
+      '<path d="M40 12l10 10l10-10M40 88l10-10l10 10M14 42l14-4l-4-14M86 58l-14 4l4 14M14 58l14 4l-4 14M86 42l-14-4l4-14" fill="none" stroke="#9BD8FF" stroke-width="5"/>',
+    snowqueen: '<path d="M14 80l-4-46l20 20l20-40l20 40l20-20l-4 46z" fill="#BDEBFF"/><path d="M50 14l6 14l-6 12l-6-12z" fill="#FFFFFF" stroke-width="3"/>' +
+      '<rect x="12" y="76" width="76" height="16" rx="5" fill="#C9B6FF"/><circle cx="50" cy="84" r="5" fill="#FF5FA2" stroke-width="3"/><circle cx="28" cy="84" r="3.5" fill="#4CC9F0" stroke-width="2"/><circle cx="72" cy="84" r="3.5" fill="#4CC9F0" stroke-width="2"/>',
     dreampalace: '<path d="M60 8a42 42 0 1 0 30 62a34 34 0 1 1-30-62z" fill="#FFE14D"/>' +
       sparkle(78, 22, 12, '#FFFFFF').replace('stroke-width="2"', 'stroke-width="4"') + sparkle(86, 50, 7, '#FFFFFF').replace('stroke-width="2"', 'stroke-width="3"'),
   };

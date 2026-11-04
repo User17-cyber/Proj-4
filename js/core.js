@@ -117,6 +117,45 @@
       cost: sig2(cost), rate: Math.max(1.07, 1.13 - 0.004 * j), time: time, rev: sig2(perCoin * time * cost),
     });
   });
+
+  // Frosty Peaks: a fourth street, up in the snow. It opens for good once you
+  // hold PEAKS_NEED golden sprinkles; then its shops open one after another,
+  // like Main Street, earning about what a Main Street shop at the same price does.
+  //  id, name, tile, bar color, kind, night sky
+  const PEAKS_NEED = 20;
+  const PEAKS = [
+    ['mittens',     'Mitten Shop',        '#FFE3E3', '#FF5A5F'],
+    ['sled',        'Sled Rentals',       '#E3F3FF', '#FF6B6B'],
+    ['snowman',     'Snowman Builders',   '#EAF6FF', '#FF9F43'],
+    ['gingerbread', 'Gingerbread Bakery', '#FCE9D6', '#C98B4F'],
+    ['candycane',   'Candy Cane Factory', '#FFE8EE', '#FF5A5F', 'factory'],
+    ['skilodge',    'Ski Lodge',          '#E8F1FF', '#5B8CFF'],
+    ['snowglobe',   'Snow Globe Shop',    '#EEF6FF', '#4CC9F0'],
+    ['igloo',       'Igloo Inn',          '#E6F7FF', '#36B9F0'],
+    ['icerink',     'Ice Rink',           '#E3F4FF', '#8C6CFF'],
+    ['maple',       'Maple Syrup Shack',  '#FFF0DC', '#E8823D'],
+    ['penguins',    'Penguin Parade',     '#E8F0FF', '#3C4A78'],
+    ['fondue',      'Fondue Chalet',      '#FFF6D6', '#FFB627'],
+    ['sweater',     'Sweater Factory',    '#FFE9F3', '#FF5FA2', 'factory'],
+    ['cablecar',    'Cable Car Station',  '#E3F0FF', '#FF6B6B'],
+    ['yeti',        'Yeti Café',          '#EAF4FF', '#4CC9F0'],
+    ['aurora',      'Aurora Observatory', '#1F2A5A', '#3DDC97', '', true],
+    ['toyshop',     'Toy Workshop',       '#FFEDE0', '#3DDC97', 'factory'],
+    ['reindeer',    'Reindeer Stables',   '#F6EBDD', '#A0643C'],
+    ['icehotel',    'Ice Hotel',          '#E0F6FF', '#36B9F0'],
+    ['snowqueen',   'Snow Queen Palace',  '#26305E', '#C9B6FF', '', true],
+  ];
+  const PEAKS_START = BUSINESSES.length;
+
+  PEAKS.forEach(function (row, j) {
+    const cost = 4000 * Math.pow(8.5, j);
+    const time = Math.max(2, Math.round(3 * Math.pow(1.45, j)));
+    const perCoin = 0.25 * Math.pow(cost / 4, -0.279);
+    BUSINESSES.push({
+      id: row[0], name: row[1], tile: row[2], bar: row[3], kind: row[4] || undefined, night: !!row[5], street: 'peaks',
+      cost: sig2(cost), rate: Math.max(1.07, 1.12 - 0.003 * j), time: time, rev: sig2(perCoin * time * cost),
+    });
+  });
   BUSINESSES.forEach(function (b) { b.street = b.street || (b.need ? 'sprinkle' : 'main'); });
 
   // Owning this many of a shop makes it twice as fast, each time.
@@ -186,6 +225,27 @@
     { name: 'Zorp Frog',       animal: 'frog',     color: '#9BE36D', acc: 'headphones' },
     { name: 'Puff Elephant',   animal: 'elephant', color: '#B8C9E8', acc: 'cap' },
     { name: 'Dreamy Unicorn',  animal: 'unicorn',  color: '#E4DBFF', acc: 'crown' },
+    // Frosty Peaks
+    { name: 'Mitzi Mouse',     animal: 'mouse',    color: '#FFE3E3', acc: 'beanie' },
+    { name: 'Slider Seal',     animal: 'seal',     color: '#C9D3E6', acc: 'cap' },
+    { name: 'Frosty Fox',      animal: 'fox',      color: '#F4F8FF', acc: 'tophat' },
+    { name: 'Ginger Bear',     animal: 'bear',     color: '#C98B4F', acc: 'chef' },
+    { name: 'Peppermint Pig',  animal: 'pig',      color: '#FFD6E0', acc: 'party' },
+    { name: 'Slopes Sheep',    animal: 'sheep',    color: '#FFFFFF', acc: 'cap' },
+    { name: 'Glitter Cat',     animal: 'cat',      color: '#E4ECF7', acc: 'glasses' },
+    { name: 'Iggy Penguin',    animal: 'penguin',  color: '#3C4A78', acc: 'bowtie' },
+    { name: 'Twirly Bunny',    animal: 'bunny',    color: '#E8F4FF', acc: 'tiara' },
+    { name: 'Woody Raccoon',   animal: 'raccoon',  color: '#A3A3B5', acc: 'beanie' },
+    { name: 'Marshal Waddles', animal: 'penguin',  color: '#2E3A66', acc: 'tophat' },
+    { name: 'Gruyère Mouse',   animal: 'mouse',    color: '#F3DCC2', acc: 'chef' },
+    { name: 'Knitty Kitty',    animal: 'cat',      color: '#FFC8DD', acc: 'beanie' },
+    { name: 'Cable Koala',     animal: 'koala',    color: '#B8BFD0', acc: 'cap' },
+    { name: 'Yuki Yeti',       animal: 'yeti',     color: '#F4FAFF', acc: 'chef' },
+    { name: 'Borealis Owl',    animal: 'owl',      color: '#4C5FA8', acc: 'wizard' },
+    { name: 'Tinker Reindeer', animal: 'reindeer', color: '#A0643C', acc: 'glasses' },
+    { name: 'Rudy Reindeer',   animal: 'reindeer', color: '#C68A5B', acc: 'bow' },
+    { name: 'Walter Walrus',   animal: 'walrus',   color: '#B07A4F', acc: 'bowtie' },
+    { name: 'Crystal Unicorn', animal: 'unicorn',  color: '#E4F1FF', acc: 'crown' },
   ];
   // Sprinkle Street managers cost ten times their shop's price for the first five, then five times.
   // Boardwalk managers start at 80 times (the first store is very cheap) and come down to four times.
@@ -260,6 +320,27 @@
     { name: 'Beep Octopus',     animal: 'octopus',  color: '#9BE36D', acc: 'headphones' },
     { name: 'Puffy Panda',      animal: 'panda',    color: '#FFFFFF', acc: 'cap' },
     { name: 'Snooze Sheep',     animal: 'sheep',    color: '#E9D5FF', acc: 'tiara' },
+    // Frosty Peaks
+    { name: 'Woolly Lamb',      animal: 'sheep',    color: '#FFF3E8', acc: 'flower' },
+    { name: 'Zippy Penguin',    animal: 'penguin',  color: '#4C5FA8', acc: 'cap' },
+    { name: 'Carrot Bunny',     animal: 'bunny',    color: '#FFFFFF', acc: 'beanie' },
+    { name: 'Gumdrop Mouse',    animal: 'mouse',    color: '#FFD6EC', acc: 'chef' },
+    { name: 'Swirl Monkey',     animal: 'monkey',   color: '#A9744F', acc: 'party' },
+    { name: 'Mogul Fox',        animal: 'fox',      color: '#FF9F5A', acc: 'beanie' },
+    { name: 'Shaker Owl',       animal: 'owl',      color: '#8A6BBE', acc: 'glasses' },
+    { name: 'Icicle Seal',      animal: 'seal',     color: '#E4ECF7', acc: 'beanie' },
+    { name: 'Axel Bear',        animal: 'bear',     color: '#E8B97A', acc: 'cap' },
+    { name: 'Pancake Pup',      animal: 'dog',      color: '#E8B97A', acc: 'chef' },
+    { name: 'Drummer Duck',     animal: 'duck',     color: '#FFE14D', acc: 'party' },
+    { name: 'Dippy Hamster',    animal: 'hamster',  color: '#F4C49A', acc: 'chef' },
+    { name: 'Purl Pig',         animal: 'pig',      color: '#FFB3C8', acc: 'beanie' },
+    { name: 'Summit Lion',      animal: 'lion',     color: '#FFE08A', acc: 'cap' },
+    { name: 'Fluffy Yeti',      animal: 'yeti',     color: '#E4F1FF', acc: 'bow' },
+    { name: 'Glow Frog',        animal: 'frog',     color: '#9BE36D', acc: 'headphones' },
+    { name: 'Gadget Hedgehog',  animal: 'hedgehog', color: '#F3D3B0', acc: 'glasses' },
+    { name: 'Jingle Reindeer',  animal: 'reindeer', color: '#B07A4F', acc: 'party' },
+    { name: 'Frost Walrus',     animal: 'walrus',   color: '#C9A27A', acc: 'sailor' },
+    { name: 'Snowdrop Cat',     animal: 'cat',      color: '#FFFFFF', acc: 'tiara' },
   ];
 
   // Trainees: a third hire for every shop, unlocked by the Trainee Program perk
@@ -327,6 +408,27 @@
     { name: 'Blip Bunny',       animal: 'bunny',    color: '#C9F7FF', acc: 'headphones' },
     { name: 'Floaty Fox',       animal: 'fox',      color: '#FF8A3D', acc: 'tophat' },
     { name: 'Dozy Dragon',      animal: 'dragon',   color: '#C9B6FF', acc: 'crown' },
+    // Frosty Peaks
+    { name: 'Thimble Mouse',    animal: 'mouse',    color: '#E4DBFF', acc: 'bow' },
+    { name: 'Bumpy Bear',       animal: 'bear',     color: '#C68A5B', acc: 'beanie' },
+    { name: 'Button Penguin',   animal: 'penguin',  color: '#3C4A78', acc: 'party' },
+    { name: 'Crumb Duck',       animal: 'duck',     color: '#FFF07A', acc: 'chef' },
+    { name: 'Minty Frog',       animal: 'frog',     color: '#8BE08B', acc: 'bow' },
+    { name: 'Bunny Hill',       animal: 'bunny',    color: '#FFF0D6', acc: 'cap' },
+    { name: 'Sparkle Pup',      animal: 'dog',      color: '#FFE3C7', acc: 'party' },
+    { name: 'Pebble Seal',      animal: 'seal',     color: '#A9B1C2', acc: 'cap' },
+    { name: 'Wobble Penguin',   animal: 'penguin',  color: '#4C5FA8', acc: 'beanie' },
+    { name: 'Sappy Hamster',    animal: 'hamster',  color: '#F4B07A', acc: 'cap' },
+    { name: 'Tiny Tux',         animal: 'penguin',  color: '#2E3A66', acc: 'bowtie' },
+    { name: 'Cheddar Cat',      animal: 'cat',      color: '#FFD27A', acc: 'chef' },
+    { name: 'Yarn Kitten',      animal: 'cat',      color: '#FFC8DD', acc: 'bow' },
+    { name: 'Hop Koala',        animal: 'koala',    color: '#B8BFD0', acc: 'beanie' },
+    { name: 'Snowpup Yeti',     animal: 'yeti',     color: '#F4FAFF', acc: 'party' },
+    { name: 'Comet Fox',        animal: 'fox',      color: '#FF8A3D', acc: 'glasses' },
+    { name: 'Spring Reindeer',  animal: 'reindeer', color: '#C9A27A', acc: 'cap' },
+    { name: 'Hay Bunny',        animal: 'bunny',    color: '#F3D3B0', acc: 'flower' },
+    { name: 'Brrr Walrus',      animal: 'walrus',   color: '#B07A4F', acc: 'beanie' },
+    { name: 'Little Frost',     animal: 'unicorn',  color: '#E4F1FF', acc: 'tiara' },
   ];
 
   // Street Bosses: one for each street, met once enough shops there are open.
@@ -336,10 +438,11 @@
     { id: 'main',      name: 'Mayor Marmalade',   animal: 'cat',     color: '#FF9F43', acc: 'tophat', open: 5, cost: [1e15, 1e21, 1e27] },
     { id: 'boardwalk', name: 'Captain Coral',     animal: 'seal',    color: '#9DB4D9', acc: 'sailor', open: 5, cost: [5e15, 5e21, 5e27] },
     { id: 'sprinkle',  name: 'Duchess Sprinkles', animal: 'unicorn', color: '#FFF0F6', acc: 'crown',  open: 3, cost: [1e17, 1e23, 1e29] },
+    { id: 'peaks',     name: 'Yolanda Yeti',      animal: 'yeti',    color: '#F4FAFF', acc: 'beanie', open: 5, cost: [2e16, 2e22, 2e28] },
   ];
   const BOSS_LEVELS = 3;
   const BOSS_BOOST = 1.5;
-  const STREET_NAMES = { main: 'Main Street', boardwalk: 'Boardwalk', sprinkle: 'Sprinkle Street' };
+  const STREET_NAMES = { main: 'Main Street', boardwalk: 'Boardwalk', peaks: 'Frosty Peaks', sprinkle: 'Sprinkle Street' };
 
   // ---------------------------------------------------------------------------
   // Upgrades: each one triples a shop's profit (or every shop's, for town-wide).
@@ -405,6 +508,26 @@
     ufo:         ['Cosmic Shakes', 'Laser Grills', 'Alien Waiters', 'Mothership Drive-In'],
     balloonport: ['Patchwork Balloons', 'Sky Picnics', 'Balloon Races', 'Cloud Harbor'],
     dreampalace: ['Pillow Towers', 'Lullaby Bells', 'Dream Weavers', 'Sweet Dreams Forever'],
+    mittens:     ['Extra Fluff', 'Matching Pairs', 'Mitten Mountain', 'Mittens for Everyone'],
+    sled:        ['Waxed Runners', 'Racing Stripes', 'Double Sleds', 'Super Slope'],
+    snowman:     ['Carrot Noses', 'Coal Buttons', 'Giant Snowballs', 'Snowman Army'],
+    gingerbread: ['Gumdrop Buttons', 'Icing Piping', 'Gingerbread Village', 'Cookie Cutter Castle'],
+    candycane:   ['Peppermint Swirl', 'Striped Pipes', 'Mega Canes', 'Candy Cane Forest'],
+    skilodge:    ['Cozy Fireplace', 'Chair Lift', 'Black Diamond Runs', 'Mountain Resort'],
+    snowglobe:   ['Glitter Snow', 'Tiny Towns', 'Music Box Bases', 'Giant Snow Globe'],
+    igloo:       ['Ice Brick Walls', 'Warm Blankets', 'Igloo Suites', 'Igloo City'],
+    icerink:     ['Sharp Blades', 'Twirl Lessons', 'Ice Show', 'Frozen Lake Rink'],
+    maple:       ['Sap Buckets', 'Maple Taffy', 'Syrup Pipeline', 'Maple Forest'],
+    penguins:    ['Tiny Top Hats', 'Marching Band', 'Belly Slides', 'Grand Parade'],
+    fondue:      ['Melty Cheese', 'Long Forks', 'Chocolate Fondue', 'Fondue Fountain'],
+    sweater:     ['Softer Wool', 'Silly Sweater Contest', 'Knitting Robots', 'Sweater Weather'],
+    cablecar:    ['Bigger Cabins', 'Sky Views', 'Twin Cables', 'Peak to Peak'],
+    yeti:        ['Yeti Muffins', 'Snowball Shakes', 'Big Footprints', 'Yeti Festival'],
+    aurora:      ['Star Charts', 'Glow Lenses', 'Aurora Dome', 'Sky Light Show'],
+    toyshop:     ['Jingle Bells', 'Wooden Trains', 'Toy Conveyor', 'Sleigh Delivery'],
+    reindeer:    ['Shiny Harnesses', 'Carrot Snacks', 'Flying Lessons', 'Reindeer Games'],
+    icehotel:    ['Ice Sculptures', 'Frozen Chandeliers', 'Ice Lobby', 'Glacier Wing'],
+    snowqueen:   ['Snowflake Crowns', 'Crystal Halls', 'Blizzard Ballroom', 'Eternal Winter'],
   };
   const UPGRADE_TIER_COST = [400, 4e5, 4e9, 4e14, 1e17, 1e20, 1e23]; // times the shop's first price
   // The Golden, Rainbow and Diamond tiers appear once their Sprinkle Perk is unlocked.
@@ -429,6 +552,11 @@
     duckboats: 'Outboard Motors', circus: 'Human Cannonball Delivery', fireworks: 'Quick Fuses', funhouse: 'Slide Exits',
     bumper: 'Nitro Bumpers', pearl: 'Oyster Express', jellybean: 'Bean Blizzard', planetarium: 'Warp Projector',
     mermaid: 'Seahorse Express', ufo: 'Tractor Beam Pickup', balloonport: 'Jet Stream', dreampalace: 'Power Naps',
+    mittens: 'Speed Knitters', sled: 'Rocket Sleds', snowman: 'Snowball Cannon', gingerbread: 'Cookie Conveyor',
+    candycane: 'Twist-o-Matic', skilodge: 'Express Chairlift', snowglobe: 'Shake Machine', igloo: 'Quick Freeze',
+    icerink: 'Zamboni Turbo', maple: 'Sap Siphons', penguins: 'Belly Sled Express', fondue: 'Double Burners',
+    sweater: 'Loom Boosters', cablecar: 'Turbo Cables', yeti: 'Yeti Sprint', aurora: 'Light-Speed Lens',
+    toyshop: 'Wind-Up Express', reindeer: 'Rocket Hooves', icehotel: 'Snowplow Shuttle', snowqueen: 'Flurry Flight',
   };
 
   // Helper upgrades: town-wide perks for one run, each doing something other than profit.
@@ -561,6 +689,8 @@
       { id: 'grape',     name: 'Grape Soda',     need: 180 },
       { id: 'sherbet',   name: 'Orange Sherbet', need: 450 },
       { id: 'rainbow',   name: 'Rainbow Pop',    need: 1100 },
+      { id: 'cocoa',     name: 'Hot Cocoa',      need: 700 },
+      { id: 'midnight',  name: 'Midnight',       need: 2500 },
     ],
     // What every manager and assistant wears ('own': each one's usual look).
     mgrHat: [
@@ -662,6 +792,8 @@
     { id: 'turbo10',     name: 'Need for Speed', desc: 'Buy 10 Turbo upgrades in one run',     test: function (s) { return Object.keys(s.upgrades).filter(function (k) { return /-turbo$/.test(k); }).length >= 10; } },
     { id: 'diamond',     name: 'Shine Bright',   desc: 'Buy a Diamond upgrade',                test: function (s) { return Object.keys(s.upgrades).some(function (k) { return UPGRADE_BY_ID[k] && UPGRADE_BY_ID[k].perk === 'diamondUpgrades'; }); } },
     { id: 'helpers',     name: 'Helping Hands',  desc: 'Buy all 6 helper upgrades in one run', test: function (s) { return HELPER_UPGRADES.every(function (h) { return s.upgrades[h.id]; }); } },
+    { id: 'peaks1',      name: 'Snow Day',       desc: 'Open a Frosty Peaks shop',             test: function (s) { return openOn(s, 'peaks') >= 1; } },
+    { id: 'peaksAll',    name: 'King of the Mountain', desc: 'Open every Frosty Peaks shop in one run', test: function (s) { return openOn(s, 'peaks') >= PEAKS.length; } },
   ];
 
   function openCount(s) { return s.biz.filter(function (b) { return b.owned > 0; }).length; }
@@ -687,7 +819,7 @@
       managers: BUSINESSES.map(function () { return false; }),
       assistants: BUSINESSES.map(function () { return false; }),
       trainees: BUSINESSES.map(function () { return false; }),
-      bosses: { main: 0, boardwalk: 0, sprinkle: 0 },
+      bosses: BOSSES.reduce(function (o, b) { o[b.id] = 0; return o; }, {}),
       upgrades: {},
       trophies: {},
       hints: {},
@@ -740,10 +872,13 @@
     return Number(s.buyMode) || 1;
   }
 
-  // Main Street and the Boardwalk open in order; Sprinkle Street shops need enough golden sprinkles.
+  // Main Street, the Boardwalk and Frosty Peaks open in order; Sprinkle Street
+  // shops, and Frosty Peaks itself, need enough golden sprinkles.
+  function sprinkleNeed(i) { return BUSINESSES[i].need || (i === PEAKS_START ? PEAKS_NEED : 0); }
+
   function isUnlocked(s, i) {
-    const b = BUSINESSES[i];
-    if (b.need) return s.sprinkles >= b.need;
+    const need = sprinkleNeed(i);
+    if (need) return s.sprinkles >= need;
     return i === 0 || i === WALK_START || s.biz[i - 1].owned > 0;
   }
 
@@ -1264,7 +1399,7 @@
     BUSINESSES: BUSINESSES, MILESTONES: MILESTONES, MANAGERS: MANAGERS, UPGRADES: UPGRADES,
     UPGRADE_BY_ID: UPGRADE_BY_ID, TROPHIES: TROPHIES, SPRINKLE_BONUS: SPRINKLE_BONUS,
     TROPHY_BONUS: TROPHY_BONUS, OFFLINE_CAP: OFFLINE_CAP, PERKS: PERKS, GOAL_SLOTS: GOAL_SLOTS, MAIN_COUNT: MAIN_COUNT,
-    WALK_START: WALK_START,
+    WALK_START: WALK_START, PEAKS_START: PEAKS_START, PEAKS_NEED: PEAKS_NEED, sprinkleNeed: sprinkleNeed,
     TRAINEES: TRAINEES, traineeCost: traineeCost, hireTrainee: hireTrainee,
     BOSSES: BOSSES, BOSS_LEVELS: BOSS_LEVELS, BOSS_BOOST: BOSS_BOOST, STREET_NAMES: STREET_NAMES, bossLevel: bossLevel, bossOpen: bossOpen,
     bossCost: bossCost, hireBoss: hireBoss, openOn: openOn, staffMult: staffMult,

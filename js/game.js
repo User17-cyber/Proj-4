@@ -32,10 +32,10 @@
 
   // Which street the Town tab shows: 'main', 'boardwalk' or 'sprinkle'.
   let district = 'main';
-  const DISTRICTS = ['main', 'boardwalk', 'sprinkle'];
+  const DISTRICTS = ['main', 'boardwalk', 'peaks', 'sprinkle'];
   function streetOf(i) { return G.BUSINESSES[i].street; }
   function isStreet(i) { return streetOf(i) === 'sprinkle'; }
-  function needText(i) { return G.BUSINESSES[i].need.toLocaleString('en-US'); }
+  function needText(i) { return G.sprinkleNeed(i).toLocaleString('en-US'); }
 
   // The Manager Hats customization dresses every manager and assistant alike.
   function hatOn() {
@@ -383,6 +383,7 @@
       tile: b.tile,
       bar: b.bar,
       night: !!b.night,
+      ground: b.street === 'peaks' ? 'snow' : b.street === 'boardwalk' ? 'planks' : '',
       locked: locked,
       signText: r.sprinkleLocked ? 'NEEDS ' + needText(i) : '',
       build: build,
@@ -403,13 +404,14 @@
     if (bk >= 0 && G.bossLevel(state, bk) > 0) list.appendChild(bossBanner(bk));
     const street = G.BUSINESSES.map(function (b, i) { return i; }).filter(function (i) { return streetOf(i) === district; });
     if (district !== 'sprinkle') {
-      // Main Street and the Boardwalk open in order: show the next empty lot and tease the rest.
+      // Main Street, the Boardwalk and Frosty Peaks open in order: show the next
+      // empty lot (or what Frosty Peaks needs to open) and tease the rest.
       let lockedShown = 0;
       street.forEach(function (i, k) {
         if (state.biz[i].owned > 0) {
           list.appendChild(shopCard(i));
         } else if (lockedShown === 0) {
-          list.appendChild(lockedCard(i));
+          list.appendChild(G.isUnlocked(state, i) ? lockedCard(i) : sprinkleLockedCard(i));
           lockedShown++;
         } else if (lockedShown === 1) {
           list.appendChild(mysteryCard(street.length - k, district));
@@ -439,7 +441,7 @@
   function bossBanner(k) {
     const b = G.BOSSES[k];
     return el('div', 'card boss-banner', '<span class="boss-face">' + bossFace(k) + '</span>' +
-      '<p><strong>' + b.name + '</strong> is the boss here. Every shop on ' + streetIn(b.id) + ' earns ' +
+      '<p><strong>' + b.name + '</strong> is the boss here. Every shop ' + (b.id === 'peaks' ? 'in ' : 'on ') + streetIn(b.id) + ' earns ' +
       multText(Math.pow(G.BOSS_BOOST, G.bossLevel(state, k))) + '.</p>');
   }
 
@@ -545,7 +547,7 @@
   function mysteryCard(remaining, where) {
     const card = el('article', 'card shop mystery');
     const sprinkleStreet = where === 'sprinkle';
-    const what = remaining + ' more ' + (sprinkleStreet ? 'Sprinkle Street ' : where === 'boardwalk' ? 'Boardwalk ' : '') +
+    const what = remaining + ' more ' + (where === 'main' ? '' : G.STREET_NAMES[where] + ' ') +
       (where === 'boardwalk' ? 'store' : 'shop') + (remaining === 1 ? '' : 's');
     card.innerHTML =
       '<div class="shop-icon">' + A.mystery() + '</div>' +
@@ -556,18 +558,20 @@
     return card;
   }
 
-  // A Sprinkle Street shop you don't have enough sprinkles for yet.
+  // A Sprinkle Street shop (or Frosty Peaks itself) you don't have enough sprinkles for yet.
   function sprinkleLockedCard(i) {
     const b = G.BUSINESSES[i];
+    const need = G.sprinkleNeed(i);
     const card = el('article', 'card shop locked');
     card.style.setProperty('--tile', b.tile);
     card.innerHTML =
       '<div class="shop-head"><h2 class="shop-name">' + b.name + '</h2>' +
         '<span class="need-chip"><span class="chip-icon">' + A.sprinkle() + '</span>' + needText(i) + '</span></div>' +
       '<div class="shop-scene"><canvas aria-hidden="true"></canvas></div>' +
-      '<p class="shop-note">Unlocks for good when you hold ' + needText(i) + ' golden sprinkles. You have ' + fmt(state.sprinkles) + '.</p>' +
-      '<div class="milestone"><div class="mini-bar"><span style="transform:scaleX(' + Math.min(1, state.sprinkles / b.need) + ')"></span></div>' +
-        '<span>' + fmt(Math.max(0, b.need - state.sprinkles)) + ' to go</span></div>';
+      '<p class="shop-note">' + (b.street === 'peaks' ? 'Frosty Peaks opens' : 'Unlocks') + ' for good when you hold ' + needText(i) +
+        ' golden sprinkles. You have ' + fmt(state.sprinkles) + '.</p>' +
+      '<div class="milestone"><div class="mini-bar"><span style="transform:scaleX(' + Math.min(1, state.sprinkles / need) + ')"></span></div>' +
+        '<span>' + fmt(Math.max(0, need - state.sprinkles)) + ' to go</span></div>';
     refs.shops.push({ i: i, locked: true, sprinkleLocked: true, scene: $('.shop-scene', card) });
     return card;
   }
@@ -582,7 +586,9 @@
     note.hidden = district === 'main';
     setText(note, district === 'sprinkle'
       ? 'Sprinkle Street shops unlock for good once you hold enough golden sprinkles. Open them with coins in every run.'
-      : 'Boardwalk stores open one after another, like Main Street. Open one to find the next.');
+      : district === 'peaks' && !G.isUnlocked(state, G.PEAKS_START)
+        ? 'A snowy street of ' + G.BUSINESSES.filter(function (b) { return b.street === 'peaks'; }).length + ' shops. It opens for good at ' + G.PEAKS_NEED + ' golden sprinkles.'
+        : G.STREET_NAMES[district] + (district === 'boardwalk' ? ' stores' : ' shops') + ' open one after another, like Main Street. Open one to find the next.');
   }
 
   function upgradesOwned(i) {
@@ -822,6 +828,7 @@
     const groups = [
       ['Main Street', function (i) { return streetOf(i) === 'main'; }],
       ['Boardwalk', function (i) { return streetOf(i) === 'boardwalk' && G.isUnlocked(state, i); }],
+      ['Frosty Peaks', function (i) { return streetOf(i) === 'peaks' && G.isUnlocked(state, i); }],
       ['Sprinkle Street', function (i) { return isStreet(i) && (G.isUnlocked(state, i) || state.biz[i].owned > 0); }],
     ];
     groups.forEach(function (gr) {
@@ -832,7 +839,7 @@
     });
   }
 
-  const BOSS_TILES = { main: '#FFF0A6', boardwalk: '#DDF6FF', sprinkle: '#FFE3F1' };
+  const BOSS_TILES = { main: '#FFF0A6', boardwalk: '#DDF6FF', peaks: '#E3F3FF', sprinkle: '#FFE3F1' };
 
   // A Street Boss: hire, then promote twice. Each level boosts their whole street.
   function bossCard(k) {
@@ -1049,12 +1056,12 @@
   // ---------------------------------------------------------------------------
   // Sprinkles tab
   // ---------------------------------------------------------------------------
-  const STYLE_GROUPS = [['sky', 'Sky'], ['ui', 'Colors'], ['border', 'Store borders'], ['front', 'Storefronts'], ['coin', 'Coins'],
+  const STYLE_GROUPS = [['sky', 'Sky'], ['ui', 'Theme'], ['border', 'Store borders'], ['front', 'Storefronts'], ['coin', 'Coins'],
     ['mgrHat', 'Manager hats'], ['hats', 'Customer hats'], ['vehicle', 'Trucks & vans'], ['confetti', 'Confetti']];
   // A small preview of each look.
   const STYLE_ART = {
     sky: function (id) { return '<span class="sky-swatch" data-sky="' + id + '"></span>'; },
-    ui: function (id) { return '<span class="ui-swatch" data-ui="' + id + '"><i></i><b></b></span>'; },
+    ui: function (id) { return '<span class="ui-swatch" data-ui="' + id + '"><b></b><i>Aa</i></span>'; },
     border: function (id) { return '<span class="border-swatch" data-border="' + id + '"><i></i></span>'; },
     front: function (id) { return A.shop('donut', id); },
     coin: function (id) { return A.coin(id); },
@@ -1170,6 +1177,10 @@
     A.setFrontStyle(G.activeStyle(state, 'front'));
     Scene.setHats(G.activeStyle(state, 'hats'));
     Scene.setVehicles(G.activeStyle(state, 'vehicle'));
+    Scene.setMood(G.activeStyle(state, 'sky'));
+    // The phone's browser bar follows the header.
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', getComputedStyle(root).getPropertyValue('--chrome').trim() || '#7FD8FF');
     $('#purseCoin').innerHTML = A.coin();
     setText($('.brand'), state.townName || 'Sprinkle Town');
   }
@@ -1581,6 +1592,12 @@
         (looks.length === 1 ? '' : looks.join(', ') + '. ') + 'Try them in Sprinkles → Customize.', true);
       if (tab === 'sprinkles') renderCustomize();
     }
+    if (G.isUnlocked(state, G.PEAKS_START) && !state.hints['street-peaks']) {
+      state.hints['street-peaks'] = true;
+      toast(A.shop(G.BUSINESSES[G.PEAKS_START].id), 'Frosty Peaks is open!',
+        'A snowy new street of shops, open for good. Find it at the top of the Town tab.', true);
+      if (tab === 'town' && district === 'peaks') renderTown();
+    }
     const perks = G.PERKS.filter(function (p) { return state.sprinkles >= p.need && !state.hints['perk-' + p.id]; });
     if (perks.length) {
       perks.forEach(function (p) { state.hints['perk-' + p.id] = true; });
@@ -1696,6 +1713,7 @@
     });
     $('#districtIcon').innerHTML = A.sprinkle();
     $('#walkIcon').innerHTML = A.product('surf');
+    $('#peaksIcon').innerHTML = A.product('icehotel');
     $('#muteBtn').addEventListener('click', function () { setSound(!state.settings.sound); });
     $('#sprinkleChip').addEventListener('click', function () { showTab('sprinkles'); });
 

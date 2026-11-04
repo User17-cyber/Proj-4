@@ -16,8 +16,19 @@
   --sun: #FFD23F;          /* coins, main buttons */
   --sun-deep: #F5B700;
   --sun-soft: #FFF1B8;
-  --accent: #FFD23F;       /* main buttons, the selected tab (the Colors customization) */
+  --accent: #FFD23F;       /* main buttons, the selected tab (the Theme customization) */
   --accent-soft: #FFF1B8;  /* goal panel header, unlocked perks, chosen looks */
+  --pop-ink: #FFFFFF;      /* text on --bubblegum */
+  --toggle: var(--grape);  /* the x1 / x10 / x100 / Max switch */
+  --track: #EEE8FF;        /* the empty part of progress bars */
+  --rule: #E3DCF3;         /* dashed lines inside cards */
+  --title-fill: #FFFFFF;   /* big outlined titles */
+  --hud-bg: var(--sky);    /* the header band */
+  --chrome: #7FD8FF;       /* the header's main color, for the phone's browser bar */
+  --tabbar-bg: var(--paper);
+  --tab-ink: var(--ink-soft);
+  --btn-radius: 14px;
+  --shade: rgba(43, 33, 71, .18);
   --bubblegum: #FF5FA2;    /* accent */
   --mint: #2ED3A0;
   --grape: #8C6CFF;
@@ -104,18 +115,138 @@ svg { display: block; width: 100%; height: 100%; }
   background-position: 10px 20px, 50px 60px;
 }
 :root[data-sky="night"] .cloud { opacity: .35; }
-/* Colors customization: buttons, tabs and cards. Written as plain attribute
-   selectors so the little previews in Customize can show each one too. */
-[data-ui="lemon"] { --accent: #FFD23F; --accent-soft: #FFF1B8; --paper: #FFFBF0; --paper-2: #FFF3D6; --bubblegum: #FF5FA2; }
-[data-ui="berry"] { --accent: #FF9CCB; --accent-soft: #FFE3F1; --paper: #FFF6FA; --paper-2: #FFE3F1; --bubblegum: #8C6CFF; }
-[data-ui="mint"] { --accent: #5EE6B5; --accent-soft: #D8FBEC; --paper: #F4FFF9; --paper-2: #DDF8EC; }
-[data-ui="blueberry"] { --accent: #7CC4FF; --accent-soft: #DDF1FF; --paper: #F5FAFF; --paper-2: #DDEEFF; }
-[data-ui="grape"] { --accent: #B9A4FF; --accent-soft: #EEE7FF; --paper: #FAF7FF; --paper-2: #ECE4FF; }
-[data-ui="sherbet"] { --accent: #FFB36B; --accent-soft: #FFE9D2; --paper: #FFF8F0; --paper-2: #FFE9D2; }
-[data-ui="rainbow"] {
-  --accent: linear-gradient(100deg, #FFB3C8, #FFE08A 28%, #B8F0C8 52%, #A8DCFF 76%, #D9C9FF);
-  --accent-soft: #FFF0F7; --paper: #FFFDF7; --paper-2: #F3F0FF;
+/* Theme customization: each theme repaints the whole interface: the header
+   band and tab bar (with a pattern), outlines and text, cards, every kind of
+   button, toggles and bars, fonts, and how round the corners are. Written as
+   plain attribute selectors so the little previews in Customize show each one. */
+[data-ui="lemon"] {
+  --disabled: #E8E3F3; --disabled-ink: #9A93B5;
+  --ink: #2B2147; --ink-soft: #5E5685; --paper: #FFFBF0; --paper-2: #FFF3D6;
+  --accent: #FFD23F; --accent-soft: #FFF1B8; --bubblegum: #FF5FA2; --mint: #2ED3A0; --toggle: #8C6CFF;
+  --track: #EEE8FF; --rule: #E3DCF3; --title-fill: #FFFFFF;
+  --hud-bg: var(--sky); --chrome: #7FD8FF; --tabbar-bg: var(--paper); --tab-ink: var(--ink-soft);
+  --font-display: 'Lilita One', 'Arial Rounded MT Bold', 'Trebuchet MS', sans-serif;
+  --radius: 18px; --btn-radius: 14px; --lift: 0 5px 0 var(--ink); --shade: rgba(43, 33, 71, .18);
 }
+/* Strawberry: berry-pink header with seeds, plum outlines, extra-round shapes. */
+[data-ui="berry"] {
+  --disabled: #F3E4EC; --disabled-ink: #B08AA0;
+  --ink: #4A1736; --ink-soft: #8A4A6E; --paper: #FFF6FA; --paper-2: #FFE3F1;
+  --accent: #FF9CCB; --accent-soft: #FFE3F1; --bubblegum: #E8336F; --mint: #5FCF6F; --toggle: #E8336F;
+  --track: #FFE0EE; --rule: #F5C9DD; --title-fill: #FFF6FA;
+  --hud-bg: radial-gradient(circle at 30% 30%, #FFF3A8 0 1.8px, transparent 2.4px) 0 0 / 22px 22px,
+    radial-gradient(circle at 70% 75%, #FFF3A8 0 1.8px, transparent 2.4px) 0 0 / 22px 22px, linear-gradient(#FF6F9F, #FF94BD);
+  --chrome: #FF6F9F;
+  --tabbar-bg: radial-gradient(circle at 30% 30%, rgba(232, 51, 111, .18) 0 1.8px, transparent 2.4px) 0 0 / 22px 22px, #FFE9F3;
+  --tab-ink: #8A4A6E;
+  --font-display: 'Chewy', 'Lilita One', 'Trebuchet MS', sans-serif;
+  --radius: 26px; --btn-radius: 22px; --lift: 0 5px 0 var(--ink); --shade: rgba(74, 23, 54, .2);
+}
+/* Mint Chip: mint header with chocolate chips, pill buttons, chocolate accents. */
+[data-ui="mint"] {
+  --disabled: #E2EFE9; --disabled-ink: #86A79E;
+  --ink: #173C35; --ink-soft: #4E7A70; --paper: #F4FFF9; --paper-2: #DDF8EC;
+  --accent: #5EE6B5; --accent-soft: #D8FBEC; --bubblegum: #7A4A2A; --mint: #FF9CC2; --toggle: #7A4A2A;
+  --track: #D5F5E8; --rule: #BFE9D8; --title-fill: #F4FFF9;
+  --hud-bg: radial-gradient(4px 2.5px at 30% 35%, rgba(90, 52, 32, .75) 99%, transparent) 0 0 / 34px 30px,
+    radial-gradient(3px 2px at 78% 74%, rgba(90, 52, 32, .6) 99%, transparent) 0 0 / 34px 30px, linear-gradient(#6FE3BA, #A6F0D4);
+  --chrome: #6FE3BA;
+  --tabbar-bg: radial-gradient(3px 2px at 30% 35%, rgba(90, 52, 32, .35) 99%, transparent) 0 0 / 26px 24px, #E6FBF2;
+  --tab-ink: #4E7A70;
+  --font-display: 'Fredoka', 'Lilita One', 'Trebuchet MS', sans-serif;
+  --radius: 20px; --btn-radius: 999px; --lift: 0 5px 0 var(--ink); --shade: rgba(23, 60, 53, .2);
+}
+/* Blueberry: dotted blue header, navy outlines, squarer corners and a sideways shadow. */
+[data-ui="blueberry"] {
+  --disabled: #E2E9F5; --disabled-ink: #8E9BBF;
+  --ink: #1B2A5C; --ink-soft: #4E5E8F; --paper: #F5FAFF; --paper-2: #DDEEFF;
+  --accent: #7CC4FF; --accent-soft: #DDF1FF; --bubblegum: #5B5FEF; --mint: #3DDC97; --toggle: #3B4CCA;
+  --track: #DCE9FF; --rule: #C9DAF5; --title-fill: #F5FAFF;
+  --hud-bg: radial-gradient(circle, #5B6BE8 0 4px, transparent 4.6px) 0 0 / 30px 30px,
+    radial-gradient(circle, rgba(255, 255, 255, .7) 0 2px, transparent 2.6px) 15px 15px / 30px 30px, linear-gradient(#86CBFF, #B5E0FF);
+  --chrome: #86CBFF;
+  --tabbar-bg: radial-gradient(circle, rgba(91, 107, 232, .2) 0 3px, transparent 3.6px) 0 0 / 30px 30px, #EAF4FF;
+  --tab-ink: #4E5E8F;
+  --font-display: 'Lilita One', 'Arial Rounded MT Bold', 'Trebuchet MS', sans-serif;
+  --radius: 10px; --btn-radius: 8px; --lift: 5px 5px 0 var(--ink); --shade: rgba(27, 42, 92, .22);
+}
+/* Grape Soda: fizzy purple header with bubbles. */
+[data-ui="grape"] {
+  --disabled: #ECE6F7; --disabled-ink: #A091C4;
+  --ink: #2C1659; --ink-soft: #5E4A8E; --paper: #FAF7FF; --paper-2: #ECE4FF;
+  --accent: #B9A4FF; --accent-soft: #EEE7FF; --bubblegum: #9B4DFF; --mint: #3DDC97; --toggle: #6B3FD9;
+  --track: #E7DDFF; --rule: #D9CCF5; --title-fill: #FAF7FF;
+  --hud-bg: radial-gradient(circle, transparent 0 4px, rgba(255, 255, 255, .8) 4.6px 6.2px, transparent 6.8px) 0 0 / 34px 34px,
+    radial-gradient(circle, transparent 0 2px, rgba(255, 255, 255, .65) 2.6px 3.8px, transparent 4.4px) 17px 20px / 34px 34px, linear-gradient(#9878FF, #C2ACFF);
+  --chrome: #9878FF;
+  --tabbar-bg: radial-gradient(circle, transparent 0 3px, rgba(107, 63, 217, .22) 3.6px 4.8px, transparent 5.4px) 0 0 / 34px 34px, #F1EBFF;
+  --tab-ink: #5E4A8E;
+  --font-display: 'Fredoka', 'Lilita One', 'Trebuchet MS', sans-serif;
+  --radius: 22px; --btn-radius: 18px; --lift: 0 6px 0 var(--ink); --shade: rgba(44, 22, 89, .22);
+}
+/* Orange Sherbet: striped orange header, pill buttons. */
+[data-ui="sherbet"] {
+  --disabled: #F4E8DD; --disabled-ink: #B89A85;
+  --ink: #4A2410; --ink-soft: #8A5A3A; --paper: #FFF8F0; --paper-2: #FFE9D2;
+  --accent: #FFB36B; --accent-soft: #FFE9D2; --bubblegum: #FF5A5F; --mint: #7BD88F; --toggle: #FF7A3D;
+  --track: #FFE4CC; --rule: #F5D2B5; --title-fill: #FFF8F0;
+  --hud-bg: repeating-linear-gradient(-45deg, rgba(255, 255, 255, .35) 0 10px, transparent 10px 20px), linear-gradient(#FF9A55, #FFC48A);
+  --chrome: #FF9A55;
+  --tabbar-bg: repeating-linear-gradient(-45deg, rgba(255, 122, 61, .12) 0 10px, transparent 10px 20px), #FFF1E2;
+  --tab-ink: #8A5A3A;
+  --font-display: 'Chewy', 'Lilita One', 'Trebuchet MS', sans-serif;
+  --radius: 16px; --btn-radius: 999px; --lift: 0 5px 0 var(--ink); --shade: rgba(74, 36, 16, .2);
+}
+/* Rainbow Pop: a rainbow header sprinkled with dots, rainbow buttons. */
+[data-ui="rainbow"] {
+  --disabled: #E8E3F3; --disabled-ink: #9A93B5;
+  --ink: #35206A; --ink-soft: #655A93; --paper: #FFFDF7; --paper-2: #F3F0FF;
+  --accent: linear-gradient(100deg, #FFB3C8, #FFE08A 28%, #B8F0C8 52%, #A8DCFF 76%, #D9C9FF);
+  --accent-soft: #FFF0F7; --bubblegum: #FF5FA2; --mint: #2ED3A0;
+  --toggle: linear-gradient(100deg, #FF5A5F, #FF9F43, #3DDC97, #4CC9F0, #8C6CFF);
+  --track: #F1ECFF; --rule: #E6DCF6; --title-fill: #FFFFFF;
+  --hud-bg: radial-gradient(circle, #FF5A5F 0 2.6px, transparent 3.2px) 0 0 / 30px 30px,
+    radial-gradient(circle, #3DDC97 0 2.6px, transparent 3.2px) 10px 12px / 30px 30px,
+    radial-gradient(circle, #4CC9F0 0 2.6px, transparent 3.2px) 20px 4px / 30px 30px,
+    radial-gradient(circle, #FFB627 0 2.6px, transparent 3.2px) 6px 22px / 30px 30px,
+    linear-gradient(90deg, #FFC9D6, #FFF0B8, #CFF5D8, #CFE9FF, #E6DAFF);
+  --chrome: #FFC9D6;
+  --tabbar-bg: linear-gradient(90deg, #FFF0F4, #FFFBEA, #EDFBF0, #EDF6FF, #F5F0FF);
+  --tab-ink: #655A93;
+  --font-display: 'Lilita One', 'Arial Rounded MT Bold', 'Trebuchet MS', sans-serif;
+  --radius: 22px; --btn-radius: 18px; --lift: 0 5px 0 var(--ink); --shade: rgba(53, 32, 106, .2);
+}
+/* Hot Cocoa: a waffle-pattern chocolate header, cream cards, marshmallow-pink highlights. */
+[data-ui="cocoa"] {
+  --disabled: #EFE4D8; --disabled-ink: #A88D7A;
+  --ink: #3B2314; --ink-soft: #7A5640; --paper: #FFF8EE; --paper-2: #F6E6D3;
+  --accent: #F0B46E; --accent-soft: #F9E3C8; --bubblegum: #8B4A2B; --mint: #FF9CC2; --toggle: #8B4A2B;
+  --track: #F1E0CC; --rule: #E6CDB2; --title-fill: #FFF3E0;
+  --hud-bg: linear-gradient(90deg, rgba(74, 38, 18, .22) 2px, transparent 2px) 0 0 / 24px 24px,
+    linear-gradient(rgba(74, 38, 18, .22) 2px, transparent 2px) 0 0 / 24px 24px, linear-gradient(#B8763E, #D9A064);
+  --chrome: #B8763E;
+  --tabbar-bg: linear-gradient(90deg, rgba(139, 74, 43, .1) 2px, transparent 2px) 0 0 / 24px 24px,
+    linear-gradient(rgba(139, 74, 43, .1) 2px, transparent 2px) 0 0 / 24px 24px, #FBEEDD;
+  --tab-ink: #7A5640;
+  --font-display: 'Chewy', 'Lilita One', 'Trebuchet MS', sans-serif;
+  --radius: 14px; --btn-radius: 12px; --lift: 0 5px 0 var(--ink); --shade: rgba(59, 35, 20, .25);
+}
+/* Midnight: a starry night-sky header and tab bar with gold highlights. */
+[data-ui="midnight"] {
+  --disabled: #E8E3F3; --disabled-ink: #9A93B5;
+  --ink: #1C1838; --ink-soft: #545079; --paper: #F7F5FF; --paper-2: #E9E5FF;
+  --accent: #FFD23F; --accent-soft: #EDE8FF; --bubblegum: #FF5FA2; --mint: #3DDC97; --toggle: #2B2560;
+  --track: #E4E0FA; --rule: #D6D0F0; --title-fill: #FFF3B0;
+  --hud-bg: radial-gradient(circle, #FFF7C2 0 1.3px, transparent 1.9px) 0 0 / 40px 34px,
+    radial-gradient(circle, #FFFFFF 0 1px, transparent 1.6px) 22px 17px / 52px 44px, linear-gradient(#1F1B4A, #3B3478);
+  --chrome: #1F1B4A;
+  --tabbar-bg: radial-gradient(circle, #FFF7C2 0 1.1px, transparent 1.7px) 6px 6px / 44px 38px, linear-gradient(#2E2866, #1F1B4A);
+  --tab-ink: #D9D3FF;
+  --font-display: 'Fredoka', 'Lilita One', 'Trebuchet MS', sans-serif;
+  --radius: 18px; --btn-radius: 14px; --lift: 0 5px 0 var(--ink); --shade: rgba(10, 8, 30, .35);
+}
+/* On the dark Midnight header, the coins-per-second pill and chips stay light. */
+:root[data-ui="midnight"] .rate { background: rgba(255, 255, 255, .85); }
 
 /* Store borders customization: the outline of every shop and factory card. */
 [data-border="ink"] { --shop-border: var(--ink); }
@@ -184,9 +315,9 @@ svg { display: block; width: 100%; height: 100%; }
   padding-top: env(safe-area-inset-top, 0px);
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
-  background: var(--sky);
+  background: var(--hud-bg);
   border-bottom: var(--line) solid var(--ink);
-  box-shadow: 0 4px 0 rgba(43, 33, 71, .18);
+  box-shadow: 0 4px 0 var(--shade);
 }
 
 .hud-inner {
@@ -215,7 +346,7 @@ svg { display: block; width: 100%; height: 100%; }
   font-family: var(--font-display);
   font-size: 1.15rem;
   letter-spacing: .02em;
-  color: #FFFFFF;
+  color: var(--title-fill);
   -webkit-text-stroke: 1.5px var(--ink);
   paint-order: stroke fill;
   text-shadow: 0 3px 0 var(--ink);
@@ -248,7 +379,7 @@ svg { display: block; width: 100%; height: 100%; }
 .chip-boost {
   padding: 0 12px;
   background: var(--bubblegum);
-  color: #FFFFFF;
+  color: var(--pop-ink);
   animation: pulse 1s ease-in-out infinite;
 }
 
@@ -257,7 +388,7 @@ svg { display: block; width: 100%; height: 100%; }
   height: 36px;
   padding: 6px;
   border: var(--line) solid var(--ink);
-  border-radius: 12px;
+  border-radius: min(12px, var(--btn-radius));
   background: var(--paper);
   box-shadow: 0 3px 0 var(--ink);
   flex: none;
@@ -331,7 +462,7 @@ svg { display: block; width: 100%; height: 100%; }
   font-weight: 400;
   font-size: 1.9rem;
   line-height: 1.1;
-  color: #FFFFFF;
+  color: var(--title-fill);
   -webkit-text-stroke: 2px var(--ink);
   paint-order: stroke fill;
   text-shadow: 0 4px 0 var(--ink);
@@ -355,7 +486,7 @@ svg { display: block; width: 100%; height: 100%; }
   min-height: 46px;
   padding: 4px 14px;
   border: var(--line) solid var(--ink);
-  border-radius: 14px;
+  border-radius: var(--btn-radius);
   background: var(--accent);
   color: var(--ink);
   font-weight: 800;
@@ -375,7 +506,7 @@ svg { display: block; width: 100%; height: 100%; }
   border-color: var(--disabled-ink);
   box-shadow: 0 4px 0 var(--disabled-ink);
 }
-.btn-pink { background: var(--bubblegum); color: #FFFFFF; }
+.btn-pink { background: var(--bubblegum); color: var(--pop-ink); }
 .btn-mint { background: var(--mint); }
 .btn-plain { background: var(--paper); }
 .btn-small { min-height: 38px; font-size: .9rem; padding: 2px 12px; }
@@ -402,7 +533,7 @@ svg { display: block; width: 100%; height: 100%; }
   font-weight: 800;
 }
 .buy-toggle button[aria-checked="true"] {
-  background: var(--grape);
+  background: var(--toggle);
   color: #FFFFFF;
 }
 
@@ -425,7 +556,7 @@ svg { display: block; width: 100%; height: 100%; }
   border: 2px solid var(--ink);
   border-radius: 999px;
   background: var(--bubblegum);
-  color: #FFFFFF;
+  color: var(--pop-ink);
   font-weight: 800;
   font-size: .8rem;
   line-height: 20px;
@@ -441,7 +572,7 @@ svg { display: block; width: 100%; height: 100%; }
   align-items: center;
   padding: 8px 12px;
 }
-.goal + .goal { border-top: 2px dashed #E3DCF3; }
+.goal + .goal { border-top: 2px dashed var(--rule); }
 .goal-icon { width: 40px; height: 40px; color: var(--ink); }
 .goal-name { display: block; font-weight: 800; font-size: .95rem; line-height: 1.2; }
 .goal-progress {
@@ -464,7 +595,7 @@ svg { display: block; width: 100%; height: 100%; }
 /* ------------------------------------------------------------------ streets */
 .district-toggle {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 4px;
   padding: 4px;
   border: var(--line) solid var(--ink);
@@ -492,7 +623,12 @@ svg { display: block; width: 100%; height: 100%; }
 .district-label { min-width: 0; text-align: center; text-wrap: balance; }
 .district-toggle button[aria-selected="true"] { background: var(--accent); color: var(--ink); }
 .district-toggle button[data-district="boardwalk"][aria-selected="true"] { background: #4CC9F0; color: var(--ink); }
-.district-toggle button[data-district="sprinkle"][aria-selected="true"] { background: var(--bubblegum); color: #FFFFFF; }
+.district-toggle button[data-district="peaks"][aria-selected="true"] { background: #BDE3FF; color: var(--ink); }
+.district-toggle button[data-district="sprinkle"][aria-selected="true"] { background: var(--bubblegum); color: var(--pop-ink); }
+/* Four streets: two rows of two on phones. */
+@media (max-width: 560px) {
+  .district-toggle { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 .district-icon { width: 20px; height: 20px; flex: none; }
 .district-toggle .badge { top: -10px; right: -6px; }
 .district-note { margin: 0; font-weight: 700; }
@@ -604,7 +740,7 @@ button.shop-scene:active { transform: translateY(1px); }
   border: var(--line) solid var(--ink);
   border-radius: 999px;
   background: var(--bubblegum);
-  color: #FFFFFF;
+  color: var(--pop-ink);
   font-family: var(--font-display);
   font-size: .85rem;
   line-height: 22px;
@@ -660,7 +796,7 @@ button.shop-scene:active { transform: translateY(1px); }
   height: 32px;
   border: var(--line) solid var(--ink);
   border-radius: 999px;
-  background: #EEE8FF;
+  background: var(--track);
   overflow: hidden;
 }
 .bar-fill {
@@ -721,7 +857,7 @@ button.shop-scene:active { transform: translateY(1px); }
 .mini-bar {
   height: 8px;
   border-radius: 999px;
-  background: #E7E0FA;
+  background: var(--track);
   overflow: hidden;
 }
 .mini-bar > span {
@@ -806,7 +942,7 @@ button.shop-scene:active { transform: translateY(1px); }
   font-family: var(--font-display);
   font-weight: 400;
   font-size: 1.35rem;
-  color: #FFFFFF;
+  color: var(--title-fill);
   -webkit-text-stroke: 1.5px var(--ink);
   paint-order: stroke fill;
   text-shadow: 0 3px 0 var(--ink);
@@ -949,7 +1085,7 @@ button.shop-scene:active { transform: translateY(1px); }
   gap: 10px;
   align-items: center;
   padding-top: 10px;
-  border-top: 2px dashed #E3DCF3;
+  border-top: 2px dashed var(--rule);
 }
 .assist-face { width: 40px; height: 40px; border: 2px solid var(--ink); border-radius: 50%; background: var(--tile, var(--paper-2)); overflow: hidden; }
 .assist-info { display: grid; min-width: 0; line-height: 1.2; }
@@ -1041,20 +1177,42 @@ button.shop-scene:active { transform: translateY(1px); }
 .sky-swatch[data-sky="ocean"] { background: linear-gradient(#5FD3D8, #B8F2E6 60%, #4CC9F0 60%); }
 .sky-swatch[data-sky="night"] { background: radial-gradient(circle at 70% 25%, #FFF3C4 0 5px, transparent 6px), linear-gradient(#2B2A63, #4B3F8F 60%, #3E6E5A 60%); }
 .sky-swatch[data-sky="rainbow"] { background: linear-gradient(#FF8FA3, #FFC48A, #FFF09A, #A8F0B8, #9BD8FF, #C9B6FF); }
-/* A tiny card in the Colors look: a button and a line of text. */
+/* A tiny screen in each theme: its header band, a button in its font, and its pop color. */
 .ui-swatch {
+  position: relative;
   display: grid;
-  align-content: center;
-  justify-items: center;
-  gap: 5px;
-  width: 48px;
-  height: 44px;
+  grid-template-rows: 14px minmax(0, 1fr);
+  width: 54px;
+  height: 46px;
   border: 2px solid var(--ink);
-  border-radius: 10px;
+  border-radius: min(12px, var(--radius));
   background: var(--paper);
+  overflow: hidden;
 }
-.ui-swatch i { width: 32px; height: 14px; border: 2px solid var(--ink); border-radius: 6px; background: var(--accent); box-shadow: 0 2px 0 var(--ink); }
-.ui-swatch b { width: 26px; height: 4px; border-radius: 2px; background: var(--bubblegum); }
+.ui-swatch b { background: var(--hud-bg); border-bottom: 2px solid var(--ink); }
+.ui-swatch i {
+  align-self: center;
+  justify-self: start;
+  margin-left: 5px;
+  padding: 0 6px;
+  border: 2px solid var(--ink);
+  border-radius: min(10px, var(--btn-radius));
+  background: var(--accent);
+  box-shadow: 0 2px 0 var(--ink);
+  font: normal 400 .78rem/1.25 var(--font-display);
+  color: var(--ink);
+}
+.ui-swatch::after {
+  content: '';
+  position: absolute;
+  right: 5px;
+  bottom: 8px;
+  width: 9px;
+  height: 9px;
+  border: 1.5px solid var(--ink);
+  border-radius: 50%;
+  background: var(--bubblegum);
+}
 /* A tiny shop card with the border look. */
 .border-swatch {
   display: grid;
@@ -1165,7 +1323,7 @@ button.shop-scene:active { transform: translateY(1px); }
   padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
-  background: var(--paper);
+  background: var(--tabbar-bg);
   border-top: var(--line) solid var(--ink);
 }
 @media (min-width: 760px) {
@@ -1179,11 +1337,11 @@ button.shop-scene:active { transform: translateY(1px); }
   min-height: 58px;
   padding: 6px 2px 4px;
   border: var(--line) solid transparent;
-  border-radius: 16px;
+  border-radius: min(16px, calc(var(--btn-radius) + 2px));
   background: transparent;
   font-weight: 800;
   font-size: .8rem;
-  color: var(--ink-soft);
+  color: var(--tab-ink);
   min-width: 0;
 }
 .tab-icon { width: 28px; height: 28px; }
@@ -1205,7 +1363,7 @@ button.shop-scene:active { transform: translateY(1px); }
   border: var(--line) solid var(--ink);
   border-radius: 999px;
   background: var(--bubblegum);
-  color: #FFFFFF;
+  color: var(--pop-ink);
   font-size: .75rem;
   line-height: 18px;
   text-align: center;
@@ -1268,7 +1426,7 @@ button.shop-scene:active { transform: translateY(1px); }
   text-align: center;
   background: var(--paper);
   border: var(--line) solid var(--ink);
-  border-radius: 24px;
+  border-radius: calc(var(--radius) + 6px);
   box-shadow: 0 8px 0 var(--ink);
   animation: pop-in .3s cubic-bezier(.2, 1.4, .4, 1);
 }
