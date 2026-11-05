@@ -536,6 +536,24 @@ svg { display: block; width: 100%; height: 100%; }
   background: var(--toggle);
   color: #FFFFFF;
 }
+/* The typed amount: a small number box at the end of the switch. */
+.buy-custom {
+  width: 64px;
+  min-height: 36px;
+  padding: 0 6px;
+  border: 2px dashed var(--ink-soft);
+  border-radius: 11px;
+  background: transparent;
+  font: 800 1rem var(--font-body);
+  color: var(--ink);
+  text-align: center;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.buy-custom::-webkit-outer-spin-button,
+.buy-custom::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.buy-custom::placeholder { color: var(--ink-soft); }
+.buy-custom.on { border: 0; background: var(--toggle); color: #FFFFFF; }
 
 /* ------------------------------------------------------------------ town goals */
 .goals { overflow: hidden; }
@@ -1542,6 +1560,7 @@ button.shop-scene:active { transform: translateY(1px); }
   .shop.mystery { grid-template-columns: 80px minmax(0, 1fr); }
   .shop-icon { width: 80px; height: 80px; }
   .shop-name { font-size: 1.1rem; }
-  .buy-toggle button { min-width: 44px; padding: 0 6px; }
+  .buy-toggle button { min-width: 42px; padding: 0 5px; }
+  .buy-custom { width: 54px; }
   .tab-label { font-size: .72rem; }
 }

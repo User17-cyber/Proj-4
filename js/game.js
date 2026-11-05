@@ -1678,6 +1678,9 @@
     document.querySelectorAll('.buy-toggle button').forEach(function (b) {
       b.setAttribute('aria-checked', String(b.getAttribute('data-mode') === state.buyMode));
     });
+    const custom = $('#buyCustom');
+    custom.classList.toggle('on', state.buyMode === 'custom');
+    if (document.activeElement !== custom) custom.value = state.buyCustom;
   }
 
   function wireUi() {
@@ -1703,6 +1706,19 @@
         updateTown(true);
       });
     });
+    // The typed amount: tapping the box picks it, typing changes it right away.
+    const custom = $('#buyCustom');
+    const useCustom = function () {
+      const n = G.cleanBuyCustom(custom.value);
+      if (n) state.buyCustom = n;
+      state.buyMode = 'custom';
+      syncBuyToggle();
+      updateTown(true);
+    };
+    custom.addEventListener('focus', function () { custom.select(); useCustom(); });
+    custom.addEventListener('input', useCustom);
+    custom.addEventListener('change', function () { custom.value = state.buyCustom; save(); });
+    custom.addEventListener('keydown', function (e) { if (e.key === 'Enter') custom.blur(); });
 
     document.querySelectorAll('.district-toggle button').forEach(function (b) {
       b.addEventListener('click', function () {

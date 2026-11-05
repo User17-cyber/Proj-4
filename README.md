@@ -48,7 +48,7 @@ It also works as-is on GitHub Pages: enable Pages for this branch and open the s
   Each look unlocks for good at a sprinkle count, from 3 sprinkles for the Bubblegum border to 3,000 for Santa hats and Solid Gold buildings.
 - **Collect trophies** for +1% profit each.
 
-Use the ×1 / ×10 / ×100 / Max switch to buy in bulk. The game saves itself in your browser every few seconds; the Trophies tab has a save code you can copy to move your town to another browser.
+Use the ×1 / ×10 / ×100 / Max switch to buy in bulk, or type any amount (up to 10,000) into the box at its end and every Buy button buys exactly that many. The game saves itself in your browser every few seconds; the Trophies tab has a save code you can copy to move your town to another browser.
 
 ## Project layout
 

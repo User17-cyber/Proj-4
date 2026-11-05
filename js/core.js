@@ -831,6 +831,7 @@
       style: defaultStyles(),
       townName: '',
       buyMode: '1',
+      buyCustom: 25, // the amount typed into the buy switch
       lastSeen: now || Date.now(),
     };
     ensureGoals(s);
@@ -866,9 +867,17 @@
 
   function managerCost(s, i) { return MANAGERS[i].cost * (hasPerk(s, 'hiringFair') ? 0.5 : 1); }
 
-  // How many the buy button is offering right now, given the x1/x10/x100/Max switch.
+  // A typed buy amount, cleaned up: a whole number from 1 to BUY_CUSTOM_MAX, or null if it isn't one.
+  const BUY_CUSTOM_MAX = 10000;
+  function cleanBuyCustom(v) {
+    const n = Math.floor(Number(v));
+    return isFinite(n) && n >= 1 ? Math.min(n, BUY_CUSTOM_MAX) : null;
+  }
+
+  // How many the buy button is offering right now, given the x1/x10/x100/Max/typed-amount switch.
   function buyAmount(s, i) {
     if (s.buyMode === 'max') return Math.max(1, maxAffordable(s, i));
+    if (s.buyMode === 'custom') return s.buyCustom;
     return Number(s.buyMode) || 1;
   }
 
@@ -1343,7 +1352,8 @@
       if (typeof data.settings.floaters === 'boolean') s.settings.floaters = data.settings.floaters;
       if (typeof data.settings.goalsOpen === 'boolean') s.settings.goalsOpen = data.settings.goalsOpen;
     }
-    if (['1', '10', '100', 'max'].indexOf(data.buyMode) >= 0) s.buyMode = data.buyMode;
+    if (['1', '10', '100', 'max', 'custom'].indexOf(data.buyMode) >= 0) s.buyMode = data.buyMode;
+    s.buyCustom = cleanBuyCustom(data.buyCustom) || s.buyCustom;
     s.lastSeen = num(data.lastSeen, now || Date.now());
     s.goals = [];
     if (Array.isArray(data.goals)) {
@@ -1407,6 +1417,7 @@
     isUnlocked: isUnlocked, canOpen: canOpen,
     newState: newState, restore: restore, earn: earn,
     costFor: costFor, maxAffordable: maxAffordable, buyAmount: buyAmount, buy: buy,
+    BUY_CUSTOM_MAX: BUY_CUSTOM_MAX, cleanBuyCustom: cleanBuyCustom,
     hireManager: hireManager, managerCost: managerCost, upgradeAvailable: upgradeAvailable, buyUpgrade: buyUpgrade,
     ASSISTANTS: ASSISTANTS, assistantCost: assistantCost, hireAssistant: hireAssistant,
     STYLES: STYLES, styleUnlocked: styleUnlocked, activeStyle: activeStyle, setStyle: setStyle,
