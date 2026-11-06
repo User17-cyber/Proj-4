@@ -80,8 +80,8 @@ class Clicker:
 
 
 class App:
-    def __init__(self, root, clicker, requests, trusted=True):
-        self.root, self.clicker, self.requests = root, clicker, requests
+    def __init__(self, root, clicker, requests, trusted=lambda: True):
+        self.root, self.clicker, self.requests, self.trusted = root, clicker, requests, trusted
         self.countdown_job = None
         self.countdown_left = 0
         self.target = None
@@ -109,15 +109,15 @@ class App:
 
         page = ttk.Frame(root, padding=20)
         page.pack(fill="both")
-        if not trusted:
-            tk.Label(page, bg="#fef3c7", fg=TEXT, font=(family, 11), justify="left", wraplength=320, padx=10, pady=8,
+        self.note = tk.Label(page, bg="#fef3c7", fg=TEXT, font=(family, 11), justify="left", wraplength=300, padx=10, pady=8,
                      text="Your Mac hasn't allowed this app to click or see key presses yet. Open System Settings "
                           "→ Privacy & Security, turn on Terminal under Accessibility and under Input Monitoring, "
-                          "then close and reopen the Auto Clicker.").pack(fill="x", pady=(0, 12))
+                          "then close and reopen the Auto Clicker.")
 
         self.status = tk.StringVar()
         self.status_label = tk.Label(page, textvariable=self.status, fg="white", font=(family, 20, "bold"), pady=10)
         self.status_label.pack(fill="x")
+        self.note_shown = False
         self.detail = tk.StringVar()
         ttk.Label(page, textvariable=self.detail, style="Muted.TLabel").pack(pady=(6, 16))
 
@@ -170,7 +170,9 @@ class App:
         per_minute = whole_number(self.speed.get(), 1, MAX_PER_MINUTE)
         limited = self.mode.get() == "limit"
         total = whole_number(self.total.get(), 1, MAX_TOTAL) if limited else None
-        if per_minute is None:
+        if not self.trusted():
+            self.error.set("Your Mac is blocking the clicks. Give permission as the yellow note says, then try again.")
+        elif per_minute is None:
             self.error.set(f"Clicks per minute must be a whole number from 1 to {MAX_PER_MINUTE:,}.")
         elif limited and total is None:
             self.error.set(f"Number of clicks must be a whole number from 1 to {MAX_TOTAL:,}.")
@@ -220,6 +222,14 @@ class App:
             state = "off"
             self.status.set("OFF")
             self.detail.set(f"Last run: {clicks(count)}" if count else "Ready when you are.")
+        # macOS silently drops clicks until permission is given, so say so instead of pretending to click
+        if self.note_shown == self.trusted():
+            self.note_shown = not self.note_shown
+            if self.note_shown:
+                self.note.pack(fill="x", pady=(0, 12), before=self.status_label)
+            else:
+                self.note.pack_forget()
+                self.error.set("")
         if state != self.shown:
             self.shown = state
             self.status_label.configure(bg={"off": GREY, "countdown": ORANGE, "on": GREEN}[state])
@@ -262,13 +272,18 @@ def listen_for_shortcuts(requests):
 
 def main():
     requests = queue.SimpleQueue()
-    listener = listen_for_shortcuts(requests)  # before Tk starts: pynput on macOS is touchy about the order
+    listen_for_shortcuts(requests)  # before Tk starts: pynput on macOS is touchy about the order
     from pynput import mouse
 
     pointer = mouse.Controller()
     root = tk.Tk()
-    App(root, Clicker(lambda: pointer.click(mouse.Button.left)), requests,
-        trusted=getattr(listener, "IS_TRUSTED", True))
+    trusted = lambda: True
+    if MAC:
+        import HIServices  # comes with pynput on macOS
+        # Shows macOS's own "allow this app to control your computer" prompt if needed.
+        HIServices.AXIsProcessTrustedWithOptions({HIServices.kAXTrustedCheckOptionPrompt: True})
+        trusted = HIServices.AXIsProcessTrusted
+    App(root, Clicker(lambda: pointer.click(mouse.Button.left)), requests, trusted)
     root.mainloop()
 
 
