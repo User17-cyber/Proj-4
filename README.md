@@ -68,3 +68,7 @@ To check pacing after tweaking numbers in `js/core.js`:
 node tools/simulate.js 45        # 45 minutes of play from a fresh start
 node tools/simulate.js 45 100    # the same, starting with 100 golden sprinkles
 ```
+
+## Auto Clicker
+
+`autoclicker/` holds a separate small desktop app that clicks the mouse for you, with F6 / Esc shortcuts and a Start / Stop button. See [autoclicker/README.md](autoclicker/README.md).
