@@ -2,6 +2,10 @@
 
 A bright, cartoony idle tycoon game that runs in any modern browser. Start with one lemonade stand, open ten shops and seven factories on Main Street, 24 more stores along the Boardwalk and 20 up in snowy Frosty Peaks, unlock twenty more on Sprinkle Street, hire animal managers to run them for you, and grow Sprinkle Town into a coin empire.
 
+## Also in this repo
+
+**Satchel** (`school/`) is a separate school planner. You type assignments in one line and it plans what to work on each night. See [school/README.md](school/README.md).
+
 ## Play
 
 Open `index.html` in a browser. There is no build step and nothing to install.
