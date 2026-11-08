@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="a" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M0,0 L12,6 L0,12 z" fill="#222"/></marker>
+    <marker id="ar" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M0,0 L12,6 L0,12 z" fill="#c92a2a"/></marker>
+    <marker id="ab" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M0,0 L12,6 L0,12 z" fill="#1c64c9"/></marker>
+    <marker id="ag" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M0,0 L12,6 L0,12 z" fill="#2b8a3e"/></marker>
+    <marker id="ao" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M0,0 L12,6 L0,12 z" fill="#e8590c"/></marker>
+  </defs>
+  <rect width="900" height="520" fill="#fff"/>
+  <text x="450" y="34" text-anchor="middle" font-size="22" font-weight="bold" fill="#222">Lab Setup: Normal Force and Friction on a Weighted Cart</text>
+
+  <!-- tabletop -->
+  <rect x="30" y="380" width="840" height="26" fill="#c8a679" stroke="#8a6d3b" stroke-width="2"/>
+  <text x="450" y="398" text-anchor="middle" font-size="13" fill="#5c4524">Lab tabletop (rough surface causes friction)</text>
+  <rect x="70" y="406" width="16" height="70" fill="#8a6d3b"/><rect x="814" y="406" width="16" height="70" fill="#8a6d3b"/>
+
+  <!-- cart -->
+  <rect x="150" y="310" width="260" height="36" rx="4" fill="#4c6ef5" stroke="#243b9c" stroke-width="2"/>
+  <text x="280" y="333" text-anchor="middle" font-size="14" fill="#fff" font-weight="bold">Cart (281 g)</text>
+  <circle cx="190" cy="366" r="14" fill="#333"/><circle cx="190" cy="366" r="5" fill="#bbb"/>
+  <circle cx="370" cy="366" r="14" fill="#333"/><circle cx="370" cy="366" r="5" fill="#bbb"/>
+
+  <!-- cylindrical weights -->
+  <g stroke="#555" stroke-width="1.5">
+    <g><rect x="185" y="268" width="52" height="42" fill="#adb5bd"/><ellipse cx="211" cy="310" rx="26" ry="6" fill="#adb5bd"/><ellipse cx="211" cy="268" rx="26" ry="6" fill="#dee2e6"/></g>
+    <g><rect x="255" y="268" width="52" height="42" fill="#adb5bd"/><ellipse cx="281" cy="310" rx="26" ry="6" fill="#adb5bd"/><ellipse cx="281" cy="268" rx="26" ry="6" fill="#dee2e6"/></g>
+    <g><rect x="325" y="268" width="52" height="42" fill="#adb5bd"/><ellipse cx="351" cy="310" rx="26" ry="6" fill="#adb5bd"/><ellipse cx="351" cy="268" rx="26" ry="6" fill="#dee2e6"/></g>
+  </g>
+  <text x="281" y="236" text-anchor="middle" font-size="14" fill="#222">Cylindrical masses</text>
+  <text x="281" y="253" text-anchor="middle" font-size="12" fill="#555">(added in different amounts each trial)</text>
+
+  <!-- string -->
+  <line x1="410" y1="328" x2="520" y2="328" stroke="#222" stroke-width="2.5"/>
+  <text x="465" y="318" text-anchor="middle" font-size="12" fill="#222">string</text>
+
+  <!-- force probe -->
+  <rect x="520" y="305" width="130" height="41" rx="4" fill="#f59f00" stroke="#9a6200" stroke-width="2"/>
+  <rect x="535" y="270" width="70" height="35" rx="3" fill="#212529" stroke="#000" stroke-width="2"/>
+  <polyline points="542,298 555,285 565,292 580,277 598,282" fill="none" stroke="#51cf66" stroke-width="2"/>
+  <circle cx="545" cy="366" r="14" fill="#333"/><circle cx="545" cy="366" r="5" fill="#bbb"/>
+  <circle cx="625" cy="366" r="14" fill="#333"/><circle cx="625" cy="366" r="5" fill="#bbb"/>
+  <rect x="512" y="322" width="10" height="12" fill="#666"/>
+  <text x="585" y="333" text-anchor="middle" font-size="12" font-weight="bold" fill="#3b2a00">Force probe</text>
+  <text x="570" y="236" text-anchor="middle" font-size="14" fill="#222">Force probe / data collector</text>
+  <text x="570" y="253" text-anchor="middle" font-size="12" fill="#555">(reads pull force vs. time)</text>
+
+  <!-- pull arrow -->
+  <line x1="652" y1="328" x2="790" y2="328" stroke="#e8590c" stroke-width="4" marker-end="url(#ao)"/>
+  <text x="725" y="316" text-anchor="middle" font-size="13" fill="#e8590c" font-weight="bold">Pulled by hand</text>
+  <text x="725" y="356" text-anchor="middle" font-size="12" fill="#e8590c">at constant speed</text>
+
+  <!-- friction arrow at surface -->
+  <line x1="260" y1="396" x2="140" y2="396" stroke="#2b8a3e" stroke-width="3" marker-end="url(#ag)" opacity="0"/>
+  <line x1="135" y1="366" x2="50" y2="366" stroke="#2b8a3e" stroke-width="4" marker-end="url(#ag)"/>
+  <text x="92" y="346" text-anchor="middle" font-size="13" fill="#2b8a3e" font-weight="bold">Friction</text><text x="92" y="386" text-anchor="middle" font-size="1" fill="none"> </text>
+
+  <!-- free-body diagram -->
+  <rect x="690" y="60" width="190" height="170" rx="8" fill="#f8f9fa" stroke="#adb5bd"/>
+  <text x="785" y="80" text-anchor="middle" font-size="13" font-weight="bold" fill="#222">Forces on cart + masses</text>
+  <circle cx="785" cy="155" r="7" fill="#222"/>
+  <line x1="785" y1="150" x2="785" y2="98" stroke="#1c64c9" stroke-width="3" marker-end="url(#ab)"/>
+  <text x="796" y="108" font-size="13" fill="#1c64c9" font-weight="bold">N</text>
+  <line x1="785" y1="160" x2="785" y2="212" stroke="#c92a2a" stroke-width="3" marker-end="url(#ar)"/>
+  <text x="796" y="214" font-size="13" fill="#c92a2a" font-weight="bold">W = mg</text>
+  <line x1="792" y1="155" x2="858" y2="155" stroke="#e8590c" stroke-width="3" marker-end="url(#ao)"/>
+  <text x="826" y="147" font-size="13" fill="#e8590c" font-weight="bold">F</text>
+  <line x1="778" y1="155" x2="712" y2="155" stroke="#2b8a3e" stroke-width="3" marker-end="url(#ag)"/>
+  <text x="725" y="147" font-size="13" fill="#2b8a3e" font-weight="bold">f</text>
+
+  <!-- notes -->
+  <rect x="150" y="470" width="720" height="40" fill="none"/>
+  <text x="450" y="484" text-anchor="middle" font-size="13" fill="#222">Normal force: N = (m cart + m added) × g   |   Friction: f = μN (read from probe, F = f at constant speed)</text>
+  <text x="450" y="503" text-anchor="middle" font-size="12" fill="#555">Vary the added mass, drag at constant speed, record the pull force each trial; plot force vs. normal force (slope ≈ μ).</text>
+</svg>
