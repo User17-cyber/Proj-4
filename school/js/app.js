@@ -12,16 +12,30 @@
   const HEAVY = 150; // minutes in a day before it counts as a crunch day
 
   // ---------- State ----------
+  const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
   let state = load();
-  const ui = { view: 'today', weekOffset: 0, filter: 'all', showDone: false, calc: {} };
+  const ui = { view: 'today', weekOffset: 0, filter: 'all', showDone: false, schedDay: 0, finder: { status: 'idle' } };
 
-  function blank() { return { classes: [], tasks: [], grades: [] }; }
+  function blankSchedule() {
+    return { mode: 'weekly', days: WEEKDAYS.map((name) => ({ name, periods: [] })), anchor: null, schoolDays: [1, 2, 3, 4, 5], offDates: [], school: null };
+  }
+  function blank() { return { classes: [], tasks: [], schedule: blankSchedule() }; }
+  // Older saves kept one time on each class (days + start/end). Turn those into a weekly schedule.
+  function scheduleFromClasses(classes) {
+    const sch = blankSchedule();
+    sch.days.forEach((day, i) => {
+      day.periods = classes.filter((c) => (c.days || []).includes(i + 1) && c.start)
+        .map((c) => ({ label: '', start: c.start, end: c.end || '', classId: c.id }));
+    });
+    return sch;
+  }
   function load() {
     try {
       const raw = localStorage.getItem(KEY);
       if (raw) {
         const s = JSON.parse(raw);
-        return { classes: s.classes || [], tasks: s.tasks || [], grades: s.grades || [] };
+        const classes = s.classes || [];
+        return { classes, tasks: s.tasks || [], schedule: s.schedule || scheduleFromClasses(classes) };
       }
     } catch (e) { /* storage blocked or bad data: start fresh */ }
     return blank();
@@ -29,7 +43,7 @@
   function save() {
     try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* private mode */ }
   }
-  function commit() { save(); render(); }
+  function commit() { save(); render(); Notify.sync(); }
 
   const cls = (id) => state.classes.find((c) => c.id === id);
   const colorOf = (id) => (cls(id) || {}).color || '#868e96';
@@ -92,23 +106,31 @@
   }
 
   // ---------- Today ----------
+  const pad2 = (n) => String(n).padStart(2, '0');
+  const dayTag = (name) => (/^(day|mon|tue|wed|thu|fri|sat|sun)/i.test(name) ? name : `Day ${name}`);
+  const rotation = () => state.schedule.mode === 'rotation';
+
+  // Periods with a class in them on a date.
+  function classPeriods(iso) {
+    return S.periodsOn(iso, state.schedule).filter((p) => cls(p.classId));
+  }
+
   function nowClass() {
     const d = new Date();
-    const dw = d.getDay();
-    const hm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-    const todays = state.classes.filter((c) => (c.days || []).includes(dw) && c.start && c.end).sort((a, b) => a.start.localeCompare(b.start));
-    const current = todays.find((c) => c.start <= hm && hm < c.end);
+    const t0 = today();
+    const hm = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+    const todays = classPeriods(t0);
+    const current = todays.find((p) => p.end && p.start <= hm && hm < p.end);
     if (current) {
-      const toMin = (s) => Number(s.slice(0, 2)) * 60 + Number(s.slice(3));
-      const pct = ((toMin(hm) - toMin(current.start)) / (toMin(current.end) - toMin(current.start))) * 100;
-      return { kind: 'now', c: current, pct, next: todays.find((c) => c.start >= current.end) };
+      const pct = ((S.toMin(hm) - S.toMin(current.start)) / (S.toMin(current.end) - S.toMin(current.start))) * 100;
+      return { kind: 'now', p: current, pct, next: todays.find((p) => p !== current && p.start >= current.end) };
     }
-    const next = todays.find((c) => c.start > hm);
-    if (next) return { kind: 'next', c: next };
-    for (let i = 1; i <= 7; i++) {
-      const dd = (dw + i) % 7;
-      const first = state.classes.filter((c) => (c.days || []).includes(dd) && c.start).sort((a, b) => a.start.localeCompare(b.start))[0];
-      if (first) return { kind: 'later', c: first, day: i === 1 ? 'Tomorrow' : S.DAY_LONG[dd] };
+    const next = todays.find((p) => p.start > hm);
+    if (next) return { kind: 'next', p: next };
+    for (let i = 1; i <= 14; i++) {
+      const dd = S.addISO(t0, i);
+      const first = classPeriods(dd)[0];
+      if (first) return { kind: 'later', p: first, day: i === 1 ? 'Tomorrow' : S.DAY_LONG[S.dow(dd)] };
     }
     return null;
   }
@@ -124,20 +146,22 @@
   function nowCard() {
     const n = nowClass();
     if (!n) return '';
-    const c = n.c;
+    const c = cls(n.p.classId);
+    const tag = rotation() ? `${dayTag(n.p.dayName)} · ` : '';
     const where = [c.room && `Room ${c.room}`, c.teacher].filter(Boolean).map(esc).join(' · ');
     if (n.kind === 'now') {
+      const nx = n.next && cls(n.next.classId);
       return `<div class="now" style="--c:${c.color}">
-        <div class="label">In class now · until ${fmtTime(c.end)}</div>
+        <div class="label">${esc(tag)}In class now · until ${fmtTime(n.p.end)}</div>
         <div class="name">${esc(c.name)}</div>
         ${where ? `<div class="where">${where}</div>` : ''}
         <div class="bar"><i style="width:${n.pct.toFixed(1)}%"></i></div>
-        ${n.next ? `<div class="where" style="margin-top:6px">Next: ${esc(n.next.name)} at ${fmtTime(n.next.start)}${n.next.room ? `, room ${esc(n.next.room)}` : ''}</div>` : ''}
+        ${nx ? `<div class="where" style="margin-top:6px">Next: ${esc(nx.name)} at ${fmtTime(n.next.start)}${nx.room ? `, room ${esc(nx.room)}` : ''}</div>` : ''}
       </div>`;
     }
-    const label = n.kind === 'next' ? `Up next · ${fmtTime(c.start)}` : `${n.day} · first class at ${fmtTime(c.start)}`;
+    const label = n.kind === 'next' ? `${tag}Up next · ${fmtTime(n.p.start)}` : `${n.day} · ${tag}first class at ${fmtTime(n.p.start)}`;
     return `<div class="now ${n.kind === 'later' ? 'idle' : ''}" style="--c:${c.color}">
-      <div class="label">${label}</div>
+      <div class="label">${esc(label)}</div>
       <div class="name">${esc(c.name)}</div>
       ${where ? `<div class="where">${where}</div>` : ''}
     </div>`;
@@ -255,7 +279,8 @@
       <div class="howto">
         <p>Satchel turns "what's due" into "what to do tonight".</p>
         <ul>
-          <li><b>Add your classes</b>, with a nickname you'd actually type (<code>bio</code>, <code>math</code>) and when they meet.</li>
+          <li><b>Add your classes</b>, with a nickname you'd actually type (<code>bio</code>, <code>math</code>).</li>
+          <li><b>Set up your bell schedule</b> in the Schedule tab, including A/B or Day 1–6 rotations. Satchel can look up your school's schedule for you and alert your phone before each class.</li>
           <li><b>Type assignments in one line</b> in the box at the top: <code>bio lab report due thu</code>, <code>math test 11/14</code>, <code>read ch 4 english tomorrow !</code></li>
           <li><b>Open Today</b> to see tonight's plan. Homework lands on the night before it's due, and study time for tests and projects is spread over the days before.</li>
         </ul>
@@ -318,18 +343,21 @@
     const cols = days.map((d) => {
       const n = S.dayNum(d);
       const dw = S.dow(d);
-      const classes = state.classes.filter((c) => (c.days || []).includes(dw)).sort((a, b) => (a.start || '').localeCompare(b.start || ''));
+      const periods = classPeriods(d);
+      const off = (state.schedule.offDates || []).includes(d);
+      const ci = S.cycleIndex(d, state.schedule);
       const due = state.tasks.filter((t) => t.due === d).sort((a, b) => (a.done - b.done) || sortTasks(a, b));
       const m = n >= now ? ((load[d] || {}).min || 0) : 0;
       return `<div class="wday ${n === now ? 'today' : ''} ${n < now ? 'past' : ''} ${dw === 0 || dw === 6 ? 'weekend' : ''}">
-        <h3>${S.DAY_SHORT[dw]} <small>${S.fmtDate(d)}</small></h3>
+        <h3>${S.DAY_SHORT[dw]}${rotation() && ci >= 0 ? ` <span class="rot">${esc(dayTag(state.schedule.days[ci].name))}</span>` : ''} <small>${S.fmtDate(d)}</small></h3>
+        ${off ? '<div class="load-label">No school</div>' : ''}
         ${n >= now ? `<div class="load" title="${S.fmtMin(m)} of planned work"><i class="${m >= HEAVY ? 'heavy' : ''}" style="width:${Math.min(100, (m / 240) * 100)}%"></i></div>
           <div class="load-label">${m ? `${S.fmtMin(m)} of work` : 'Free'}</div>` : ''}
         ${due.length ? `<div class="wk-sub">Due</div>` : ''}
         ${due.map((t) => `<div class="wdue ${t.done ? 'done' : ''} ${t.type === 'test' || t.type === 'project' ? 'big' : ''}" style="--c:${colorOf(t.classId)}" data-act="edit-task" data-id="${t.id}">
             ${t.priority ? '! ' : ''}${esc(t.title)}<small>${esc([(cls(t.classId) || {}).name, t.type !== 'homework' ? S.TYPES[t.type].label : ''].filter(Boolean).join(' · '))}</small></div>`).join('')}
-        ${classes.length ? `<div class="wk-sub">Classes</div>` : ''}
-        ${classes.map((c) => `<div class="wclass" style="--c:${c.color}"><b>${esc(c.name)}</b><span>${fmtTime(c.start)}</span></div>`).join('')}
+        ${periods.length ? `<div class="wk-sub">Classes</div>` : ''}
+        ${periods.map((p) => { const c = cls(p.classId); return `<div class="wclass" style="--c:${c.color}"><b>${esc(c.name)}</b><span>${fmtTime(p.start)}</span></div>`; }).join('')}
       </div>`;
     }).join('');
 
@@ -344,81 +372,305 @@
       <div class="week">${cols}</div>`;
   }
 
-  // ---------- Grades ----------
-  function renderGrades() {
-    if (!state.classes.length) {
-      return `<div class="view-head"><div><h1>Grades</h1></div></div>
-        <div class="card empty"><strong>No classes yet</strong>Add a class to start tracking grades.<br><button class="btn primary" data-act="new-class">Add a class</button></div>`;
-    }
-    const cards = state.classes.map((c) => {
-      const g = S.classGrade(c, state.grades);
-      const entries = state.grades.filter((x) => x.classId === c.id);
-      const cats = c.cats && c.cats.length ? c.cats : [{ name: 'All', weight: 100 }];
-      const calc = ui.calc[c.id] || { target: 90, weight: 20 };
-      const need = S.neededOnFinal(g.pct, Number(calc.target), Number(calc.weight));
-      let answer = 'Add a grade to see what you need.';
-      let cls2 = '';
-      if (need != null) {
-        if (need <= 0) { answer = `You're safe: even a 0 keeps you at ${calc.target}%.`; cls2 = 'good'; }
-        else if (need > 100) { answer = `You'd need ${need.toFixed(1)}%, so ${calc.target}% is out of reach. Try a lower target.`; cls2 = 'bad'; }
-        else { answer = `You need ${need.toFixed(1)}% on the final.`; cls2 = need < 70 ? 'good' : ''; }
-      }
-      return `<section class="card gcard" style="--c:${c.color}">
-        <div class="ghead">
-          <div class="name"><b>${esc(c.name)}</b><span>${g.count} grade${g.count === 1 ? '' : 's'} entered</span></div>
-          <div class="big"><b>${g.pct == null ? '–' : `${g.pct.toFixed(1)}%`}</b><span>${S.letter(g.pct)}</span></div>
-        </div>
-        <div class="cats">${g.per.map((p) => `<div class="cat">
-            <span>${esc(p.name)} <span class="w">${p.weight}%</span></span><b>${p.pct == null ? '–' : `${p.pct.toFixed(1)}%`}</b>
-            <div class="bar"><i style="width:${p.pct == null ? 0 : Math.min(100, p.pct)}%"></i></div></div>`).join('')}</div>
-        <details ${entries.length ? '' : 'open'}>
-          <summary>Scores</summary>
-          ${entries.length ? `<table class="gtable">${entries.map((x) => `<tr>
-              <td>${esc(x.name || 'Untitled')}<div class="catname">${esc(x.cat)}</div></td>
-              <td class="n">${+x.score} / ${+x.max}</td>
-              <td class="n">${x.max > 0 ? `${((x.score / x.max) * 100).toFixed(0)}%` : ''}</td>
-              <td class="x"><button class="icon-btn" data-act="del-grade" data-id="${x.id}" aria-label="Delete ${esc(x.name)}">${ICON.x}</button></td></tr>`).join('')}</table>` : ''}
-          <form class="gadd" data-form="grade" data-id="${c.id}">
-            <select class="input" name="cat" aria-label="Category">${cats.map((k) => `<option>${esc(k.name)}</option>`).join('')}</select>
-            <input class="input" name="name" placeholder="Name (Quiz 3)" aria-label="Assignment name">
-            <div class="score" style="grid-column:1/-1">
-              <input class="input" name="score" inputmode="decimal" placeholder="Score" aria-label="Points earned" required>
-              <span>/</span>
-              <input class="input" name="max" inputmode="decimal" placeholder="Out of" value="100" aria-label="Points possible" required>
-            </div>
-            <button class="btn small" type="submit">Add score</button>
-          </form>
-        </details>
-        <details>
-          <summary>What do I need on the final?</summary>
-          <div class="calc" data-calc="${c.id}">
-            <div class="inputs">I want <input class="input" name="target" inputmode="decimal" value="${esc(calc.target)}" aria-label="Target grade percent">%
-              and the final is worth <input class="input" name="weight" inputmode="decimal" value="${esc(calc.weight)}" aria-label="Final exam weight percent">% of my grade</div>
-            <div class="answer ${cls2}">${esc(answer)}</div>
-          </div>
-        </details>
-      </section>`;
-    }).join('');
-
-    const withGrades = state.classes.map((c) => S.classGrade(c, state.grades).pct).filter((p) => p != null);
-    const gpa = withGrades.length ? withGrades.map(gpaPoints).reduce((a, b) => a + b, 0) / withGrades.length : null;
-    return `<div class="view-head"><div><h1>Grades</h1><div class="sub">${gpa != null ? `Unweighted GPA about <b>${gpa.toFixed(2)}</b> across ${withGrades.length} class${withGrades.length === 1 ? '' : 'es'}` : 'Enter scores to see your running grade in each class.'}</div></div></div>
-      <div class="grades">${cards}</div>`;
+  // ---------- Schedule ----------
+  // The first school day from today on: what "today is Day A" refers to.
+  function refSchoolDay() {
+    let d = today();
+    for (let i = 0; i < 21 && !S.isSchoolDay(d, state.schedule); i++) d = S.addISO(d, 1);
+    return d;
   }
-  function gpaPoints(p) {
-    const map = { 'A': 4, 'A−': 3.7, 'B+': 3.3, 'B': 3, 'B−': 2.7, 'C+': 2.3, 'C': 2, 'C−': 1.7, 'D+': 1.3, 'D': 1, 'D−': .7, 'F': 0 };
-    return map[S.letter(p)];
+
+  function renderSchedule() {
+    const sch = state.schedule;
+    const rot = sch.mode === 'rotation';
+    ui.schedDay = Math.max(0, Math.min(ui.schedDay, sch.days.length - 1));
+    const day = sch.days[ui.schedDay];
+    // Keep periods in time order; empty times go last.
+    day.periods.sort((a, b) => (a.start || '99').localeCompare(b.start || '99'));
+
+    const ref = refSchoolDay();
+    const refIdx = S.cycleIndex(ref, sch);
+    const refLabel = ref === today() ? 'Today is' : `${S.DAY_LONG[S.dow(ref)]} (${S.fmtDate(ref)}) is`;
+    const todayIdx = S.cycleIndex(today(), sch);
+    const status = todayIdx < 0
+      ? 'No school today.'
+      : `Today is ${esc(rot ? dayTag(sch.days[todayIdx].name) : sch.days[todayIdx].name)}: ${classPeriods(today()).length} class${classPeriods(today()).length === 1 ? '' : 'es'}.`;
+
+    const classOpts = (sel) => `<option value="">Free / no class</option>${state.classes.map((c) => `<option value="${c.id}" ${c.id === sel ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}`;
+    const rows = day.periods.map((p, i) => `<div class="prow" data-i="${i}" style="--c:${colorOf(p.classId)}">
+        <input class="input" data-f="label" value="${esc(p.label)}" placeholder="Period ${i + 1}" aria-label="Period name">
+        <input class="input" type="time" data-f="start" value="${esc(p.start)}" aria-label="Starts">
+        <input class="input" type="time" data-f="end" value="${esc(p.end)}" aria-label="Ends">
+        <select class="input" data-f="classId" aria-label="Class">${classOpts(p.classId)}</select>
+        <button class="icon-btn" data-act="del-period" data-id="${i}" aria-label="Remove this period">${ICON.x}</button>
+      </div>`).join('');
+
+    const tabs = sch.days.map((d, i) => `<button class="${i === ui.schedDay ? 'on' : ''}" data-act="sched-day" data-id="${i}">
+        ${esc(rot ? dayTag(d.name) : d.name.slice(0, 3))}${i === todayIdx ? ' <span class="today-dot" title="Today"></span>' : ''}</button>`).join('');
+    const others = sch.days.map((d, i) => (i === ui.schedDay ? '' : `<option value="${i}">${esc(rot ? dayTag(d.name) : d.name)}</option>`)).join('');
+
+    const rotCard = rot ? `<section class="card card-pad stack-sm">
+        <h2>Rotation</h2>
+        <div class="row2">
+          <label class="field"><span>Days in the cycle</span>
+            <select data-sched="count">${[2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => `<option ${n === sch.days.length ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+          <label class="field"><span>${esc(refLabel)}</span>
+            <select data-sched="anchor">${sch.days.map((d, i) => `<option value="${i}" ${i === refIdx ? 'selected' : ''}>${esc(dayTag(d.name))}</option>`).join('')}</select></label>
+        </div>
+        <div class="field"><span>Days off</span>
+          <small>Holidays and snow days. The rotation picks up where it left off.</small>
+          <div class="offs">${(sch.offDates || []).filter((x) => S.dayNum(x) >= S.dayNum(today()) - 7).sort().map((x) => `<span class="chip">${S.DAY_SHORT[S.dow(x)]} ${S.fmtDate(x)}
+              <button class="chip-x" data-act="del-off" data-id="${x}" aria-label="Remove ${S.fmtDate(x)}">×</button></span>`).join('') || '<span class="muted-text">None yet</span>'}</div>
+          <div class="inline"><input class="input" type="date" data-off-input aria-label="Day off"><button class="btn small" type="button" data-sched-add-off>Add day off</button></div>
+        </div>
+      </section>` : '';
+
+    return `<div class="view-head"><div><h1>Schedule</h1><div class="sub">${status}</div></div>
+        <div class="seg" role="group" aria-label="Schedule type">
+          <button class="${rot ? '' : 'on'}" data-act="sched-mode" data-id="weekly">Same every week</button>
+          <button class="${rot ? 'on' : ''}" data-act="sched-mode" data-id="rotation">Rotating days</button>
+        </div></div>
+      <div class="grid-today">
+        <div class="stack">
+          ${finderCard()}
+          <section class="card">
+            <div class="daytabs">${tabs}</div>
+            <div class="card-pad stack-sm">
+              ${rot ? `<label class="field inline-field"><span>Name of this day</span><input class="input" data-sched="dayname" value="${esc(day.name)}" style="max-width:140px"></label>` : ''}
+              ${day.periods.length ? `<div class="prow head"><span>Period</span><span>Starts</span><span>Ends</span><span>Class</span><span></span></div>${rows}` : `<div class="empty" style="padding:14px 0">No periods on ${esc(rot ? dayTag(day.name) : day.name)} yet.</div>`}
+              <div class="inline">
+                <button class="btn small" data-act="add-period">Add period</button>
+                ${others ? `<span class="muted-text">or</span><select class="input small-select" data-copy-from aria-label="Copy from">${others}</select><button class="btn small" data-act="copy-day">Copy periods here</button>` : ''}
+              </div>
+              ${state.classes.length ? '' : '<p class="howto" style="margin:0">Add your classes in the Classes tab, then pick one for each period here.</p>'}
+            </div>
+          </section>
+        </div>
+        <div class="stack">
+          ${notifyCard()}
+          ${rotCard}
+        </div>
+      </div>`;
+  }
+
+  function finderCard() {
+    const f = ui.finder;
+    let body = '';
+    if (Notify.server === false || (Notify.server && !Notify.finder)) {
+      body = `<p class="howto">${Notify.server === false
+        ? 'Looking up schedules needs the Satchel server, and this copy of the page isn\'t running on one (see <code>school/README.md</code>). You can still type your times in below.'
+        : 'The Satchel server is running without an Anthropic API key, so it can\'t search the web. Set <code>ANTHROPIC_API_KEY</code> and restart it.'}</p>`;
+    } else if (f.status === 'loading') {
+      body = `<div class="finder-wait"><span class="spinner"></span>Searching the web for ${esc(f.query)}'s bell schedule. This can take a minute.</div>`;
+    } else if (f.status === 'done') {
+      const r = f.result;
+      body = `<div class="found">
+        <div><b>${esc(r.school_name)}</b>${r.source_url ? ` · <a href="${esc(r.source_url)}" target="_blank" rel="noopener noreferrer">source</a>` : ''}</div>
+        <div class="muted-text">${r.rotation ? `Rotating schedule, ${r.days.length} days` : 'Same schedule each week'}${r.notes ? ` · ${esc(r.notes)}` : ''}</div>
+        <div class="found-days">${r.days.map((d) => `<div><b>${esc(r.rotation ? dayTag(d.name) : d.name)}</b>
+          ${d.periods.map((p) => `<span>${esc(p.label)} ${fmtTime(p.start)}–${fmtTime(p.end)}</span>`).join('')}</div>`).join('')}</div>
+        <div class="inline"><button class="btn primary small" data-act="finder-use">Use this schedule</button><button class="btn small ghost" data-act="finder-clear">Dismiss</button></div>
+        <small class="muted-text">Found by searching the web, so check it against your school's site.</small>
+      </div>`;
+    } else if (f.status === 'error' || f.status === 'notfound') {
+      body = `<p class="${f.status === 'error' ? 'err-text' : 'howto'}">${esc(f.message)}</p>`;
+    }
+    const disabled = Notify.server === false || (Notify.server && !Notify.finder) || f.status === 'loading';
+    return `<section class="card card-pad stack-sm">
+      <h2>Find my school's bell schedule</h2>
+      <form class="inline" data-form="finder">
+        <input class="input" name="school" value="${esc(f.query || '')}" placeholder="School and town, e.g. Lincoln High School, Portland OR" aria-label="High school name and town" ${disabled ? 'disabled' : ''} required>
+        <button class="btn" ${disabled ? 'disabled' : ''}>Find</button>
+      </form>
+      ${body}
+    </section>`;
+  }
+
+  function notifyCard() {
+    const n = Notify;
+    const lead = n.cfg.lead;
+    const leadSel = `<label class="inline">Alert me <select class="input small-select" data-lead aria-label="Minutes before class">
+        ${[0, 2, 5, 10, 15].map((m) => `<option value="${m}" ${m === lead ? 'selected' : ''}>${m ? `${m} min before` : 'when it starts'}</option>`).join('')}</select></label>`;
+    const calBtn = '<button class="btn small" data-act="calendar">Add classes to Calendar</button>';
+    let body;
+    if (n.server === null) body = '<p class="howto">Checking…</p>';
+    else if (n.server === false) {
+      body = `<p class="howto">Push alerts come from the Satchel server, and this copy isn't running on one. Until it is, you can put your classes in your iPhone's Calendar with an alert before each one.</p>${leadSel}<div class="inline">${calBtn}</div>`;
+    } else if (n.isIOS && !n.standalone()) {
+      body = `<ol class="steps">
+          <li>Tap the <b>Share</b> button in Safari.</li>
+          <li>Choose <b>Add to Home Screen</b>.</li>
+          <li>Open Satchel from your Home Screen and come back to this tab to turn alerts on.</li>
+        </ol><p class="muted-text">iPhones only allow notifications from websites that are on the Home Screen (iOS 16.4 or later).</p>`;
+    } else if (!n.supported()) {
+      body = `<p class="howto">This browser can't receive notifications. Use the Calendar option instead.</p>${leadSel}<div class="inline">${calBtn}</div>`;
+    } else if (Notification.permission === 'denied') {
+      body = '<p class="err-text">Notifications are blocked for Satchel. Turn them on in Settings → Notifications → Satchel, then reopen the app.</p>';
+    } else if (!n.cfg.enabled) {
+      body = `<p class="howto">Get a notification like <b>“Next: AP Biology · Room 214”</b> before each class, following your rotation.</p>${leadSel}
+        <div class="inline"><button class="btn primary" data-act="notify-on">Turn on class alerts</button></div>`;
+    } else {
+      body = `<p class="ok-text">Alerts are on for this device.</p>${leadSel}
+        <div class="inline"><button class="btn small" data-act="notify-test">Send a test</button><button class="btn small ghost" data-act="notify-off">Turn off</button></div>`;
+    }
+    return `<section class="card card-pad stack-sm">
+      <h2>Class alerts</h2>
+      ${body}
+      ${body.includes('data-act="calendar"') || n.server === null ? '' : `<details class="more"><summary>Or use Calendar instead</summary><p class="muted-text">Adds the next 10 weeks of classes to your Calendar, each with an alert. Re-download after changing your schedule.</p>${calBtn}</details>`}
+    </section>`;
+  }
+
+  // ---------- Push notifications ----------
+  // The page registers a service worker and a push subscription; the Satchel server keeps a copy of the
+  // schedule (class names and rooms only) and sends the alerts, so they arrive even with the app closed.
+  const Notify = (() => {
+    const NKEY = KEY + '.notify';
+    let cfg = { enabled: false, lead: 5 };
+    try { cfg = { ...cfg, ...JSON.parse(localStorage.getItem(NKEY) || '{}') }; } catch (e) { /* ignore */ }
+    const saveCfg = () => { try { localStorage.setItem(NKEY, JSON.stringify(cfg)); } catch (e) { /* ignore */ } };
+    let server = null, finder = false, vapidKey = null, reg = null, timer = null;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const standalone = () => navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+    const supported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+    const rerender = () => { if (ui.view === 'schedule') render(); };
+
+    function b64ToBytes(b64) {
+      const s = atob((b64 + '='.repeat((4 - (b64.length % 4)) % 4)).replace(/-/g, '+').replace(/_/g, '/'));
+      return Uint8Array.from(s, (ch) => ch.charCodeAt(0));
+    }
+    async function post(path, body) {
+      const r = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      let j = {};
+      try { j = await r.json(); } catch (e) { /* not JSON */ }
+      if (!r.ok) throw new Error(j.error || `Server error ${r.status}`);
+      return j;
+    }
+
+    async function init() {
+      if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+        try { reg = await navigator.serviceWorker.register('sw.js'); } catch (e) { /* not served over https */ }
+      }
+      try {
+        const r = await fetch('api/health', { cache: 'no-store' });
+        const j = r.ok ? await r.json() : null;
+        server = !!(j && j.app === 'satchel');
+        if (server) { finder = !!j.finder; vapidKey = j.vapidPublicKey; }
+      } catch (e) { server = false; }
+      rerender();
+      if (cfg.enabled && server) sync(true);
+    }
+
+    function payload(sub) {
+      const { mode, days, anchor, schoolDays, offDates } = state.schedule;
+      return {
+        subscription: sub,
+        tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        lead: cfg.lead,
+        schedule: { mode, days: days.map((d) => ({ name: d.name, periods: d.periods.map(({ label, start, end, classId }) => ({ label, start, end, classId })) })), anchor, schoolDays, offDates },
+        classes: state.classes.map((c) => ({ id: c.id, name: c.name, room: c.room || '' })),
+      };
+    }
+    async function currentSub() { return reg ? reg.pushManager.getSubscription() : null; }
+    async function send() {
+      try {
+        const sub = await currentSub();
+        if (!sub) { cfg.enabled = false; saveCfg(); rerender(); return; }
+        await post('api/sync', payload(sub.toJSON()));
+      } catch (e) { /* offline: the next change retries */ }
+    }
+    function sync(now) {
+      if (!cfg.enabled || !server) return;
+      clearTimeout(timer);
+      timer = setTimeout(send, now ? 0 : 1000);
+    }
+
+    async function enable() {
+      try {
+        // Ask straight from the tap: iOS only shows the permission prompt for a user gesture.
+        const perm = await Notification.requestPermission();
+        if (perm !== 'granted') { rerender(); toast('Notifications were not allowed'); return; }
+        reg = reg || await navigator.serviceWorker.register('sw.js');
+        await navigator.serviceWorker.ready;
+        let sub = await currentSub();
+        if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(vapidKey) });
+        await post('api/sync', payload(sub.toJSON()));
+        cfg.enabled = true;
+        saveCfg();
+        rerender();
+        toast('Class alerts are on');
+      } catch (e) {
+        toast(`Couldn't turn on alerts: ${e.message}`);
+      }
+    }
+    async function disable() {
+      cfg.enabled = false;
+      saveCfg();
+      try {
+        const sub = await currentSub();
+        if (sub) { await post('api/unsubscribe', { endpoint: sub.endpoint }); await sub.unsubscribe(); }
+      } catch (e) { /* already gone */ }
+      rerender();
+      toast('Class alerts are off');
+    }
+    async function test() {
+      try {
+        const sub = await currentSub();
+        if (!sub) throw new Error('not subscribed');
+        await post('api/test', { endpoint: sub.endpoint });
+        toast('Test sent. It should arrive in a few seconds.');
+      } catch (e) { toast(`Couldn't send a test: ${e.message}`); }
+    }
+    function setLead(m) { cfg.lead = m; saveCfg(); sync(true); }
+
+    return {
+      init, sync, enable, disable, test, setLead, supported, standalone, isIOS,
+      get cfg() { return cfg; }, get server() { return server; }, get finder() { return finder; },
+    };
+  })();
+
+  // ---------- Calendar export ----------
+  // Works without the server: iPhone Calendar shows its own alert before each class.
+  function downloadCalendar() {
+    const lead = Notify.cfg.lead;
+    const icsEsc = (x) => String(x).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+    const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+    const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Satchel//School planner//EN', 'CALSCALE:GREGORIAN', 'X-WR-CALNAME:Classes'];
+    let n = 0;
+    for (let i = 0; i < 70; i++) {
+      const d = S.addISO(today(), i);
+      const ymd = d.replace(/-/g, '');
+      for (const p of classPeriods(d)) {
+        const c = cls(p.classId);
+        const end = p.end && p.end > p.start ? p.end : S.fromMin(S.toMin(p.start) + 50);
+        const hm = (x) => x.replace(':', '');
+        lines.push('BEGIN:VEVENT', `UID:${ymd}-${hm(p.start)}-${c.id}@satchel`, `DTSTAMP:${stamp}`,
+          `DTSTART:${ymd}T${hm(p.start)}00`, `DTEND:${ymd}T${hm(end)}00`, `SUMMARY:${icsEsc(c.name)}`);
+        if (c.room) lines.push(`LOCATION:${icsEsc(`Room ${c.room}`)}`);
+        if (rotation()) lines.push(`DESCRIPTION:${icsEsc([dayTag(p.dayName), p.label].filter(Boolean).join(', '))}`);
+        lines.push('BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${icsEsc(`Next: ${c.name}${c.room ? ` · Room ${c.room}` : ''}`)}`,
+          `TRIGGER:-PT${lead}M`, 'END:VALARM', 'END:VEVENT');
+        n++;
+      }
+    }
+    lines.push('END:VCALENDAR');
+    if (!n) { toast('Put some classes on your schedule first'); return; }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([lines.join('\r\n')], { type: 'text/calendar' }));
+    a.download = 'satchel-classes.ics';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    toast(`${n} classes ready to add to your Calendar`);
   }
 
   // ---------- Classes ----------
   function renderClasses() {
-    const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const cards = state.classes.map((c) => {
       const open = state.tasks.filter((t) => t.classId === c.id && !t.done).length;
-      const days = (c.days || []).slice().sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map((d) => DAYS[d]).join(' ');
+      const meets = state.schedule.days.filter((day) => day.periods.some((p) => p.classId === c.id))
+        .map((day) => (rotation() ? dayTag(day.name) : day.name.slice(0, 3))).join(', ');
       return `<div class="card ccard" style="--c:${c.color}" data-act="edit-class" data-id="${c.id}" tabindex="0" role="button">
         <b>${esc(c.name)}</b>
-        <div class="meta">${days ? `<span>${days}${c.start ? ` · ${fmtTime(c.start)}` : ''}</span>` : ''}${c.room ? `<span>Room ${esc(c.room)}</span>` : ''}${c.teacher ? `<span>${esc(c.teacher)}</span>` : ''}</div>
+        <div class="meta">${meets ? `<span>${esc(meets)}</span>` : '<span>Not on your schedule yet</span>'}${c.room ? `<span>Room ${esc(c.room)}</span>` : ''}${c.teacher ? `<span>${esc(c.teacher)}</span>` : ''}</div>
         <div class="meta"><span>${open} open assignment${open === 1 ? '' : 's'}</span>${c.nick ? `<span class="nick">type: ${esc(c.nick)}</span>` : ''}</div>
       </div>`;
     }).join('');
@@ -449,14 +701,16 @@
   }
 
   // ---------- Render ----------
-  const VIEWS = { today: renderToday, tasks: renderTasks, week: renderWeek, grades: renderGrades, classes: renderClasses };
+  const VIEWS = { today: renderToday, tasks: renderTasks, week: renderWeek, schedule: renderSchedule, classes: renderClasses };
+  let lastView = null;
   function render() {
-    // Keep open <details> open across re-renders on the grades page.
+    // Keep open <details> open across re-renders of the same view.
     const openDetails = [...document.querySelectorAll('#main details')].map((d) => d.open);
     $('#main').innerHTML = VIEWS[ui.view]();
-    if (ui.view === 'grades' && openDetails.length) {
+    if (lastView === ui.view && openDetails.length) {
       document.querySelectorAll('#main details').forEach((d, i) => { if (openDetails[i] !== undefined) d.open = openDetails[i]; });
     }
+    lastView = ui.view;
     document.querySelectorAll('.tabs button').forEach((b) => b.classList.toggle('active', b.dataset.view === ui.view));
     updatePreview();
   }
@@ -584,9 +838,7 @@
   function classDialog(c) {
     const isNew = !c;
     const used = new Set(state.classes.map((x) => x.color));
-    c = c || { name: '', nick: '', color: COLORS.find((x) => !used.has(x)) || COLORS[0], teacher: '', room: '', days: [1, 2, 3, 4, 5], start: '', end: '',
-      cats: [{ name: 'Homework', weight: 20 }, { name: 'Quizzes', weight: 30 }, { name: 'Tests', weight: 50 }] };
-    const DAYS = [[1, 'Mon'], [2, 'Tue'], [3, 'Wed'], [4, 'Thu'], [5, 'Fri'], [6, 'Sat'], [0, 'Sun']];
+    c = c || { name: '', nick: '', color: COLORS.find((x) => !used.has(x)) || COLORS[0], teacher: '', room: '' };
     openDialog(`<h2>${isNew ? 'Add a class' : 'Edit class'}</h2>
       <div class="row2">
         <label class="field"><span>Class name</span><input name="name" value="${esc(c.name)}" placeholder="AP Biology" required></label>
@@ -597,18 +849,9 @@
       </div></div>
       <div class="row2">
         <label class="field"><span>Teacher</span><input name="teacher" value="${esc(c.teacher)}"></label>
-        <label class="field"><span>Room</span><input name="room" value="${esc(c.room)}"></label>
+        <label class="field"><span>Room</span><input name="room" value="${esc(c.room)}"><small>Shown in class alerts</small></label>
       </div>
-      <div class="field"><span>Meets on</span><div class="daypick">
-        ${DAYS.map(([d, l]) => `<label><input type="checkbox" name="days" value="${d}" ${(c.days || []).includes(d) ? 'checked' : ''}><span>${l}</span></label>`).join('')}
-      </div></div>
-      <div class="row2">
-        <label class="field"><span>Starts</span><input type="time" name="start" value="${esc(c.start)}"></label>
-        <label class="field"><span>Ends</span><input type="time" name="end" value="${esc(c.end)}"></label>
-      </div>
-      <label class="field"><span>Grade categories and weights</span>
-        <textarea name="cats">${esc((c.cats || []).map((k) => `${k.name} ${k.weight}`).join('\n'))}</textarea>
-        <small>One per line, from your syllabus. Leave empty if all points count equally.</small></label>
+      <p class="howto" style="margin:0">When the class meets is set in the <b>Schedule</b> tab.</p>
       <div class="dlg-actions">
         ${isNew ? '' : '<button class="btn danger" value="delete" formnovalidate>Delete class</button>'}
         <span class="spacer"></span>
@@ -617,17 +860,16 @@
       </div>`, (fd, action) => {
       if (action === 'delete') {
         const n = state.tasks.filter((t) => t.classId === c.id).length;
-        if (!confirm(`Delete ${c.name}? Its ${n} assignment${n === 1 ? '' : 's'} and grades will be deleted too.`)) return;
+        if (!confirm(`Delete ${c.name}? Its ${n} assignment${n === 1 ? '' : 's'} will be deleted too, and its periods on your schedule will be left free.`)) return;
         state.classes = state.classes.filter((x) => x !== c);
         state.tasks = state.tasks.filter((t) => t.classId !== c.id);
-        state.grades = state.grades.filter((g) => g.classId !== c.id);
+        for (const day of state.schedule.days) for (const p of day.periods) if (p.classId === c.id) p.classId = null;
         commit();
         return;
       }
       const data = {
         name: fd.get('name').trim() || 'Class', nick: fd.get('nick').trim(), color: fd.get('color') || COLORS[0],
-        teacher: fd.get('teacher').trim(), room: fd.get('room').trim(), days: fd.getAll('days').map(Number),
-        start: fd.get('start'), end: fd.get('end'), cats: S.parseCats(fd.get('cats')),
+        teacher: fd.get('teacher').trim(), room: fd.get('room').trim(),
       };
       if (isNew) state.classes.push({ id: uid(), ...data });
       else Object.assign(c, data);
@@ -675,19 +917,23 @@
       case 'filter': ui.filter = id; render(); break;
       case 'toggle-done': ui.showDone = !ui.showDone; render(); break;
       case 'week': ui.weekOffset = id === '0' ? 0 : ui.weekOffset + Number(id); render(); break;
-      case 'del-grade': {
-        const idx = state.grades.findIndex((g) => g.id === id);
-        const g = state.grades[idx];
-        state.grades.splice(idx, 1);
-        commit();
-        toast('Score deleted', () => { state.grades.splice(idx, 0, g); commit(); });
-        break;
-      }
+      case 'sched-day': ui.schedDay = Number(id); render(); break;
+      case 'sched-mode': setMode(id); break;
+      case 'add-period': addPeriod(); break;
+      case 'del-period': state.schedule.days[ui.schedDay].periods.splice(Number(id), 1); commit(); break;
+      case 'copy-day': copyDay(); break;
+      case 'del-off': state.schedule.offDates = state.schedule.offDates.filter((x) => x !== id); commit(); break;
+      case 'finder-use': applyFound(); break;
+      case 'finder-clear': ui.finder = { status: 'idle' }; render(); break;
+      case 'notify-on': Notify.enable(); break;
+      case 'notify-off': Notify.disable(); break;
+      case 'notify-test': Notify.test(); break;
+      case 'calendar': downloadCalendar(); break;
       case 'sample': loadSample(); break;
       case 'export': exportData(); break;
       case 'import': importData(); break;
       case 'reset':
-        if (confirm('Erase all classes, assignments and grades from this browser? Download a backup first if you might want them back.')) {
+        if (confirm('Erase all classes, assignments and your schedule from this browser? Download a backup first if you might want them back.')) {
           state = blank(); commit(); go('today');
         }
         break;
@@ -695,39 +941,165 @@
   });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && e.target.matches('.ccard')) e.target.click();
+    if (e.key === 'Enter' && e.target.matches('[data-off-input]')) { e.preventDefault(); addOffDate(); }
     if (e.key === '/' && !e.target.closest('input, textarea, select') && !dlg.open) { e.preventDefault(); quickInput.focus(); }
     if (e.key === 'Escape' && document.activeElement === quickInput) { quickInput.value = ''; quickInput.blur(); updatePreview(); }
   });
 
-  document.addEventListener('submit', (e) => {
-    const f = e.target.closest('[data-form="grade"]');
-    if (!f) return;
-    e.preventDefault();
-    const fd = new FormData(f);
-    const score = Number(fd.get('score')), max = Number(fd.get('max'));
-    if (!Number.isFinite(score) || !Number.isFinite(max) || max <= 0) { toast('Enter a score and what it was out of'); return; }
-    state.grades.push({ id: uid(), classId: f.dataset.id, cat: fd.get('cat'), name: fd.get('name').trim(), score, max });
+  // ---------- Schedule editing ----------
+  const LETTERS = 'ABCDEFGHIJ';
+  const nextDayName = (days) => (days.every((d) => /^\d+$/.test(d.name)) ? String(days.length + 1) : LETTERS[days.length] || String(days.length + 1));
+  const timesOnly = (periods) => periods.map(({ label, start, end }) => ({ label, start, end, classId: null }));
+
+  function setMode(mode) {
+    const sch = state.schedule;
+    if (sch.mode === mode) return;
+    if (mode === 'rotation') {
+      // Start from an A/B cycle using Monday's and Tuesday's periods.
+      sch.days = [{ name: 'A', periods: sch.days[0].periods }, { name: 'B', periods: (sch.days[1] || sch.days[0]).periods }];
+      sch.anchor = { date: refSchoolDay(), index: 0 };
+    } else {
+      const src = sch.days;
+      sch.days = WEEKDAYS.map((name, i) => ({ name, periods: i < src.length ? src[i].periods : timesOnly(src[0].periods) }));
+      sch.anchor = null;
+    }
+    sch.mode = mode;
+    ui.schedDay = 0;
     commit();
-    const again = document.querySelector(`[data-form="grade"][data-id="${f.dataset.id}"] [name=name]`);
-    if (again) again.focus();
+  }
+
+  function setDayCount(n) {
+    const sch = state.schedule;
+    if (n < sch.days.length) {
+      const lost = sch.days.slice(n).filter((d) => d.periods.length).map((d) => dayTag(d.name));
+      if (lost.length && !confirm(`Remove ${lost.join(', ')} and their periods?`)) { render(); return; }
+      sch.days = sch.days.slice(0, n);
+    }
+    while (sch.days.length < n) sch.days.push({ name: nextDayName(sch.days), periods: timesOnly(sch.days[0].periods) });
+    if (sch.anchor) sch.anchor.index = Math.min(sch.anchor.index, n - 1);
+    commit();
+  }
+
+  function addPeriod() {
+    const periods = state.schedule.days[ui.schedDay].periods;
+    const last = periods.filter((p) => p.end || p.start).slice(-1)[0];
+    // Guess the next slot: 5 minutes after the last one ends, as long as the last one.
+    let start = '', end = '';
+    if (last && last.start && last.end) {
+      const len = S.toMin(last.end) - S.toMin(last.start);
+      start = S.fromMin(Math.min(S.toMin(last.end) + 5, 23 * 60));
+      end = S.fromMin(Math.min(S.toMin(start) + len, 23 * 60 + 59));
+    }
+    periods.push({ label: '', start, end, classId: null });
+    commit();
+    const rows = document.querySelectorAll('.prow:not(.head)');
+    const row = [...rows].find((r) => !r.querySelector('[data-f=start]').value) || rows[rows.length - 1];
+    if (row) row.querySelector('[data-f=label]').focus();
+  }
+
+  function copyDay() {
+    const from = Number(document.querySelector('[data-copy-from]').value);
+    const sch = state.schedule;
+    const to = sch.days[ui.schedDay];
+    if (to.periods.length && !confirm(`Replace the periods on ${dayTag(to.name)}?`)) return;
+    // Times always; classes too in a weekly schedule, where most days look alike.
+    to.periods = rotation() ? timesOnly(sch.days[from].periods) : sch.days[from].periods.map((p) => ({ ...p }));
+    commit();
+  }
+
+  function addOffDate() {
+    const inp = document.querySelector('[data-off-input]');
+    if (!inp || !inp.value) return;
+    const sch = state.schedule;
+    if (!sch.offDates.includes(inp.value)) sch.offDates.push(inp.value);
+    commit();
+  }
+
+  // Edits to period rows and schedule settings save as you go, without re-rendering mid-typing.
+  document.addEventListener('change', (e) => {
+    const el = e.target;
+    const row = el.closest('.prow');
+    if (row && el.dataset.f) {
+      const p = state.schedule.days[ui.schedDay].periods[Number(row.dataset.i)];
+      p[el.dataset.f] = el.dataset.f === 'classId' ? (el.value || null) : el.value;
+      save();
+      Notify.sync();
+      if (el.dataset.f === 'classId') row.style.setProperty('--c', colorOf(p.classId));
+      if (el.dataset.f === 'start') render(); // re-sort by time
+      return;
+    }
+    const sch = state.schedule;
+    switch (el.dataset.sched) {
+      case 'count': setDayCount(Number(el.value)); return;
+      case 'anchor': sch.anchor = { date: refSchoolDay(), index: Number(el.value) }; commit(); return;
+      case 'dayname': sch.days[ui.schedDay].name = el.value.trim() || nextDayName(sch.days.slice(0, ui.schedDay)); commit(); return;
+      default: break;
+    }
+    if (el.matches('[data-lead]')) { Notify.setLead(Number(el.value)); toast(`Alerts will come ${Number(el.value) ? `${el.value} minutes before` : 'as'} each class${Number(el.value) ? '' : ' starts'}`); }
+  });
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-sched-add-off]')) addOffDate();
   });
 
-  document.addEventListener('input', (e) => {
-    const box = e.target.closest('[data-calc]');
-    if (!box) return;
-    const id = box.dataset.calc;
-    ui.calc[id] = { target: box.querySelector('[name=target]').value, weight: box.querySelector('[name=weight]').value };
-    const c = cls(id);
-    const g = S.classGrade(c, state.grades);
-    const { target, weight } = ui.calc[id];
-    const need = S.neededOnFinal(g.pct, Number(target), Number(weight));
-    const ans = box.querySelector('.answer');
-    ans.className = 'answer';
-    if (need == null || !Number.isFinite(need)) ans.textContent = g.pct == null ? 'Add a grade to see what you need.' : 'Enter a final weight between 1 and 99.';
-    else if (need <= 0) { ans.textContent = `You're safe: even a 0 keeps you at ${target}%.`; ans.classList.add('good'); }
-    else if (need > 100) { ans.textContent = `You'd need ${need.toFixed(1)}%, so ${target}% is out of reach. Try a lower target.`; ans.classList.add('bad'); }
-    else { ans.textContent = `You need ${need.toFixed(1)}% on the final.`; if (need < 70) ans.classList.add('good'); }
+  // ---------- School schedule finder ----------
+  document.addEventListener('submit', async (e) => {
+    const f = e.target.closest('[data-form="finder"]');
+    if (!f) return;
+    e.preventDefault();
+    const query = new FormData(f).get('school').trim();
+    if (!query) return;
+    ui.finder = { status: 'loading', query };
+    render();
+    try {
+      const ctl = new AbortController();
+      const timer = setTimeout(() => ctl.abort(), 180_000);
+      const r = await fetch('api/find-schedule', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ school: query }), signal: ctl.signal,
+      });
+      clearTimeout(timer);
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || `Server error ${r.status}`);
+      ui.finder = j.result.found && j.result.days.length
+        ? { status: 'done', query, result: j.result }
+        : { status: 'notfound', query, message: j.result.notes || `Couldn't find a published bell schedule for ${query}. Try adding the town and state, or type the times in below.` };
+    } catch (err) {
+      ui.finder = { status: 'error', query, message: err.name === 'AbortError' ? 'That took too long. Try again in a moment.' : `Search failed: ${err.message}` };
+    }
+    if (ui.view === 'schedule') render();
   });
+
+  function applyFound() {
+    const r = ui.finder.result;
+    const sch = state.schedule;
+    const hasAny = sch.days.some((d) => d.periods.length);
+    if (hasAny && !confirm('Replace your current period times with this schedule? Classes stay matched to periods with the same name.')) return;
+    let days = r.days.map((d) => ({ name: d.name, periods: d.periods.map((p) => ({ label: p.label, start: p.start, end: p.end, classId: null })) }));
+    const rot = r.rotation && days.length > 1;
+    if (!rot) {
+      // One "every day" schedule, or one per weekday.
+      days = WEEKDAYS.map((name, i) => {
+        const match = days.find((d) => d.name.toLowerCase().startsWith(name.slice(0, 3).toLowerCase())) || days[Math.min(i, days.length - 1)];
+        return { name, periods: match.periods.map((p) => ({ ...p })) };
+      });
+    }
+    // Keep class choices where a period with the same name existed before.
+    days.forEach((d, i) => {
+      const old = sch.days[i];
+      if (!old) return;
+      for (const p of d.periods) {
+        const same = old.periods.find((o) => o.classId && o.label && o.label.toLowerCase() === p.label.toLowerCase());
+        if (same) p.classId = same.classId;
+      }
+    });
+    sch.mode = rot ? 'rotation' : 'weekly';
+    sch.days = days;
+    sch.anchor = rot ? { date: refSchoolDay(), index: 0 } : null;
+    sch.school = { name: r.school_name, source: r.source_url };
+    ui.finder = { status: 'idle', query: ui.finder.query };
+    ui.schedDay = 0;
+    commit();
+    toast(rot ? 'Schedule added. Set which day today is, then pick your class for each period.' : 'Schedule added. Now pick your class for each period.');
+  }
 
   // ---------- Backup ----------
   function exportData() {
@@ -747,7 +1119,7 @@
         const s = JSON.parse(await inp.files[0].text());
         if (!Array.isArray(s.classes) || !Array.isArray(s.tasks)) throw new Error('bad');
         if (!confirm('Replace everything here with this backup?')) return;
-        state = { classes: s.classes, tasks: s.tasks, grades: s.grades || [] };
+        state = { classes: s.classes, tasks: s.tasks, schedule: s.schedule || scheduleFromClasses(s.classes) };
         commit();
         toast('Backup restored');
       } catch (err) { toast("That file isn't a Satchel backup"); }
@@ -760,16 +1132,26 @@
     if ((state.classes.length || state.tasks.length) && !confirm('Replace what you have with sample data?')) return;
     const t0 = today();
     const d = (n) => S.addISO(t0, n);
-    const C = (id, name, nick, color, teacher, room, start, end, days, cats) => ({ id, name, nick, color, teacher, room, start, end, days, cats });
-    const std = [{ name: 'Homework', weight: 20 }, { name: 'Quizzes', weight: 30 }, { name: 'Tests', weight: 50 }];
+    const C = (id, name, nick, color, teacher, room) => ({ id, name, nick, color, teacher, room });
+    const P = (label, start, end, classId) => ({ label, start, end, classId });
+    // An A/B block schedule with today's school day as Day A.
+    let ref = t0;
+    while (!S.isSchoolDay(ref, { schoolDays: [1, 2, 3, 4, 5] })) ref = S.addISO(ref, 1);
     state = {
       classes: [
-        C('bio', 'AP Biology', 'bio', '#0ca678', 'Ms. Okafor', '214', '08:00', '08:50', [1, 2, 3, 4, 5], [{ name: 'Labs', weight: 25 }, { name: 'Quizzes', weight: 25 }, { name: 'Tests', weight: 50 }]),
-        C('alg', 'Algebra II', 'math, alg', '#3b5bdb', 'Mr. Reyes', '108', '09:00', '09:50', [1, 2, 3, 4, 5], std),
-        C('eng', 'English Literature', 'eng', '#ae3ec9', 'Dr. Lindqvist', '301', '10:05', '10:55', [1, 3, 5], [{ name: 'Essays', weight: 50 }, { name: 'Reading checks', weight: 20 }, { name: 'Participation', weight: 30 }]),
-        C('his', 'US History', 'hist, history', '#e8590c', 'Mrs. Patel', '122', '11:00', '11:50', [2, 4], std),
-        C('spa', 'Spanish III', 'span, spanish', '#d6336c', 'Sr. Molina', '017', '13:00', '13:50', [1, 2, 3, 4, 5], [{ name: 'Homework', weight: 30 }, { name: 'Speaking', weight: 30 }, { name: 'Tests', weight: 40 }]),
+        C('bio', 'AP Biology', 'bio', '#0ca678', 'Ms. Okafor', '214'),
+        C('alg', 'Algebra II', 'math, alg', '#3b5bdb', 'Mr. Reyes', '108'),
+        C('eng', 'English Literature', 'eng', '#ae3ec9', 'Dr. Lindqvist', '301'),
+        C('his', 'US History', 'hist, history', '#e8590c', 'Mrs. Patel', '122'),
+        C('spa', 'Spanish III', 'span, spanish', '#d6336c', 'Sr. Molina', '017'),
       ],
+      schedule: {
+        mode: 'rotation', schoolDays: [1, 2, 3, 4, 5], offDates: [], anchor: { date: ref, index: 0 }, school: null,
+        days: [
+          { name: 'A', periods: [P('Block 1', '07:45', '09:10', 'bio'), P('Block 2', '09:20', '10:45', 'alg'), P('Lunch', '10:45', '11:20', null), P('Block 3', '11:25', '12:50', 'eng'), P('Block 4', '13:00', '14:25', 'spa')] },
+          { name: 'B', periods: [P('Block 5', '07:45', '09:10', 'his'), P('Block 6', '09:20', '10:45', 'spa'), P('Lunch', '10:45', '11:20', null), P('Block 7', '11:25', '12:50', 'bio'), P('Block 8', '13:00', '14:25', null)] },
+        ],
+      },
       tasks: [
         ['alg', 'Worksheet 5.3, odd problems', 'homework', d(1), 30],
         ['spa', 'Vocab list 7', 'homework', d(1), 20],
@@ -782,13 +1164,6 @@
         ['eng', 'Annotate poem for discussion', 'homework', d(-1), 20],
         ['his', 'Chapter 12 notes', 'reading', d(5), 40],
       ].map(([classId, title, type, due, effort, priority]) => ({ id: uid(), created: Date.now(), classId, title, type, due, effort, priority: !!priority, done: false, log: {}, notes: '' })),
-      grades: [
-        ['bio', 'Labs', 'Lab 1', 18, 20], ['bio', 'Quizzes', 'Quiz 1', 8, 10], ['bio', 'Tests', 'Unit 1 test', 84, 100], ['bio', 'Tests', 'Unit 2 test', 91, 100],
-        ['alg', 'Homework', 'HW avg', 95, 100], ['alg', 'Quizzes', 'Quiz 4', 17, 20], ['alg', 'Tests', 'Ch 3 test', 78, 100],
-        ['eng', 'Essays', 'Personal essay', 46, 50], ['eng', 'Reading checks', 'Checks 1–4', 36, 40],
-        ['his', 'Tests', 'Unit 1', 88, 100], ['his', 'Quizzes', 'Map quiz', 23, 25],
-        ['spa', 'Speaking', 'Interview', 27, 30], ['spa', 'Tests', 'Unidad 2', 81, 100],
-      ].map(([classId, cat, name, score, max]) => ({ id: uid(), classId, cat, name, score, max })),
     };
     // One completed homework so the plan shows progress.
     state.tasks.push({ id: uid(), created: Date.now(), classId: 'bio', title: 'Textbook p. 112 questions', type: 'homework', due: d(1), effort: 25, priority: false, done: true, doneAt: t0, log: {}, notes: '' });
@@ -800,6 +1175,7 @@
   // ---------- Start ----------
   try { const v = localStorage.getItem(KEY + '.view'); if (v && VIEWS[v]) ui.view = v; } catch (e) { /* ignore */ }
   render();
+  Notify.init();
   // Keep "in class now" and the date fresh if the tab stays open.
-  setInterval(() => { if (!dlg.open && document.activeElement?.tagName !== 'INPUT') render(); }, 60_000);
+  setInterval(() => { if (!dlg.open && ui.view !== 'schedule' && !document.activeElement?.closest('input, select, textarea')) render(); }, 60_000);
 })();

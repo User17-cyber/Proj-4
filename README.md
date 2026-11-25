@@ -4,7 +4,7 @@ A bright, cartoony idle tycoon game that runs in any modern browser. Start with 
 
 ## Also in this repo
 
-**Satchel** (`school/`) is a separate school planner. You type assignments in one line and it plans what to work on each night. See [school/README.md](school/README.md).
+**Satchel** (`school/`) is a separate school planner. You type assignments in one line and it plans what to work on each night. It also handles block-schedule rotations and sends class alerts to your phone. See [school/README.md](school/README.md).
 
 ## Play
 

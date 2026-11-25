@@ -35,10 +35,28 @@ assert.deepStrictEqual(p2.map((x) => [x.day, x.min, x.done]), [['2026-11-10', 60
 // Homework lands on the night before; overdue lands today.
 assert.deepStrictEqual(S.planFor({ type: 'homework', due: '2026-11-14', effort: 30 }, today)[0].day, '2026-11-13');
 assert.deepStrictEqual(S.planFor({ type: 'homework', due: '2026-11-08', effort: 30 }, today)[0].day, today);
-// Grades
-const g = S.classGrade({ id: 'b', cats: [{ name: 'HW', weight: 40 }, { name: 'Tests', weight: 60 }] },
-  [{ classId: 'b', cat: 'HW', score: 9, max: 10 }, { classId: 'b', cat: 'Tests', score: 80, max: 100 }]);
-assert.strictEqual(Math.round(g.pct * 10) / 10, 84);
-assert.strictEqual(Math.round(S.neededOnFinal(84, 90, 20)), 114);
+// Rotation: A/B days, anchor Tue 2026-11-10 = A. Thanksgiving off.
+const sch = {
+  mode: 'rotation', schoolDays: [1, 2, 3, 4, 5], offDates: ['2026-11-26', '2026-11-27'], anchor: { date: '2026-11-10', index: 0 },
+  days: [
+    { name: 'A', periods: [{ label: 'P1', start: '08:00', end: '09:25', classId: 'b' }, { label: 'Lunch', start: '11:00', end: '11:30', classId: null }] },
+    { name: 'B', periods: [{ label: 'P5', start: '08:00', end: '09:25', classId: 'h' }] },
+  ],
+};
+const name = (d) => (S.cycleIndex(d, sch) < 0 ? '-' : sch.days[S.cycleIndex(d, sch)].name);
+const got = ['2026-11-09', '2026-11-10', '2026-11-11', '2026-11-13', '2026-11-14', '2026-11-16', '2026-11-25', '2026-11-26', '2026-11-30'].map(name).join('');
+assert.strictEqual(got, 'BABB-AB-A', `rotation ${got}`); // weekend and holidays skip, rotation carries on
+assert.strictEqual(S.periodsOn('2026-11-10', sch)[0].dayName, 'A');
+// Alerts: lead 5 -> due 07:55..07:59 for the 08:00 class; free periods never alert.
+assert.strictEqual(S.dueAlerts(sch, '2026-11-10', S.toMin('07:54'), 5).length, 0);
+assert.strictEqual(S.dueAlerts(sch, '2026-11-10', S.toMin('07:55'), 5)[0].period.classId, 'b');
+assert.strictEqual(S.dueAlerts(sch, '2026-11-10', S.toMin('07:59'), 5).length, 1);
+assert.strictEqual(S.dueAlerts(sch, '2026-11-10', S.toMin('08:00'), 5).length, 0);
+assert.strictEqual(S.dueAlerts(sch, '2026-11-10', S.toMin('10:57'), 5).length, 0);
+assert.strictEqual(S.dueAlerts(sch, '2026-11-10', S.toMin('08:00'), 0).length, 1); // lead 0: at the start
+// Weekly mode: days[0] is Monday.
+const wk = { mode: 'weekly', days: [{ name: 'Mon', periods: [{ start: '09:00', classId: 'm' }] }, { name: 'Tue', periods: [] }] };
+assert.strictEqual(S.periodsOn('2026-11-09', wk)[0].classId, 'm');
+assert.strictEqual(S.periodsOn('2026-11-15', wk).length, 0);
 console.log(fail ? `${fail} parser checks failed` : 'All checks passed');
 process.exit(fail ? 1 : 0);

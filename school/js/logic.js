@@ -220,49 +220,56 @@
     return load;
   }
 
-  // ---------- Grades ----------
-  function classGrade(c, grades) {
-    const mine = grades.filter((g) => g.classId === c.id);
-    const cats = c.cats && c.cats.length ? c.cats : [{ name: 'All', weight: 100 }];
-    const named = new Set(cats.map((x) => x.name));
-    let wsum = 0, total = 0;
-    const per = cats.map((cat, i) => {
-      // Entries whose category no longer exists count toward the first category.
-      const items = c.cats && c.cats.length
-        ? mine.filter((g) => g.cat === cat.name || (i === 0 && !named.has(g.cat)))
-        : mine;
-      const s = items.reduce((a, g) => a + Number(g.score), 0);
-      const m = items.reduce((a, g) => a + Number(g.max), 0);
-      const pct = m > 0 ? (s / m) * 100 : null;
-      if (pct !== null) { wsum += Number(cat.weight); total += pct * Number(cat.weight); }
-      return { name: cat.name, weight: Number(cat.weight), pct, n: items.length };
-    });
-    return { pct: wsum ? total / wsum : null, per, count: mine.length };
+  // ---------- Bell schedule ----------
+  // schedule = {
+  //   mode: 'weekly' (days[0..4] = Mon..Fri) or 'rotation' (A/B, Day 1-6...: advances one step per school day),
+  //   days: [{ name, periods: [{ label, start: "HH:MM", end: "HH:MM", classId }] }],
+  //   anchor: { date, index }  (rotation only: which cycle day `date` is),
+  //   schoolDays: [1..5], offDates: ["YYYY-MM-DD", ...]  (days off don't advance the rotation)
+  // }
+  function isSchoolDay(iso, sch) {
+    return (sch.schoolDays || [1, 2, 3, 4, 5]).includes(dow(iso)) && !(sch.offDates || []).includes(iso);
   }
 
-  function letter(p) {
-    if (p == null) return '–';
-    const scale = [[93, 'A'], [90, 'A−'], [87, 'B+'], [83, 'B'], [80, 'B−'], [77, 'C+'], [73, 'C'], [70, 'C−'], [67, 'D+'], [63, 'D'], [60, 'D−']];
-    for (const [min, l] of scale) if (p >= min) return l;
-    return 'F';
+  function cycleIndex(iso, sch) {
+    if (!sch || !sch.days || !sch.days.length || !isSchoolDay(iso, sch)) return -1;
+    if (sch.mode !== 'rotation') {
+      const i = (dow(iso) + 6) % 7;
+      return i < sch.days.length ? i : -1;
+    }
+    if (!sch.anchor) return -1;
+    const n = sch.days.length;
+    const a = dayNum(sch.anchor.date), b = dayNum(iso);
+    let steps = 0;
+    if (b >= a) { for (let d = a + 1; d <= b; d++) if (isSchoolDay(numISO(d), sch)) steps++; }
+    else { for (let d = b + 1; d <= a; d++) if (isSchoolDay(numISO(d), sch)) steps--; }
+    return (((sch.anchor.index + steps) % n) + n) % n;
   }
 
-  // Score needed on a final worth `weight` % of the course to finish at `target` %.
-  function neededOnFinal(current, target, weight) {
-    const w = weight / 100;
-    if (w <= 0 || w >= 1 || current == null) return null;
-    return (target - current * (1 - w)) / w;
+  // The periods on a date, sorted by start time, each with its cycle day attached.
+  function periodsOn(iso, sch) {
+    const i = cycleIndex(iso, sch);
+    if (i < 0) return [];
+    const day = sch.days[i];
+    return (day.periods || []).filter((p) => p.start)
+      .map((p) => ({ ...p, dayName: day.name, dayIndex: i }))
+      .sort((x, y) => x.start.localeCompare(y.start));
   }
 
-  function parseCats(text) {
-    return text.split('\n').map((line) => {
-      const m = line.trim().match(/^(.*?)[\s:,-]+(\d+(?:\.\d+)?)\s*%?$/);
-      return m ? { name: m[1].trim(), weight: Number(m[2]) } : null;
-    }).filter((c) => c && c.name);
+  const toMin = (hm) => Number(hm.slice(0, 2)) * 60 + Number(hm.slice(3, 5));
+  const fromMin = (m) => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
+
+  // Class-period notifications due at local date `iso`, local minute `nowMin`.
+  // A period is due from (start - lead) until it starts, so a missed tick still sends it.
+  function dueAlerts(sch, iso, nowMin, lead) {
+    return periodsOn(iso, sch)
+      .filter((p) => p.classId)
+      .filter((p) => { const at = toMin(p.start) - lead; return nowMin >= at && nowMin < Math.max(at + 1, toMin(p.start)); })
+      .map((p) => ({ key: `${iso}|${p.start}|${p.classId}`, period: p }));
   }
 
   const api = { toISO, dayNum, numISO, addISO, dow, fmtDate, relDue, fmtMin, DAY_SHORT, DAY_LONG, MON_SHORT,
-    TYPES, parseQuick, planFor, loadByDay, classGrade, letter, neededOnFinal, parseCats };
+    TYPES, parseQuick, planFor, loadByDay, isSchoolDay, cycleIndex, periodsOn, toMin, fromMin, dueAlerts };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.Satchel = api;
-})(this);
+})(typeof self !== 'undefined' ? self : this);
